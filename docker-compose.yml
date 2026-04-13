@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: salescrm
+      POSTGRES_PASSWORD: salescrm123
+      POSTGRES_DB: salescrm
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U salescrm -d salescrm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://salescrm:salescrm123@postgres:5432/salescrm
+      SECRET_KEY: c2ac9593345be3956fc06d2e2bce7df2afbbc7d383e7a5ca4d6eedf9aa32e884
+      FRONTEND_URL: http://localhost
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      REFRESH_TOKEN_EXPIRE_DAYS: 7
+      ADMIN_EMAIL: admin@salescrm.com
+      ADMIN_PASSWORD: Admin@123
+      ADMIN_NAME: Administrator
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # When the browser calls /api/..., nginx proxies it to backend internally.
+        # So the base URL from the browser's perspective is just the frontend origin.
+        VITE_API_BASE_URL: ""
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  pgdata:
