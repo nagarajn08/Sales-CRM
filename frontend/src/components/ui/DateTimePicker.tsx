@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const MONTHS = [
@@ -26,18 +26,7 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
     const d = value ? new Date(value) : new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
-  const ref = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  // Build days grid
   const year = view.getFullYear();
   const month = view.getMonth();
   const firstDayOfWeek = new Date(year, month, 1).getDay();
@@ -67,12 +56,11 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
   const isDisabled = (day: number) => {
     if (!minDate) return false;
     const d = new Date(year, month, day);
-    const min = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
-    return d < min;
+    return d < new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
   };
 
   const isSelectedDay = (day: number) =>
-    selected &&
+    !!selected &&
     selected.getFullYear() === year &&
     selected.getMonth() === month &&
     selected.getDate() === day;
@@ -83,11 +71,11 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
   };
 
   const displayLabel = selected
-    ? `${selected.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}  ${selected.getHours().toString().padStart(2, "0")}:${selected.getMinutes().toString().padStart(2, "0")}`
+    ? `${selected.getDate().toString().padStart(2,"0")} ${MONTHS[selected.getMonth()].slice(0,3)} ${selected.getFullYear()}  ${selected.getHours().toString().padStart(2,"0")}:${selected.getMinutes().toString().padStart(2,"0")}`
     : "";
 
   return (
-    <div ref={ref} className="relative">
+    <div className="w-full">
       {label && (
         <label className="block text-sm font-medium text-foreground mb-1.5">
           {label} {required && <span className="text-destructive">*</span>}
@@ -100,21 +88,22 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-2.5 rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer text-left transition-colors hover:border-primary/50"
       >
-        <span className="text-lg leading-none">📅</span>
+        <span className="text-base leading-none">📅</span>
         <span className={displayLabel ? "text-foreground font-medium" : "text-muted-foreground"}>
           {displayLabel || "Click to select date & time"}
         </span>
+        <span className="ml-auto text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
       </button>
 
-      {/* Popup */}
+      {/* Inline calendar — no absolute positioning, expands in flow */}
       {open && (
-        <div className="absolute z-[100] mt-2 w-72 rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
+        <div className="mt-2 w-full rounded-xl border border-border bg-card shadow-lg overflow-hidden">
           {/* Month header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-border">
+          <div className="flex items-center justify-between px-3 py-2.5 bg-primary/5 border-b border-border">
             <button
               type="button"
               onClick={() => setView(new Date(year, month - 1, 1))}
-              className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground font-bold text-lg leading-none"
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground font-bold text-lg"
             >
               ‹
             </button>
@@ -124,7 +113,7 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
             <button
               type="button"
               onClick={() => setView(new Date(year, month + 1, 1))}
-              className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground font-bold text-lg leading-none"
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground font-bold text-lg"
             >
               ›
             </button>
@@ -171,10 +160,8 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
 
             {/* Time picker */}
             <div className="mt-3 pt-3 border-t border-border">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Time
-              </p>
-              <div className="flex items-center gap-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Time</p>
+              <div className="flex items-end gap-2">
                 <div className="flex-1">
                   <label className="text-xs text-muted-foreground block mb-1">Hour</label>
                   <select
@@ -189,7 +176,7 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
                     ))}
                   </select>
                 </div>
-                <span className="text-muted-foreground font-bold mt-4">:</span>
+                <span className="text-muted-foreground font-bold pb-2">:</span>
                 <div className="flex-1">
                   <label className="text-xs text-muted-foreground block mb-1">Minute</label>
                   <select
@@ -207,7 +194,7 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
               </div>
             </div>
 
-            {/* Done button */}
+            {/* Done */}
             <button
               type="button"
               onClick={() => setOpen(false)}
