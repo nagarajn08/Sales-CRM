@@ -73,7 +73,8 @@ def list_leads(
         )
     if overdue:
         q = q.filter(Lead.next_followup_at <= datetime.utcnow(), Lead.next_followup_at.isnot(None))
-    return q.order_by(Lead.next_followup_at.asc().nullslast(), Lead.created_at.desc()).offset(skip).limit(limit).all()
+    # Always show leads with soonest follow-up first; leads with no follow-up go to the bottom
+    return q.order_by(Lead.next_followup_at.asc().nulls_last(), Lead.created_at.desc()).offset(skip).limit(limit).all()
 
 
 @router.post("/", response_model=LeadRead, status_code=status.HTTP_201_CREATED)
@@ -88,6 +89,7 @@ def create_lead(body: LeadCreate, current_user: User = Depends(get_current_user)
     )
     db.add(lead)
     db.flush()
+    lead.web_id = f"WEB-{lead.id:04d}"
     _log_activity(db, lead.id, current_user.id, ActivityType.CREATED, new_status=LeadStatus.NEW)
     db.commit()
     db.refresh(lead)

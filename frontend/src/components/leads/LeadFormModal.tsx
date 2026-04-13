@@ -34,7 +34,6 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
 
   const [users, setUsers] = useState<User[]>([]);
   const [form, setForm] = useState({
-    web_id: "",
     name: "",
     email: "",
     mobile: "",
@@ -57,7 +56,6 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
   useEffect(() => {
     if (lead) {
       setForm({
-        web_id: lead.web_id ?? "",
         name: lead.name,
         email: lead.email ?? "",
         mobile: lead.mobile ?? "",
@@ -70,7 +68,7 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
       });
     } else {
       setForm({
-        web_id: "", name: "", email: "", mobile: "", whatsapp: "", company: "",
+        name: "", email: "", mobile: "", whatsapp: "", company: "",
         notes: "", priority: "warm", source: "manual", assigned_to_id: "",
       });
     }
@@ -91,7 +89,6 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {
-        web_id: form.web_id.trim() || null,
         name: form.name.trim(),
         email: form.email.trim() || null,
         mobile: form.mobile.trim() || null,
@@ -125,10 +122,7 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
   return (
     <Modal open={open} onClose={onClose} title={lead ? "Edit Lead" : "Add New Lead"} maxWidth="max-w-xl">
       <form onSubmit={submit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <Input label="Full Name" value={form.name} onChange={(e) => f("name", e.target.value)} required error={errors.name} />
-          <Input label="Web ID" value={form.web_id} onChange={(e) => f("web_id", e.target.value)} placeholder="e.g. WEB-1042" />
-        </div>
+        <Input label="Full Name" value={form.name} onChange={(e) => f("name", e.target.value)} required error={errors.name} />
 
         <div className="grid grid-cols-2 gap-3">
           <Input label="Mobile" value={form.mobile} onChange={(e) => f("mobile", e.target.value)} placeholder="+91..." error={errors.mobile} />

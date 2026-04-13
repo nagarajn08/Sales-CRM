@@ -5,7 +5,6 @@ from app.schemas.user import UserSummary
 
 
 class LeadCreate(BaseModel):
-    web_id: str | None = None
     name: str
     email: str | None = None
     mobile: str | None = None

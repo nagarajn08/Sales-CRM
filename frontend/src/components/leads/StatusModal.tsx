@@ -23,17 +23,13 @@ const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
   { value: "converted", label: "Converted" },
 ];
 
-function toLocalDatetimeValue(date: Date) {
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
 export function StatusModal({ open, onClose, lead, onUpdated }: Props) {
   const defaultFollowup = () => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     d.setHours(10, 0, 0, 0);
-    return toLocalDatetimeValue(d);
+    const p = (n: number) => n.toString().padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
   };
 
   const [status, setStatus] = useState<LeadStatus>(lead.status);
@@ -92,22 +88,13 @@ export function StatusModal({ open, onClose, lead, onUpdated }: Props) {
         )}
 
         {needsFollowup && (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground">
-              Follow-up Date & Time <span className="text-destructive">*</span>
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base pointer-events-none">📅</span>
-              <input
-                type="datetime-local"
-                value={followupAt}
-                min={toLocalDatetimeValue(new Date())}
-                onChange={(e) => setFollowupAt(e.target.value)}
-                className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">Click the field to open the date &amp; time picker</p>
-          </div>
+          <DateTimePicker
+            label="Follow-up Date & Time"
+            required
+            value={followupAt}
+            onChange={setFollowupAt}
+            minDate={new Date()}
+          />
         )}
 
         <Textarea
