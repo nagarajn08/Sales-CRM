@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 import { DateTimePicker } from "../ui/DateTimePicker";
 import { leadsApi } from "../../api";
 import type { Lead, LeadStatus } from "../../types";
-import { STATUS_LABELS, FOLLOWUP_REQUIRED_STATUSES, TERMINAL_STATUSES } from "../../types";
+import { FOLLOWUP_REQUIRED_STATUSES, TERMINAL_STATUSES } from "../../types";
 
 interface Props {
   open: boolean;

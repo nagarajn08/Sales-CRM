@@ -12,7 +12,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // already logged in
   if (user) {
     navigate("/dashboard", { replace: true });
     return null;
@@ -37,18 +36,23 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        {/* Logo */}
+      <div className="w-full max-w-[360px] animate-fade-up">
+
+        {/* Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary text-primary-foreground text-3xl mb-4">
-            🚀
+          <div className="inline-flex items-center justify-center h-10 w-10 rounded-xl bg-primary mb-4">
+            <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5 text-white">
+              <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.8"/>
+              <circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.8"/>
+              <path d="M10 3V1.5M10 18.5V17M3 10H1.5M18.5 10H17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">SalesCRM</h1>
-          <p className="text-muted-foreground text-sm mt-1">Sign in to your account</p>
+          <h1 className="text-xl font-bold text-foreground">SalesCRM</h1>
+          <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
         </div>
 
         {/* Card */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
           <form onSubmit={submit} className="space-y-4">
             <Input
               label="Email"
@@ -71,18 +75,22 @@ export default function LoginPage() {
             />
 
             {error && (
-              <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">
+              <div className="flex items-start gap-2.5 text-sm text-destructive bg-destructive/8 border border-destructive/15 rounded-lg px-3 py-2.5">
+                <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 mt-0.5 shrink-0">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.2"/>
+                  <path d="M8 5v3.5M8 10.5v.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                </svg>
                 {error}
-              </p>
+              </div>
             )}
 
             <Button type="submit" className="w-full" loading={loading}>
-              Sign In
+              Sign in
             </Button>
           </form>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
+        <p className="text-center text-xs text-muted-foreground mt-5">
           Contact your administrator to get access.
         </p>
       </div>

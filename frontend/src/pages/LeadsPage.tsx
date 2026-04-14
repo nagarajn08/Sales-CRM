@@ -72,18 +72,14 @@ export default function LeadsPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 animate-fade-up">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Leads</h1>
-          <p className="text-sm text-muted-foreground">{leads.length} total</p>
+          <h1 className="text-lg font-bold text-foreground">Leads</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{leads.length} total</p>
         </div>
         <div className="sm:ml-auto flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
-            📤 Import
-          </Button>
-          <Button size="sm" onClick={() => setShowAdd(true)}>
-            + Add Lead
-          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>Import</Button>
+          <Button size="sm" onClick={() => setShowAdd(true)}>+ Add Lead</Button>
         </div>
       </div>
 
@@ -122,28 +118,28 @@ export default function LeadsPage() {
       {/* Table */}
       {loading ? (
         <div className="flex items-center justify-center h-48">
-          <span className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <span className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       ) : leads.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <p className="text-4xl mb-3">📭</p>
-          <p className="font-medium">No leads found</p>
-          <p className="text-sm mt-1">Try adjusting your filters or add a new lead</p>
+        <div className="animate-fade-in text-center py-16 text-muted-foreground bg-card border border-border rounded-xl">
+          <p className="font-data text-3xl font-medium text-muted-foreground/40 mb-3">0</p>
+          <p className="font-medium text-foreground text-sm">No leads found</p>
+          <p className="text-sm mt-1">Adjust filters or add a new lead</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border overflow-hidden bg-card">
+        <div className="animate-fade-in rounded-xl border border-border overflow-hidden bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-secondary/50">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden xl:table-cell">Web ID</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Contact</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Priority</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Follow-up</th>
+              <thead>
+                <tr className="border-b border-border bg-secondary/40">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Name</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden xl:table-cell">Web ID</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Contact</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Priority</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Follow-up</th>
                   {isAdmin && (
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Assigned To</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Assigned To</th>
                   )}
                 </tr>
               </thead>
@@ -154,18 +150,20 @@ export default function LeadsPage() {
                     <tr
                       key={lead.id}
                       onClick={() => navigate(`/leads/${lead.id}`)}
-                      className="hover:bg-secondary/40 cursor-pointer transition-colors"
+                      className="hover:bg-secondary/40 cursor-pointer transition-colors group"
                     >
                       <td className="px-4 py-3">
-                        <p className="font-medium text-foreground">{lead.name}</p>
-                        {lead.company && <p className="text-xs text-muted-foreground">{lead.company}</p>}
+                        <p className="font-medium text-foreground group-hover:text-primary transition-colors">{lead.name}</p>
+                        {lead.company && <p className="text-xs text-muted-foreground mt-0.5">{lead.company}</p>}
                       </td>
-                      <td className="px-4 py-3 hidden xl:table-cell text-muted-foreground text-xs">
-                        {lead.web_id ?? <span className="italic">—</span>}
+                      <td className="px-4 py-3 hidden xl:table-cell">
+                        <span className="font-data text-xs text-muted-foreground">
+                          {lead.web_id ?? "—"}
+                        </span>
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">
-                        <p>{lead.mobile ?? "—"}</p>
-                        {lead.email && <p className="text-xs">{lead.email}</p>}
+                        <p className="font-data text-xs">{lead.mobile ?? "—"}</p>
+                        {lead.email && <p className="text-xs mt-0.5">{lead.email}</p>}
                       </td>
                       <td className="px-4 py-3">
                         <Badge className={STATUS_COLORS[lead.status]}>{STATUS_LABELS[lead.status]}</Badge>
@@ -175,15 +173,15 @@ export default function LeadsPage() {
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell">
                         {followup ? (
-                          <span className={followup.overdue ? "text-destructive font-medium" : "text-foreground"}>
-                            {followup.overdue ? "⚠️ " : ""}{followup.label}
+                          <span className={`font-data text-xs ${followup.overdue ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                            {followup.label}
                           </span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </td>
                       {isAdmin && (
-                        <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">
+                        <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground text-xs">
                           {lead.assigned_to?.name ?? <span className="italic">Unassigned</span>}
                         </td>
                       )}
