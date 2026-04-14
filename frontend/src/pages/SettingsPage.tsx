@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { settingsApi } from "../api";
+import { useAuth } from "../auth/AuthContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -15,14 +16,37 @@ const THEMES: { value: ThemeColor; label: string; color: string }[] = [
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [webhook, setWebhook] = useState<{ webhook_url: string; verify_token: string } | null>(null);
+  const [webhookCopied, setWebhookCopied] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     settingsApi.get().then(setSettings).finally(() => setLoading(false));
+    settingsApi.getWebhook().then(setWebhook).catch(() => {});
   }, []);
+
+  const copyWebhook = () => {
+    if (webhook?.webhook_url) {
+      navigator.clipboard.writeText(webhook.webhook_url);
+      setWebhookCopied(true);
+      setTimeout(() => setWebhookCopied(false), 2000);
+    }
+  };
+
+  const regenerateWebhook = async () => {
+    setRegenerating(true);
+    try {
+      const data = await settingsApi.regenerateWebhook();
+      setWebhook(prev => prev ? { ...prev, ...data } : null);
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   const updateSetting = (key: string, value: string) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -103,6 +127,66 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Webhook Integration */}
+      {webhook && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Social Media Lead Capture</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Paste this webhook URL into Meta Lead Ads, LinkedIn Lead Gen Forms, or Google Ads
+              to automatically push leads into your CRM.
+            </p>
+
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-1.5">Webhook URL</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs bg-secondary rounded-lg px-3 py-2.5 text-foreground break-all font-mono">
+                  {webhook.webhook_url}
+                </code>
+                <button
+                  onClick={copyWebhook}
+                  className="shrink-0 px-3 py-2 rounded-lg border border-border text-xs font-medium hover:bg-secondary transition-colors"
+                >
+                  {webhookCopied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-1.5">Meta Verify Token</p>
+              <code className="text-xs bg-secondary rounded-lg px-3 py-2 text-foreground font-mono block">
+                {webhook.verify_token}
+              </code>
+            </div>
+
+            <div className="rounded-lg border border-border divide-y divide-border text-sm">
+              {[
+                { platform: "Meta (Facebook/Instagram)", desc: "Use Webhook URL above. Verify token: salescrm_webhook_verify" },
+                { platform: "LinkedIn Lead Gen", desc: "POST to Webhook URL with firstName, lastName, emailAddress fields" },
+                { platform: "Google Ads", desc: "Use webhook integration, POST to Webhook URL" },
+                { platform: "Any Platform", desc: "POST JSON with name, email, mobile, source, campaign_name fields" },
+              ].map(({ platform, desc }) => (
+                <div key={platform} className="px-4 py-3">
+                  <p className="font-medium text-foreground">{platform}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {user?.role === "admin" && (
+              <div className="flex items-center justify-between pt-1">
+                <p className="text-xs text-muted-foreground">Regenerating creates a new URL and invalidates the old one.</p>
+                <Button variant="outline" size="sm" onClick={regenerateWebhook} loading={regenerating}>
+                  Regenerate
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* App Settings */}
       {!loading && (

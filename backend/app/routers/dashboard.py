@@ -6,7 +6,6 @@ from app.dependencies import get_current_user
 from app.models.lead import Lead, LeadStatus
 from app.models.user import User, UserRole
 from app.schemas.dashboard import DashboardStats, UserStats
-from app.schemas.lead import LeadRead
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -16,38 +15,48 @@ def get_stats(current_user: User = Depends(get_current_user), db: Session = Depe
     now = datetime.utcnow()
     today_start = datetime.combine(date.today(), datetime.min.time())
 
-    def count(q):
-        return q.count()
+    org_base = db.query(Lead).filter(Lead.organization_id == current_user.organization_id)
 
     if current_user.role == UserRole.USER:
-        base = db.query(Lead).filter(Lead.assigned_to_id == current_user.id)
+        base = org_base.filter(Lead.assigned_to_id == current_user.id)
     else:
-        base = db.query(Lead)
+        base = org_base
 
-    total = count(base)
-    active = count(base.filter(Lead.is_active == True))
-    converted_today = count(base.filter(Lead.status == LeadStatus.CONVERTED, Lead.updated_at >= today_start))
-    new_today = count(base.filter(Lead.created_at >= today_start))
-    overdue = count(base.filter(Lead.next_followup_at <= now, Lead.next_followup_at.isnot(None), Lead.is_active == True))
+    total = base.count()
+    active = base.filter(Lead.is_active == True).count()
+    converted_today = base.filter(
+        Lead.status == LeadStatus.CONVERTED, Lead.updated_at >= today_start
+    ).count()
+    new_today = base.filter(Lead.created_at >= today_start).count()
+    overdue = base.filter(
+        Lead.next_followup_at <= now,
+        Lead.next_followup_at.isnot(None),
+        Lead.is_active == True,
+    ).count()
 
-    due_leads = base.filter(Lead.next_followup_at <= now, Lead.is_active == True).order_by(Lead.next_followup_at).limit(20).all()
+    due_leads = base.filter(
+        Lead.next_followup_at <= now, Lead.is_active == True
+    ).order_by(Lead.next_followup_at).limit(20).all()
 
     user_stats = []
     if current_user.role in (UserRole.ADMIN, UserRole.MANAGER):
-        from app.models.user import User as UserModel
-        users = db.query(UserModel).filter(UserModel.role == UserRole.USER, UserModel.is_active == True).all()
+        users = db.query(User).filter(
+            User.organization_id == current_user.organization_id,
+            User.role == UserRole.USER,
+            User.is_active == True,
+        ).all()
         for u in users:
-            ub = db.query(Lead).filter(Lead.assigned_to_id == u.id)
+            ub = org_base.filter(Lead.assigned_to_id == u.id)
             user_stats.append(UserStats(
                 user_id=u.id, user_name=u.name,
-                total_leads=count(ub),
-                new=count(ub.filter(Lead.status == LeadStatus.NEW)),
-                call_back=count(ub.filter(Lead.status == LeadStatus.CALL_BACK)),
-                busy=count(ub.filter(Lead.status == LeadStatus.BUSY)),
-                not_reachable=count(ub.filter(Lead.status == LeadStatus.NOT_REACHABLE)),
-                not_interested=count(ub.filter(Lead.status == LeadStatus.NOT_INTERESTED)),
-                converted=count(ub.filter(Lead.status == LeadStatus.CONVERTED)),
-                overdue_followups=count(ub.filter(Lead.next_followup_at <= now, Lead.is_active == True)),
+                total_leads=ub.count(),
+                new=ub.filter(Lead.status == LeadStatus.NEW).count(),
+                call_back=ub.filter(Lead.status == LeadStatus.CALL_BACK).count(),
+                busy=ub.filter(Lead.status == LeadStatus.BUSY).count(),
+                not_reachable=ub.filter(Lead.status == LeadStatus.NOT_REACHABLE).count(),
+                not_interested=ub.filter(Lead.status == LeadStatus.NOT_INTERESTED).count(),
+                converted=ub.filter(Lead.status == LeadStatus.CONVERTED).count(),
+                overdue_followups=ub.filter(Lead.next_followup_at <= now, Lead.is_active == True).count(),
             ))
 
     return DashboardStats(

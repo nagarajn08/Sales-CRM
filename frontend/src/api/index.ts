@@ -7,6 +7,10 @@ export const authApi = {
   logout: () => api.post("/api/auth/logout"),
   refresh: () => api.post("/api/auth/refresh").then(r => r.data),
   me: () => api.get<User>("/api/auth/me").then(r => r.data),
+  signupIndividual: (data: { name: string; email: string; password: string; mobile?: string }) =>
+    api.post("/api/auth/signup/individual", data).then(r => r.data),
+  signupCorporate: (data: { company_name: string; admin_name: string; email: string; password: string; mobile?: string }) =>
+    api.post("/api/auth/signup/corporate", data).then(r => r.data),
 };
 
 // Users
@@ -60,4 +64,6 @@ export const notificationsApi = {
 export const settingsApi = {
   get: () => api.get<Record<string, string>>("/api/settings/").then(r => r.data),
   update: (settings: Record<string, string>) => api.put("/api/settings/", { settings }),
+  getWebhook: () => api.get<{ webhook_token: string; webhook_url: string; verify_token: string; org_name: string; org_type: string }>("/api/settings/webhook").then(r => r.data),
+  regenerateWebhook: () => api.post<{ webhook_token: string; webhook_url: string }>("/api/settings/webhook/regenerate").then(r => r.data),
 };

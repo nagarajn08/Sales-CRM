@@ -1,4 +1,14 @@
 export type UserRole = "admin" | "manager" | "user";
+export type OrgType = "individual" | "corporate";
+
+export interface Organization {
+  id: number;
+  name: string;
+  type: OrgType;
+  webhook_token: string;
+  is_active: boolean;
+  created_at: string;
+}
 
 export interface User {
   id: number;
@@ -20,7 +30,7 @@ export interface UserSummary {
 
 export type LeadStatus = "new" | "call_back" | "busy" | "not_reachable" | "not_interested" | "converted";
 export type LeadPriority = "hot" | "warm" | "cold";
-export type LeadSource = "manual" | "import" | "website" | "reference" | "cold_call" | "other";
+export type LeadSource = "manual" | "import" | "website" | "reference" | "cold_call" | "facebook" | "instagram" | "linkedin" | "google_ads" | "other";
 
 export interface Lead {
   id: number;
@@ -34,6 +44,7 @@ export interface Lead {
   status: LeadStatus;
   priority: LeadPriority;
   source: LeadSource;
+  campaign_name: string | null;
   assigned_to: UserSummary | null;
   created_by: UserSummary;
   next_followup_at: string | null;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
@@ -90,8 +90,11 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-5">
-          Contact your administrator to get access.
+        <p className="text-center text-sm text-muted-foreground mt-5">
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-primary font-medium hover:underline">
+            Sign up free
+          </Link>
         </p>
       </div>
     </div>

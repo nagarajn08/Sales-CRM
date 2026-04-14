@@ -8,7 +8,8 @@ class EmailTemplate(Base):
     __tablename__ = "email_templates"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # NULL = global template
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     name = Column(String, nullable=False)
     subject = Column(String, nullable=False)
     body = Column(Text, nullable=False)

@@ -1,12 +1,20 @@
+import secrets
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user, get_refresh_token_payload
-from app.models.user import User
-from app.schemas.auth import LoginRequest, TokenResponse
+from app.models.organization import Organization, OrgType
+from app.models.user import User, UserRole
+from app.schemas.auth import (
+    LoginRequest, TokenResponse,
+    IndividualSignupRequest, CorporateSignupRequest,
+)
 from app.schemas.user import UserRead
-from app.services.auth_service import create_access_token, create_refresh_token, verify_password
+from app.services.auth_service import (
+    create_access_token, create_refresh_token,
+    hash_password, verify_password,
+)
 from app.config import settings
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -14,8 +22,10 @@ COOKIE = "refresh_token"
 
 
 def _set_cookie(response: Response, token: str):
-    response.set_cookie(COOKIE, token, httponly=True, secure=False, samesite="lax",
-                        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400, path="/api/auth")
+    response.set_cookie(
+        COOKIE, token, httponly=True, secure=False, samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400, path="/api/auth",
+    )
 
 
 def _tokens(user: User, response: Response) -> dict:
@@ -26,6 +36,7 @@ def _tokens(user: User, response: Response) -> dict:
     return {"access_token": access, "token_type": "bearer"}
 
 
+# ── Login ──────────────────────────────────────────────────────────────────
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
@@ -38,6 +49,61 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
     return _tokens(user, response)
 
 
+# ── Signup: Individual ────────────────────────────────────────────────────
+@router.post("/signup/individual", response_model=TokenResponse, status_code=201)
+def signup_individual(body: IndividualSignupRequest, response: Response, db: Session = Depends(get_db)):
+    if db.query(User).filter(User.email == body.email).first():
+        raise HTTPException(status_code=409, detail="Email already registered")
+    org = Organization(
+        name=body.name,
+        type=OrgType.INDIVIDUAL,
+        webhook_token=secrets.token_urlsafe(24),
+    )
+    db.add(org)
+    db.flush()
+    user = User(
+        organization_id=org.id,
+        email=body.email,
+        name=body.name,
+        mobile=body.mobile,
+        hashed_password=hash_password(body.password),
+        role=UserRole.ADMIN,
+        is_owner=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return _tokens(user, response)
+
+
+# ── Signup: Corporate ─────────────────────────────────────────────────────
+@router.post("/signup/corporate", response_model=TokenResponse, status_code=201)
+def signup_corporate(body: CorporateSignupRequest, response: Response, db: Session = Depends(get_db)):
+    if db.query(User).filter(User.email == body.email).first():
+        raise HTTPException(status_code=409, detail="Email already registered")
+    org = Organization(
+        name=body.company_name,
+        type=OrgType.CORPORATE,
+        webhook_token=secrets.token_urlsafe(24),
+    )
+    db.add(org)
+    db.flush()
+    user = User(
+        organization_id=org.id,
+        email=body.email,
+        name=body.admin_name,
+        mobile=body.mobile,
+        hashed_password=hash_password(body.password),
+        role=UserRole.ADMIN,
+        is_owner=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return _tokens(user, response)
+
+
+# ── Token refresh / logout / me ───────────────────────────────────────────
 @router.post("/refresh", response_model=TokenResponse)
 def refresh(response: Response, payload: dict = Depends(get_refresh_token_payload), db: Session = Depends(get_db)):
     user = db.get(User, int(payload["sub"]))

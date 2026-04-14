@@ -3,6 +3,7 @@ import { useAuth } from "./auth/AuthContext";
 import { AppLayout } from "./components/layout/AppLayout";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
 import DashboardPage from "./pages/DashboardPage";
 import LeadsPage from "./pages/LeadsPage";
 import LeadDetailPage from "./pages/LeadDetailPage";
@@ -24,6 +25,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route
         path="/"
         element={
