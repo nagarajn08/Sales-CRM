@@ -87,6 +87,7 @@ export interface Lead {
   priority: LeadPriority;
   source: LeadSource;
   campaign_name: string | null;
+  tags: string | null;
   assigned_to: UserSummary | null;
   created_by: UserSummary;
   next_followup_at: string | null;

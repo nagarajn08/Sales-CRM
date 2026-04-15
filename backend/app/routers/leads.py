@@ -1,3 +1,4 @@
+import csv
 import io
 import smtplib
 from email.mime.text import MIMEText
@@ -5,6 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import pandas as pd
@@ -15,7 +17,7 @@ from app.models.lead_activity import LeadActivity, ActivityType
 from app.models.notification import Notification
 from app.models.app_settings import AppSettings
 from app.models.user import User, UserRole
-from app.schemas.lead import ActivityRead, LeadCreate, LeadRead, LeadReassign, LeadStatusUpdate, LeadUpdate
+from app.schemas.lead import ActivityRead, BulkActionRequest, CallLogRequest, LeadCreate, LeadRead, LeadReassign, LeadStatusUpdate, LeadUpdate
 
 
 class EmailSendRequest(BaseModel):
@@ -44,28 +46,31 @@ def _log_activity(db: Session, lead_id: int, user_id: int, activity_type: Activi
     db.add(activity)
 
 
-@router.get("/", response_model=list[LeadRead])
-def list_leads(
+def _build_lead_query(
+    db: Session,
+    current_user: User,
     status: Optional[LeadStatus] = None,
     priority: Optional[str] = None,
+    source: Optional[LeadSource] = None,
     assigned_to_id: Optional[int] = None,
     search: Optional[str] = None,
     overdue: Optional[bool] = None,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(50, le=200),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    tag: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    include_inactive: bool = False,
 ):
-    q = db.query(Lead).filter(
-        Lead.is_active == True,
-        Lead.organization_id == current_user.organization_id,
-    )
+    q = db.query(Lead).filter(Lead.organization_id == current_user.organization_id)
+    if not include_inactive:
+        q = q.filter(Lead.is_active == True)
     if current_user.role == UserRole.USER:
         q = q.filter(Lead.assigned_to_id == current_user.id)
     if status:
         q = q.filter(Lead.status == status)
     if priority:
         q = q.filter(Lead.priority == priority)
+    if source:
+        q = q.filter(Lead.source == source)
     if assigned_to_id:
         q = q.filter(Lead.assigned_to_id == assigned_to_id)
     if search:
@@ -73,11 +78,154 @@ def list_leads(
             Lead.name.ilike(f"%{search}%") |
             Lead.mobile.ilike(f"%{search}%") |
             Lead.email.ilike(f"%{search}%") |
-            Lead.company.ilike(f"%{search}%")
+            Lead.company.ilike(f"%{search}%") |
+            Lead.web_id.ilike(f"%{search}%")
         )
     if overdue:
         q = q.filter(Lead.next_followup_at <= datetime.utcnow(), Lead.next_followup_at.isnot(None))
+    if tag:
+        q = q.filter(Lead.tags.ilike(f"%{tag}%"))
+    if date_from:
+        try:
+            q = q.filter(Lead.created_at >= datetime.fromisoformat(date_from))
+        except Exception:
+            pass
+    if date_to:
+        try:
+            q = q.filter(Lead.created_at <= datetime.fromisoformat(date_to + "T23:59:59"))
+        except Exception:
+            pass
+    return q
+
+
+@router.get("/", response_model=list[LeadRead])
+def list_leads(
+    status: Optional[LeadStatus] = None,
+    priority: Optional[str] = None,
+    source: Optional[LeadSource] = None,
+    assigned_to_id: Optional[int] = None,
+    search: Optional[str] = None,
+    overdue: Optional[bool] = None,
+    tag: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, le=200),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    q = _build_lead_query(db, current_user, status=status, priority=priority, source=source,
+                          assigned_to_id=assigned_to_id, search=search, overdue=overdue,
+                          tag=tag, date_from=date_from, date_to=date_to)
     return q.order_by(Lead.next_followup_at.asc().nulls_last(), Lead.created_at.desc()).offset(skip).limit(limit).all()
+
+
+@router.get("/export")
+def export_leads(
+    status: Optional[LeadStatus] = None,
+    priority: Optional[str] = None,
+    source: Optional[LeadSource] = None,
+    assigned_to_id: Optional[int] = None,
+    search: Optional[str] = None,
+    tag: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    q = _build_lead_query(db, current_user, status=status, priority=priority, source=source,
+                          assigned_to_id=assigned_to_id, search=search, tag=tag,
+                          date_from=date_from, date_to=date_to)
+    leads = q.order_by(Lead.created_at.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Web ID", "Name", "Mobile", "WhatsApp", "Email", "Company",
+                     "Status", "Priority", "Source", "Tags", "Assigned To",
+                     "Next Follow-up", "Last Comment", "Notes", "Created At"])
+    for lead in leads:
+        writer.writerow([
+            lead.web_id or "",
+            lead.name,
+            lead.mobile or "",
+            lead.whatsapp or "",
+            lead.email or "",
+            lead.company or "",
+            lead.status.value,
+            lead.priority.value,
+            lead.source.value,
+            lead.tags or "",
+            lead.assigned_to.name if lead.assigned_to else "",
+            lead.next_followup_at.isoformat() if lead.next_followup_at else "",
+            lead.last_comment or "",
+            lead.notes or "",
+            lead.created_at.isoformat(),
+        ])
+    output.seek(0)
+    filename = f"leads_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@router.post("/bulk")
+def bulk_action(
+    body: BulkActionRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    leads = db.query(Lead).filter(
+        Lead.id.in_(body.lead_ids),
+        Lead.organization_id == current_user.organization_id,
+    ).all()
+
+    if not leads:
+        raise HTTPException(status_code=404, detail="No leads found")
+
+    # Check access for non-admin
+    if current_user.role == UserRole.USER:
+        for lead in leads:
+            if lead.assigned_to_id != current_user.id and lead.created_by_id != current_user.id:
+                raise HTTPException(status_code=403, detail="Access denied to one or more leads")
+
+    if body.action == "delete":
+        if current_user.role not in (UserRole.ADMIN, UserRole.MANAGER):
+            raise HTTPException(status_code=403, detail="Only admins can bulk delete")
+        for lead in leads:
+            db.delete(lead)
+
+    elif body.action == "status":
+        if not body.status:
+            raise HTTPException(status_code=400, detail="Status required")
+        for lead in leads:
+            old_status = lead.status
+            lead.status = body.status
+            if body.status in (LeadStatus.NOT_INTERESTED, LeadStatus.CONVERTED):
+                lead.is_active = False
+                lead.next_followup_at = None
+            _log_activity(db, lead.id, current_user.id, ActivityType.STATUS_CHANGED,
+                          old_status=old_status, new_status=body.status)
+
+    elif body.action == "reassign":
+        if current_user.role not in (UserRole.ADMIN, UserRole.MANAGER):
+            raise HTTPException(status_code=403, detail="Only admins can bulk reassign")
+        if not body.assigned_to_id:
+            raise HTTPException(status_code=400, detail="assigned_to_id required")
+        new_user = db.get(User, body.assigned_to_id)
+        if not new_user or new_user.organization_id != current_user.organization_id:
+            raise HTTPException(status_code=404, detail="Target user not found")
+        for lead in leads:
+            old_name = lead.assigned_to.name if lead.assigned_to else "Unassigned"
+            lead.assigned_to_id = body.assigned_to_id
+            _log_activity(db, lead.id, current_user.id, ActivityType.REASSIGNED,
+                          meta=f"Bulk reassign: {old_name} → {new_user.name}")
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown action: {body.action}")
+
+    db.commit()
+    return {"ok": True, "affected": len(leads)}
 
 
 @router.post("/", response_model=LeadRead, status_code=status.HTTP_201_CREATED)
@@ -288,6 +436,33 @@ def send_email_to_lead(
                   comment=f"Subject: {body.subject}")
     db.commit()
     return {"ok": True, "sent_to": lead.email}
+
+
+@router.post("/{lead_id}/call", response_model=ActivityRead)
+def log_call(lead_id: int, body: CallLogRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    lead = db.get(Lead, lead_id)
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    _check_lead_access(lead, current_user)
+
+    meta_parts = [f"Type: {body.call_type}"]
+    if body.duration_minutes:
+        meta_parts.append(f"Duration: {body.duration_minutes} min")
+    if body.outcome:
+        meta_parts.append(f"Outcome: {body.outcome}")
+    meta_str = " | ".join(meta_parts)
+
+    activity = LeadActivity(
+        lead_id=lead.id,
+        user_id=current_user.id,
+        activity_type=ActivityType.CALL_LOG,
+        comment=body.notes,
+        meta=meta_str,
+    )
+    db.add(activity)
+    db.commit()
+    db.refresh(activity)
+    return activity
 
 
 @router.delete("/{lead_id}", status_code=status.HTTP_204_NO_CONTENT)

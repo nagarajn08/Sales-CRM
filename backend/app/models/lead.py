@@ -57,6 +57,7 @@ class Lead(Base):
 
     next_followup_at = Column(DateTime, nullable=True)
     last_comment = Column(Text, nullable=True)
+    tags = Column(Text, nullable=True)  # comma-separated tags e.g. "hot,referral,enterprise"
     is_active = Column(Boolean, default=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)

@@ -13,6 +13,7 @@ class ActivityType(str, enum.Enum):
     FOLLOWUP_SET = "followup_set"
     EMAIL_SENT = "email_sent"
     IMPORTED = "imported"
+    CALL_LOG = "call_log"
 
 
 class LeadActivity(Base):

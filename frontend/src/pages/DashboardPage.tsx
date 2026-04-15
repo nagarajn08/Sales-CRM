@@ -59,6 +59,73 @@ function MiniBar({ count, max, color }: { count: number; max: number; color: str
   );
 }
 
+function DonutChart({ data }: { data: Array<{ label: string; count: number; color: string }> }) {
+  const total = data.reduce((s, d) => s + d.count, 0);
+  if (total === 0) return <div className="h-32 flex items-center justify-center text-xs text-muted-foreground">No data</div>;
+
+  const size = 100;
+  const r = 36;
+  const cx = 50;
+  const cy = 50;
+  const circumference = 2 * Math.PI * r;
+
+  let offset = 0;
+  const segments = data.map(d => {
+    const pct = d.count / total;
+    const seg = { ...d, pct, offset, dash: pct * circumference, gap: (1 - pct) * circumference };
+    offset += pct * circumference;
+    return seg;
+  });
+
+  const colorMap: Record<string, string> = {
+    "bg-blue-500": "#3b82f6",
+    "bg-yellow-500": "#eab308",
+    "bg-teal-500": "#14b8a6",
+    "bg-orange-500": "#f97316",
+    "bg-gray-400": "#9ca3af",
+    "bg-red-500": "#ef4444",
+    "bg-emerald-500": "#10b981",
+    "bg-violet-500": "#8b5cf6",
+    "bg-indigo-500": "#6366f1",
+    "bg-pink-500": "#ec4899",
+    "bg-sky-500": "#0ea5e9",
+    "bg-amber-500": "#f59e0b",
+    "bg-slate-500": "#64748b",
+  };
+
+  return (
+    <div className="flex items-center gap-4">
+      <svg viewBox={`0 0 ${size} ${size}`} className="h-24 w-24 shrink-0 -rotate-90">
+        {segments.map((seg, i) => (
+          <circle
+            key={i}
+            cx={cx} cy={cy} r={r}
+            fill="none"
+            stroke={colorMap[seg.color] ?? "#6366f1"}
+            strokeWidth="12"
+            strokeDasharray={`${seg.dash} ${seg.gap}`}
+            strokeDashoffset={-seg.offset}
+          />
+        ))}
+        <circle cx={cx} cy={cy} r="24" fill="var(--card)" />
+      </svg>
+      <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+        {data.map(d => (
+          <div key={d.label} className="flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <div className={cn("h-2 w-2 rounded-full shrink-0", d.color)} />
+              <span className="text-muted-foreground truncate">{d.label}</span>
+            </div>
+            <span className="tabular-nums font-semibold text-foreground shrink-0">
+              {total > 0 ? `${Math.round(d.count / total * 100)}%` : "—"} · {d.count}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function sourceLabel(s: string) {
   return s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
@@ -122,8 +189,6 @@ export default function DashboardPage() {
   if (!stats) return <p className="text-sm text-muted-foreground">Failed to load dashboard.</p>;
 
   const sourceMax = Math.max(...stats.leads_by_source_today.map(s => s.count), 1);
-  const sourceAllMax = Math.max(...stats.leads_by_source_all.map(s => s.count), 1);
-  const statusMax = Math.max(...stats.status_breakdown.map(s => s.count), 1);
   const now = new Date();
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -194,45 +259,32 @@ export default function DashboardPage() {
           )}
         </SectionCard>
 
-        {/* Status breakdown */}
+        {/* Status breakdown - donut chart */}
         <SectionCard title="Pipeline Breakdown">
           {stats.status_breakdown.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground">No active leads</div>
           ) : (
-            <div className="p-4 space-y-3">
-              {stats.status_breakdown.map((s: StatusCount) => (
-                <div key={s.status}>
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="font-medium text-foreground">{s.label}</span>
-                    <span className="tabular-nums text-muted-foreground font-semibold">{s.count}</span>
-                  </div>
-                  <MiniBar count={s.count} max={statusMax} color={STATUS_BAR_COLORS[s.status] ?? "bg-primary"} />
-                </div>
-              ))}
+            <div className="p-4">
+              <DonutChart data={stats.status_breakdown.map(s => ({
+                label: s.label,
+                count: s.count,
+                color: STATUS_BAR_COLORS[s.status] ?? "bg-primary",
+              }))} />
             </div>
           )}
         </SectionCard>
 
-        {/* All-time source mix */}
+        {/* All-time source mix - donut chart */}
         <SectionCard title="All-Time Lead Sources">
           {stats.leads_by_source_all.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground">No leads yet</div>
           ) : (
-            <div className="p-4 space-y-3">
-              {stats.leads_by_source_all.slice(0, 8).map((s: SourceCount) => (
-                <div key={s.source}>
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <div className="flex items-center gap-1.5">
-                      <div className={cn("h-2 w-2 rounded-full shrink-0", SOURCE_COLORS[s.source] ?? "bg-primary")} />
-                      <span className="font-medium text-foreground">{sourceLabel(s.source)}</span>
-                    </div>
-                    <span className="tabular-nums text-muted-foreground font-semibold">
-                      {stats.total_leads > 0 ? `${Math.round(s.count / stats.total_leads * 100)}%` : "—"} · {s.count}
-                    </span>
-                  </div>
-                  <MiniBar count={s.count} max={sourceAllMax} color={SOURCE_COLORS[s.source] ?? "bg-primary"} />
-                </div>
-              ))}
+            <div className="p-4">
+              <DonutChart data={stats.leads_by_source_all.slice(0, 6).map((s: SourceCount) => ({
+                label: sourceLabel(s.source),
+                count: s.count,
+                color: SOURCE_COLORS[s.source] ?? "bg-primary",
+              }))} />
             </div>
           )}
         </SectionCard>

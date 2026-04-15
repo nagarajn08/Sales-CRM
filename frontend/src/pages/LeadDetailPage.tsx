@@ -11,8 +11,9 @@ import { ReassignModal } from "../components/leads/ReassignModal";
 import { CommentModal } from "../components/leads/CommentModal";
 import { LeadFormModal } from "../components/leads/LeadFormModal";
 import { EmailModal } from "../components/leads/EmailModal";
+import { CallLogModal } from "../components/leads/CallLogModal";
 import { useAuth } from "../auth/AuthContext";
-import { cn, fmtDate, fmtDateTime } from "../lib/utils";
+import { cn, fmtDateTime } from "../lib/utils";
 
 const ACTIVITY_ICONS: Record<string, string> = {
   created: "✨",
@@ -22,6 +23,7 @@ const ACTIVITY_ICONS: Record<string, string> = {
   followup_set: "📅",
   email_sent: "✉️",
   imported: "📤",
+  call_log: "📞",
 };
 
 export default function LeadDetailPage() {
@@ -39,6 +41,7 @@ export default function LeadDetailPage() {
   const [showComment, setShowComment] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
+  const [showCallLog, setShowCallLog] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -104,6 +107,9 @@ export default function LeadDetailPage() {
               <Button size="sm" variant="outline" onClick={() => setShowComment(true)}>
                 💬 Comment
               </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowCallLog(true)}>
+                📞 Log Call
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setShowStatus(true)}>
                 🔄 Update Status
               </Button>
@@ -149,7 +155,21 @@ export default function LeadDetailPage() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               {lead.web_id && <InfoRow label="Web ID" value={lead.web_id} />}
               <InfoRow label="Mobile" value={lead.mobile} />
-              <InfoRow label="WhatsApp" value={lead.whatsapp} />
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">WhatsApp</p>
+                {lead.whatsapp ? (
+                  <a
+                    href={`https://wa.me/${lead.whatsapp.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-emerald-600 hover:underline flex items-center gap-1 mt-0.5"
+                  >
+                    💬 {lead.whatsapp}
+                  </a>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-0.5">—</p>
+                )}
+              </div>
               <InfoRow label="Email" value={lead.email} />
               <InfoRow label="Source" value={lead.source.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())} />
               <InfoRow label="Assigned To" value={lead.assigned_to?.name ?? "Unassigned"} />
@@ -157,6 +177,21 @@ export default function LeadDetailPage() {
               <InfoRow label="Created" value={fmtDateTime(lead.created_at)} />
               <InfoRow label="Updated" value={fmtDateTime(lead.updated_at)} />
             </div>
+
+            {/* Tags */}
+            {lead.tags && (
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Tags</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {lead.tags.split(",").map(t => t.trim()).filter(Boolean).map(tag => (
+                    <span key={tag} className="text-xs px-2.5 py-1 rounded-full bg-secondary text-foreground font-medium border border-border">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {lead.notes && (
               <div className="mt-4 pt-4 border-t border-border">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Notes</p>
@@ -284,6 +319,8 @@ export default function LeadDetailPage() {
       <LeadFormModal open={showEdit} onClose={() => setShowEdit(false)} lead={lead}
         onSaved={(l) => { setLead(l); }} />
       <EmailModal open={showEmail} onClose={() => setShowEmail(false)} lead={lead} />
+      <CallLogModal open={showCallLog} onClose={() => setShowCallLog(false)} lead={lead}
+        onLogged={() => fetchLead()} />
     </div>
   );
 }

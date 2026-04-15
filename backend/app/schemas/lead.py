@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List, Optional
 from pydantic import BaseModel
 from app.models.lead import LeadStatus, LeadPriority, LeadSource
 from app.schemas.user import UserSummary
@@ -14,6 +15,7 @@ class LeadCreate(BaseModel):
     priority: LeadPriority = LeadPriority.WARM
     source: LeadSource = LeadSource.MANUAL
     assigned_to_id: int | None = None
+    tags: str | None = None
 
 
 class LeadUpdate(BaseModel):
@@ -25,6 +27,7 @@ class LeadUpdate(BaseModel):
     company: str | None = None
     notes: str | None = None
     priority: LeadPriority | None = None
+    tags: str | None = None
 
 
 class LeadStatusUpdate(BaseModel):
@@ -35,6 +38,20 @@ class LeadStatusUpdate(BaseModel):
 
 class LeadReassign(BaseModel):
     assigned_to_id: int
+
+
+class BulkActionRequest(BaseModel):
+    lead_ids: List[int]
+    action: str  # "status", "reassign", "delete"
+    status: LeadStatus | None = None
+    assigned_to_id: int | None = None
+
+
+class CallLogRequest(BaseModel):
+    call_type: str = "outbound"  # "inbound" | "outbound"
+    duration_minutes: int | None = None
+    outcome: str | None = None   # "answered", "no_answer", "busy", "voicemail"
+    notes: str | None = None
 
 
 class LeadRead(BaseModel):
@@ -50,6 +67,7 @@ class LeadRead(BaseModel):
     priority: LeadPriority
     source: LeadSource
     campaign_name: str | None = None
+    tags: str | None = None
     assigned_to: UserSummary | None
     created_by: UserSummary
     next_followup_at: datetime | None

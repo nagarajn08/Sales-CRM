@@ -41,6 +41,11 @@ export const leadsApi = {
     return api.post("/api/leads/import", form, { params: assigned_to_id ? { assigned_to_id } : {} }).then(r => r.data);
   },
   delete: (id: number) => api.delete(`/api/leads/${id}`),
+  bulk: (data: { lead_ids: number[]; action: string; status?: string; assigned_to_id?: number }) =>
+    api.post<{ ok: boolean; affected: number }>("/api/leads/bulk", data).then(r => r.data),
+  export: (params?: object) => api.get("/api/leads/export", { params, responseType: "blob" }).then(r => r.data),
+  logCall: (id: number, data: { call_type: string; duration_minutes?: number; outcome?: string; notes?: string }) =>
+    api.post(`/api/leads/${id}/call`, data).then(r => r.data),
 };
 
 // Dashboard

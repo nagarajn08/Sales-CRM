@@ -43,6 +43,7 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
     priority: "warm",
     source: "manual",
     assigned_to_id: "",
+    tags: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -65,11 +66,12 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
         priority: lead.priority,
         source: lead.source,
         assigned_to_id: lead.assigned_to?.id?.toString() ?? "",
+        tags: lead.tags ?? "",
       });
     } else {
       setForm({
         name: "", email: "", mobile: "", whatsapp: "", company: "",
-        notes: "", priority: "warm", source: "manual", assigned_to_id: "",
+        notes: "", priority: "warm", source: "manual", assigned_to_id: "", tags: "",
       });
     }
     setErrors({});
@@ -97,6 +99,7 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
         notes: form.notes.trim() || null,
         priority: form.priority,
         source: form.source,
+        tags: form.tags.trim() || null,
       };
       if (isAdmin && form.assigned_to_id) {
         payload.assigned_to_id = parseInt(form.assigned_to_id);
@@ -147,6 +150,13 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
             options={[{ value: "", label: "Unassigned" }, ...users.map((u) => ({ value: u.id.toString(), label: u.name }))]}
           />
         )}
+
+        <Input
+          label="Tags"
+          value={form.tags}
+          onChange={(e) => f("tags", e.target.value)}
+          placeholder="hot, referral, enterprise (comma separated)"
+        />
 
         <Textarea label="Notes" value={form.notes} onChange={(e) => f("notes", e.target.value)} placeholder="Any additional notes..." rows={2} />
 
