@@ -8,7 +8,8 @@
       "Bash(venv/Scripts/activate.bat)",
       "Bash(venv/Scripts/python.exe -c ':*)",
       "Bash(curl:*)",
-      "Bash(venv/Scripts/python.exe -c \"import app.main; print\\('OK'\\)\")"
+      "Bash(venv/Scripts/python.exe -c \"import app.main; print\\('OK'\\)\")",
+      "Bash(xargs ls *)"
     ]
   }
 }

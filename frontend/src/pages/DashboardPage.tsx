@@ -17,16 +17,16 @@ function KpiCard({
 }) {
   return (
     <div
-      className="animate-fade-up bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+      className="animate-fade-up bg-card border border-border rounded-xl p-4 shadow-card hover:shadow-card-hover transition-shadow group"
       style={{ "--delay": `${delay}ms` } as React.CSSProperties}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-muted-foreground truncate">{label}</p>
-          <p className="text-2xl font-bold text-foreground mt-1 tabular-nums leading-none">{value}</p>
-          {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide truncate">{label}</p>
+          <p className="font-display text-[26px] font-bold text-foreground mt-1.5 tabular-nums leading-none tracking-tight">{value}</p>
+          {sub && <p className="text-[11px] text-muted-foreground mt-1.5">{sub}</p>}
         </div>
-        <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5", color)}>
+        <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 transition-transform group-hover:scale-110", color)}>
           {icon}
         </div>
       </div>
@@ -36,11 +36,11 @@ function KpiCard({
 
 function SectionCard({ title, badge, children }: { title: string; badge?: number; children: React.ReactNode }) {
   return (
-    <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+    <div className="bg-card border border-border rounded-xl shadow-card overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-secondary/20">
+        <h2 className="font-display font-bold text-sm text-foreground tracking-tight">{title}</h2>
         {badge !== undefined && badge > 0 && (
-          <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full tabular-nums">
+          <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full tabular-nums">
             {badge}
           </span>
         )}
@@ -199,7 +199,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="animate-fade-up flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-lg font-bold text-foreground">{greeting}, {user?.name?.split(" ")[0]} 👋</h1>
+          <h1 className="font-display text-xl font-bold text-foreground tracking-tight">{greeting}, {user?.name?.split(" ")[0]} 👋</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" })}
           </p>

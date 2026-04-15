@@ -142,8 +142,8 @@ export default function LeadDetailPage() {
           <CardHeader>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <CardTitle className="text-xl">{lead.name}</CardTitle>
-                {lead.company && <p className="text-muted-foreground text-sm mt-0.5">{lead.company}</p>}
+                <CardTitle className="text-xl tracking-tight">{lead.name}</CardTitle>
+                {lead.company && <p className="text-muted-foreground text-sm mt-0.5 font-medium">{lead.company}</p>}
               </div>
               <div className="flex gap-2 flex-wrap justify-end">
                 <Badge className={STATUS_COLORS[lead.status]}>{STATUS_LABELS[lead.status]}</Badge>

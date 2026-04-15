@@ -177,19 +177,19 @@ export const STATUS_LABELS: Record<LeadStatus, string> = {
 };
 
 export const STATUS_COLORS: Record<LeadStatus, string> = {
-  new: "bg-blue-100 text-blue-700",
-  call_back: "bg-yellow-100 text-yellow-700",
-  interested_call_back: "bg-teal-100 text-teal-700",
-  busy: "bg-orange-100 text-orange-700",
-  not_reachable: "bg-gray-100 text-gray-600",
-  not_interested: "bg-red-100 text-red-700",
-  converted: "bg-green-100 text-green-700",
+  new:                  "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  call_back:            "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
+  interested_call_back: "bg-teal-500/10 text-teal-700 dark:text-teal-400",
+  busy:                 "bg-orange-500/10 text-orange-700 dark:text-orange-400",
+  not_reachable:        "bg-gray-500/10 text-gray-600 dark:text-gray-400",
+  not_interested:       "bg-red-500/10 text-red-600 dark:text-red-400",
+  converted:            "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
 };
 
 export const PRIORITY_COLORS: Record<LeadPriority, string> = {
-  hot: "bg-red-100 text-red-700",
-  warm: "bg-amber-100 text-amber-700",
-  cold: "bg-sky-100 text-sky-700",
+  hot:  "bg-red-500/10 text-red-600 dark:text-red-400",
+  warm: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  cold: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
 };
 
 export const FOLLOWUP_REQUIRED_STATUSES: LeadStatus[] = ["call_back", "interested_call_back", "busy", "not_reachable"];

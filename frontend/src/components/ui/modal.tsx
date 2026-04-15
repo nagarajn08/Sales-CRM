@@ -14,7 +14,6 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
     if (!open) return;
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", h);
-    // Prevent body scroll while modal is open
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
@@ -32,30 +31,31 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
       role="dialog"
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-[2px] animate-fade-in"
+        onClick={onClose}
+      />
 
-      {/* Sheet / Dialog */}
+      {/* Dialog */}
       <div
         className={cn(
-          "relative bg-card border border-border shadow-2xl w-full flex flex-col",
-          // Mobile: bottom sheet — rounded top, full width, max 85vh
-          "rounded-t-2xl max-h-[85vh]",
-          // Desktop: centered dialog — fully rounded, respects maxWidth
-          "sm:rounded-xl sm:max-h-[92vh]",
+          "relative bg-card border border-border shadow-modal w-full flex flex-col",
+          "rounded-t-2xl max-h-[85vh] animate-slide-up",
+          "sm:rounded-xl sm:max-h-[92vh] sm:animate-scale-in",
           maxWidth
         )}
       >
-        {/* Drag handle — mobile only */}
-        <div className="sm:hidden flex justify-center pt-2.5 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-border" />
+        {/* Drag handle (mobile) */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
+          <div className="w-9 h-1 rounded-full bg-border" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
-          <h2 className="text-sm font-semibold text-card-foreground">{title}</h2>
+        <div className="flex items-center justify-between border-b border-border px-5 py-3.5 shrink-0">
+          <h2 className="font-display font-bold text-[15px] text-card-foreground tracking-tight">{title}</h2>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-secondary"
+            className="text-muted-foreground hover:text-foreground transition-colors h-7 w-7 flex items-center justify-center rounded-lg hover:bg-secondary"
             aria-label="Close"
           >
             <svg viewBox="0 0 14 14" fill="none" className="w-3.5 h-3.5">
@@ -65,7 +65,7 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
         </div>
 
         {/* Body */}
-        <div className="p-4 overflow-y-auto overscroll-contain">{children}</div>
+        <div className="p-5 overflow-y-auto overscroll-contain">{children}</div>
       </div>
     </div>
   );

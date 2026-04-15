@@ -7,179 +7,225 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-function IconDashboard({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className={className}>
-      <rect x="1" y="1" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.3"/>
-      <rect x="9.5" y="1" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.3"/>
-      <rect x="1" y="9.5" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.3"/>
-      <rect x="9.5" y="9.5" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.3"/>
-    </svg>
-  );
-}
-
-function IconLeads({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className={className}>
-      <circle cx="6" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.3"/>
-      <path d="M1 14c0-2.76 2.24-5 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-      <circle cx="11.5" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.3"/>
-      <path d="M8.5 14c0-2.21 1.34-4 3.5-4s3.5 1.79 3.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-function IconTemplates({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className={className}>
-      <rect x="1.5" y="2.5" width="13" height="11" rx="1.8" stroke="currentColor" strokeWidth="1.3"/>
-      <path d="M1.5 6.5h13" stroke="currentColor" strokeWidth="1.3"/>
-      <path d="M4.5 9.5h7M4.5 12h4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-function IconUsers({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className={className}>
-      <circle cx="8" cy="5" r="2.8" stroke="currentColor" strokeWidth="1.3"/>
-      <path d="M2 14.5c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-function IconPlatform({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className={className}>
-      <rect x="1" y="1" width="14" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
-      <path d="M5 15h6M8 11v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-      <path d="M4.5 5.5L6.5 7.5L9.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
-
-function IconSettings({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className={className}>
-      <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.3"/>
-      <path d="M8 1.5v1M8 13.5v1M1.5 8h1M13.5 8h1M3.4 3.4l.7.7M11.9 11.9l.7.7M3.4 12.6l.7-.7M11.9 4.1l.7-.7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
 const NAV_ITEMS = [
-  { to: "/dashboard", label: "Dashboard",      Icon: IconDashboard },
-  { to: "/leads",     label: "Leads",           Icon: IconLeads },
-  { to: "/templates", label: "Email Templates", Icon: IconTemplates },
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: (
+      <svg viewBox="0 0 16 16" fill="none" className="h-[15px] w-[15px]">
+        <rect x="1.5" y="1.5" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.35"/>
+        <rect x="9.5" y="1.5" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.35"/>
+        <rect x="1.5" y="9.5" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.35"/>
+        <rect x="9.5" y="9.5" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.35"/>
+      </svg>
+    ),
+  },
+  {
+    to: "/leads",
+    label: "Leads",
+    icon: (
+      <svg viewBox="0 0 16 16" fill="none" className="h-[15px] w-[15px]">
+        <circle cx="6.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.35"/>
+        <path d="M1.5 14.5c0-2.76 2.24-5 5-5" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"/>
+        <circle cx="11.5" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.35"/>
+        <path d="M8.5 14.5c0-2.76 1.79-5 4-5" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    to: "/templates",
+    label: "Email Templates",
+    icon: (
+      <svg viewBox="0 0 16 16" fill="none" className="h-[15px] w-[15px]">
+        <rect x="1.5" y="3" width="13" height="10" rx="1.8" stroke="currentColor" strokeWidth="1.35"/>
+        <path d="M1.5 6l6.5 4 6.5-4" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
 ];
 
 const ADMIN_ITEMS = [
-  { to: "/users",    label: "Users",    Icon: IconUsers },
-  { to: "/settings", label: "Settings", Icon: IconSettings },
+  {
+    to: "/users",
+    label: "Team",
+    icon: (
+      <svg viewBox="0 0 16 16" fill="none" className="h-[15px] w-[15px]">
+        <circle cx="8" cy="5" r="2.8" stroke="currentColor" strokeWidth="1.35"/>
+        <path d="M2 14.5c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    to: "/settings",
+    label: "Settings",
+    icon: (
+      <svg viewBox="0 0 16 16" fill="none" className="h-[15px] w-[15px]">
+        <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.35"/>
+        <path d="M8 1.5v1.2M8 13.3v1.2M1.5 8h1.2M13.3 8h1.2M3.4 3.4l.85.85M11.75 11.75l.85.85M3.4 12.6l.85-.85M11.75 4.25l.85-.85" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
 ];
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const { user } = useAuth();
-
-  const linkClass = ({ isActive }: { isActive: boolean }) =>
-    cn(
-      "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-      isActive
-        ? "bg-primary/10 text-primary"
-        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-    );
-
-  const iconClass = (isActive: boolean) =>
-    cn("h-4 w-4 shrink-0", isActive ? "text-primary" : "text-muted-foreground");
+  const initials = user?.name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() ?? "?";
 
   return (
-    <aside
-      className={cn(
-        "fixed inset-y-0 left-0 z-30 w-56 bg-card border-r border-border flex flex-col transition-transform duration-200 lg:relative lg:translate-x-0",
-        open ? "translate-x-0" : "-translate-x-full"
-      )}
-    >
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 px-4 h-14 border-b border-border shrink-0">
-        <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-primary shrink-0">
-          <svg viewBox="0 0 14 14" fill="none" className="h-3.5 w-3.5 text-white">
-            <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/>
-            <circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.5"/>
-            <path d="M7 2V1M7 13v-1M2 7H1M13 7h-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        </div>
-        <span className="font-bold text-foreground text-sm tracking-tight">SalesCRM</span>
-        <button
+    <>
+      {/* Mobile overlay */}
+      {open && (
+        <div
+          className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={onClose}
-          className="ml-auto lg:hidden p-1 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4">
-            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        </button>
-      </div>
+        />
+      )}
 
-      {/* Nav */}
-      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        {NAV_ITEMS.map((item) => (
-          <NavLink key={item.to} to={item.to} className={linkClass} onClick={onClose}>
-            {({ isActive }) => (
-              <>
-                <item.Icon className={iconClass(isActive)} />
-                {item.label}
-              </>
-            )}
-          </NavLink>
-        ))}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-30 w-[220px] flex flex-col transition-transform duration-300 ease-out lg:relative lg:translate-x-0",
+          "bg-sidebar border-r border-sidebar-border",
+          open ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 px-4 h-[58px] border-b border-sidebar-border shrink-0">
+          <div className="relative flex items-center justify-center h-8 w-8 rounded-xl bg-sidebar-accent/20 border border-sidebar-accent/30 shrink-0">
+            <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-sidebar-accent">
+              <path d="M8 2C4.68 2 2 4.68 2 8s2.68 6 6 6 6-2.68 6-6-2.68-6-6-6z" stroke="currentColor" strokeWidth="1.4"/>
+              <path d="M5 8h6M8 5l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border border-sidebar" />
+          </div>
+          <div>
+            <p className="font-display font-bold text-sidebar-foreground text-sm leading-none tracking-tight">SalesCRM</p>
+            <p className="text-[10px] text-sidebar-muted mt-0.5 font-medium">Sales Intelligence</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="ml-auto lg:hidden p-1.5 text-sidebar-muted hover:text-sidebar-foreground transition-colors rounded-md hover:bg-white/5"
+          >
+            <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4">
+              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
 
-        {user?.is_superadmin && (
-          <>
-            <div className="pt-4 pb-1.5 px-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-              Platform
-            </div>
-            <NavLink to="/platform" className={linkClass} onClick={onClose}>
+        {/* Navigation */}
+        <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto">
+          {NAV_ITEMS.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={onClose}
+              className={({ isActive }) => cn(
+                "group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 relative",
+                isActive
+                  ? "bg-white/[0.08] text-sidebar-foreground nav-active-glow"
+                  : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-white/5"
+              )}
+            >
               {({ isActive }) => (
                 <>
-                  {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-full bg-primary" />}
-                  <IconPlatform className={iconClass(isActive)} />
-                  <span>Platform Admin</span>
+                  <span className={cn(
+                    "shrink-0 transition-colors",
+                    isActive ? "text-sidebar-accent" : "text-sidebar-muted group-hover:text-sidebar-foreground"
+                  )}>
+                    {item.icon}
+                  </span>
+                  <span>{item.label}</span>
+                  {isActive && (
+                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-accent" />
+                  )}
                 </>
               )}
             </NavLink>
-          </>
-        )}
+          ))}
 
-        {user?.role === "admin" && (
-          <>
-            <div className="pt-4 pb-1 px-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-              Admin
-            </div>
-            {ADMIN_ITEMS.map((item) => (
-              <NavLink key={item.to} to={item.to} className={linkClass} onClick={onClose}>
+          {/* Superadmin section */}
+          {user?.is_superadmin && (
+            <>
+              <div className="pt-5 pb-1.5 px-3">
+                <p className="text-[10px] font-semibold text-sidebar-muted uppercase tracking-[0.1em]">Platform</p>
+              </div>
+              <NavLink
+                to="/platform"
+                onClick={onClose}
+                className={({ isActive }) => cn(
+                  "group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 relative",
+                  isActive
+                    ? "bg-white/[0.08] text-sidebar-foreground nav-active-glow"
+                    : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-white/5"
+                )}
+              >
                 {({ isActive }) => (
                   <>
-                    <item.Icon className={iconClass(isActive)} />
-                    {item.label}
+                    <span className={cn("shrink-0 transition-colors", isActive ? "text-sidebar-accent" : "text-sidebar-muted group-hover:text-sidebar-foreground")}>
+                      <svg viewBox="0 0 16 16" fill="none" className="h-[15px] w-[15px]">
+                        <rect x="1" y="1" width="14" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.35"/>
+                        <path d="M5 15h6M8 11v4" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"/>
+                      </svg>
+                    </span>
+                    <span>Platform Admin</span>
+                    {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-accent" />}
                   </>
                 )}
               </NavLink>
-            ))}
-          </>
-        )}
-      </nav>
+            </>
+          )}
 
-      {/* User footer */}
-      <div className="px-3 py-3 border-t border-border shrink-0">
-        <div className="flex items-center gap-2.5 px-1">
-          <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold shrink-0">
-            {user?.name?.[0]?.toUpperCase() ?? "?"}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground truncate leading-tight">{user?.name}</p>
-            <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+          {/* Admin section */}
+          {user?.role === "admin" && (
+            <>
+              <div className="pt-5 pb-1.5 px-3">
+                <p className="text-[10px] font-semibold text-sidebar-muted uppercase tracking-[0.1em]">Admin</p>
+              </div>
+              {ADMIN_ITEMS.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={onClose}
+                  className={({ isActive }) => cn(
+                    "group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 relative",
+                    isActive
+                      ? "bg-white/[0.08] text-sidebar-foreground nav-active-glow"
+                      : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-white/5"
+                  )}
+                >
+                  {({ isActive }) => (
+                    <>
+                      <span className={cn("shrink-0 transition-colors", isActive ? "text-sidebar-accent" : "text-sidebar-muted group-hover:text-sidebar-foreground")}>
+                        {item.icon}
+                      </span>
+                      <span>{item.label}</span>
+                      {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-accent" />}
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </>
+          )}
+        </nav>
+
+        {/* User footer */}
+        <div className="px-2.5 py-3 border-t border-sidebar-border shrink-0">
+          <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-white/5 transition-colors cursor-default">
+            <div className="relative shrink-0">
+              <div
+                className="h-7 w-7 rounded-lg flex items-center justify-center text-white text-[11px] font-bold"
+                style={{ background: "linear-gradient(135deg, hsl(var(--sidebar-accent) / 0.9), hsl(var(--sidebar-accent) / 0.5))" }}
+              >
+                {initials}
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border border-sidebar" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-semibold text-sidebar-foreground truncate leading-tight">{user?.name}</p>
+              <p className="text-[10px] text-sidebar-muted capitalize mt-px">{user?.role}</p>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

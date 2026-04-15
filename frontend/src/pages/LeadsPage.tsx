@@ -203,8 +203,8 @@ export default function LeadsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 animate-fade-up">
         <div>
-          <h1 className="text-lg font-bold text-foreground">Leads</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{leads.length} total</p>
+          <h1 className="font-display text-xl font-bold text-foreground tracking-tight">Leads</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{leads.length} leads found</p>
         </div>
         <div className="sm:ml-auto flex items-center gap-2 flex-wrap">
           {/* View toggle */}
@@ -390,11 +390,11 @@ export default function LeadsPage() {
           <KanbanView leads={leads} onLeadsChange={fetchLeads} />
         </div>
       ) : (
-        <div className="animate-fade-in rounded-xl border border-border overflow-hidden bg-card">
+        <div className="animate-fade-in rounded-xl border border-border overflow-hidden bg-card shadow-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-secondary/40">
+                <tr className="border-b border-border bg-secondary/30">
                   <th className="px-4 py-3 w-8">
                     <input
                       type="checkbox"
@@ -404,16 +404,16 @@ export default function LeadsPage() {
                       className="rounded cursor-pointer"
                     />
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Name</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden xl:table-cell">Web ID</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Contact</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Priority</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Follow-up</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden xl:table-cell">Tags</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden xl:table-cell">Last Comment</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Name</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide hidden xl:table-cell">Web ID</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Contact</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Priority</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Follow-up</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide hidden xl:table-cell">Tags</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide hidden xl:table-cell">Last Comment</th>
                   {isAdmin && (
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Assigned To</th>
+                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Assigned To</th>
                   )}
                 </tr>
               </thead>
