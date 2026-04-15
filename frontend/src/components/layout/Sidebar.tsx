@@ -88,22 +88,36 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 px-4 h-[58px] border-b border-sidebar-border shrink-0">
-          <div className="relative flex items-center justify-center h-8 w-8 rounded-xl bg-sidebar-accent/20 border border-sidebar-accent/30 shrink-0">
+        {/* Logo + Org name */}
+        <div className="flex items-start gap-2.5 px-4 pt-4 pb-3.5 border-b border-sidebar-border shrink-0">
+          <div className="relative flex items-center justify-center h-8 w-8 rounded-xl bg-sidebar-accent/20 border border-sidebar-accent/30 shrink-0 mt-0.5">
             <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-sidebar-accent">
               <path d="M8 2C4.68 2 2 4.68 2 8s2.68 6 6 6 6-2.68 6-6-2.68-6-6-6z" stroke="currentColor" strokeWidth="1.4"/>
               <path d="M5 8h6M8 5l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border border-sidebar" />
           </div>
-          <div>
-            <p className="font-display font-bold text-sidebar-foreground text-sm leading-none tracking-tight">SalesCRM</p>
-            <p className="text-[10px] text-sidebar-muted mt-0.5 font-medium">Sales Intelligence</p>
+          <div className="min-w-0 flex-1">
+            {user?.org_name ? (
+              <>
+                <p className="font-display font-bold text-sidebar-foreground text-sm leading-tight tracking-tight truncate">
+                  {user.org_name}
+                </p>
+                <p className="text-[10px] text-sidebar-muted mt-0.5 font-medium flex items-center gap-1">
+                  <span className="inline-block h-1 w-1 rounded-full bg-sidebar-accent/60" />
+                  SalesCRM · {user.org_type === "individual" ? "Individual" : "Business"}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-display font-bold text-sidebar-foreground text-sm leading-none tracking-tight">SalesCRM</p>
+                <p className="text-[10px] text-sidebar-muted mt-0.5 font-medium">Sales Intelligence</p>
+              </>
+            )}
           </div>
           <button
             onClick={onClose}
-            className="ml-auto lg:hidden p-1.5 text-sidebar-muted hover:text-sidebar-foreground transition-colors rounded-md hover:bg-white/5"
+            className="lg:hidden p-1.5 text-sidebar-muted hover:text-sidebar-foreground transition-colors rounded-md hover:bg-white/5 shrink-0"
           >
             <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4">
               <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>

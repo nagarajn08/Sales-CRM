@@ -29,6 +29,14 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     organization = relationship("Organization", back_populates="users")
+
+    @property
+    def org_name(self) -> str | None:
+        return self.organization.name if self.organization else None
+
+    @property
+    def org_type(self) -> str | None:
+        return self.organization.type.value if self.organization else None
     assigned_leads = relationship("Lead", foreign_keys="Lead.assigned_to_id", back_populates="assigned_to")
     created_leads = relationship("Lead", foreign_keys="Lead.created_by_id", back_populates="created_by")
     activities = relationship("LeadActivity", back_populates="user")

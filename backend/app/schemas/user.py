@@ -31,6 +31,8 @@ class UserRead(BaseModel):
     is_superadmin: bool
     last_login: datetime | None
     created_at: datetime
+    org_name: str | None = None
+    org_type: str | None = None
 
     model_config = {"from_attributes": True}
 

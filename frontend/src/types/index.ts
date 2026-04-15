@@ -22,6 +22,8 @@ export interface User {
   is_superadmin: boolean;
   last_login: string | null;
   created_at: string;
+  org_name: string | null;
+  org_type: OrgType | null;
 }
 
 export interface OrgSummary {
