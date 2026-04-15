@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { usersApi } from "../api";
+import { useAuth } from "../auth/AuthContext";
 import type { User, UserRole } from "../types";
 import { Button } from "../components/ui/button";
+import { fmtDateTime } from "../lib/utils";
 import { Badge } from "../components/ui/badge";
 import { Card } from "../components/ui/card";
 import { Modal } from "../components/ui/modal";
@@ -31,6 +33,8 @@ interface UserFormState {
 const emptyForm = (): UserFormState => ({ name: "", email: "", mobile: "", password: "", role: "user", is_active: true });
 
 export default function UsersPage() {
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.is_superadmin;
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -113,10 +117,12 @@ export default function UsersPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Users</h1>
-          <p className="text-sm text-muted-foreground">{users.length} accounts</p>
+          <h1 className="text-lg font-bold text-foreground">Users</h1>
+          <p className="text-sm text-muted-foreground">
+            {users.length} {isSuperAdmin ? "accounts across all organizations" : "accounts"}
+          </p>
         </div>
-        <Button onClick={openAdd}>+ Add User</Button>
+        {!isSuperAdmin && <Button onClick={openAdd}>+ Add User</Button>}
       </div>
 
       {loading ? (
@@ -129,12 +135,13 @@ export default function UsersPage() {
             <table className="w-full text-sm">
               <thead className="bg-secondary/50">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Email</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Role</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Status</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Last Login</th>
-                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Name</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Email</th>
+                  {isSuperAdmin && <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Org ID</th>}
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Role</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Status</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Last Login</th>
+                  {!isSuperAdmin && <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -145,10 +152,18 @@ export default function UsersPage() {
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                           {u.name[0]?.toUpperCase()}
                         </div>
-                        <span className="font-medium text-foreground">{u.name}</span>
+                        <div>
+                          <p className="font-medium text-foreground">{u.name}</p>
+                          {u.is_owner && <span className="text-[10px] text-muted-foreground">Owner</span>}
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">{u.email}</td>
+                    <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground text-xs">{u.email}</td>
+                    {isSuperAdmin && (
+                      <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground text-xs font-data">
+                        #{u.organization_id ?? "—"}
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <Badge className={ROLE_COLORS[u.role]}>{u.role}</Badge>
                     </td>
@@ -158,14 +173,16 @@ export default function UsersPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground text-xs">
-                      {u.last_login ? new Date(u.last_login).toLocaleString() : "Never"}
+                      {u.last_login ? fmtDateTime(u.last_login) : "Never"}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex gap-2 justify-end">
-                        <Button size="sm" variant="outline" onClick={() => openEdit(u)}>Edit</Button>
-                        <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(u)}>Delete</Button>
-                      </div>
-                    </td>
+                    {!isSuperAdmin && (
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="outline" onClick={() => openEdit(u)}>Edit</Button>
+                          <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(u)}>Delete</Button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

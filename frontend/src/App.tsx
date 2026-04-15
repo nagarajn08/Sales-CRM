@@ -4,6 +4,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import SuperAdminPage from "./pages/SuperAdminPage";
 import DashboardPage from "./pages/DashboardPage";
 import LeadsPage from "./pages/LeadsPage";
 import LeadDetailPage from "./pages/LeadDetailPage";
@@ -55,6 +56,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="platform" element={<SuperAdminPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

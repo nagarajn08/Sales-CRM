@@ -11,12 +11,10 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 
 @router.get("/", response_model=list[UserRead])
 def list_users(admin: User = Depends(require_admin), db: Session = Depends(get_db)):
-    return (
-        db.query(User)
-        .filter(User.organization_id == admin.organization_id)
-        .order_by(User.created_at.desc())
-        .all()
-    )
+    q = db.query(User).filter(User.is_superadmin == False)
+    if not admin.is_superadmin:
+        q = q.filter(User.organization_id == admin.organization_id)
+    return q.order_by(User.created_at.desc()).all()
 
 
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)

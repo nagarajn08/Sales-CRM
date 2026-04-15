@@ -17,6 +17,7 @@ interface Props {
 const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
   { value: "new", label: "New" },
   { value: "call_back", label: "Call Back" },
+  { value: "interested_call_back", label: "Interested - Call Back" },
   { value: "busy", label: "Busy" },
   { value: "not_reachable", label: "Not Reachable" },
   { value: "not_interested", label: "Not Interested" },
@@ -66,8 +67,8 @@ export function StatusModal({ open, onClose, lead, onUpdated }: Props) {
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Update Lead Status">
-      <form onSubmit={submit} className="space-y-4">
+    <Modal open={open} onClose={onClose} title="Update Status" maxWidth="max-w-sm">
+      <form onSubmit={submit} className="space-y-3">
         <Select
           label="Status"
           value={status}
@@ -76,13 +77,13 @@ export function StatusModal({ open, onClose, lead, onUpdated }: Props) {
         />
 
         {isTerminal && status === "not_interested" && (
-          <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
-            Marking as <strong>Not Interested</strong> will end all follow-ups for this lead.
+          <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2 text-xs text-destructive">
+            Marking as <strong>Not Interested</strong> will end all follow-ups.
           </div>
         )}
 
         {status === "converted" && (
-          <div className="rounded-lg bg-green-50 border border-green-200 dark:bg-green-900/20 dark:border-green-800 p-3 text-sm text-green-700 dark:text-green-400">
+          <div className="rounded-lg bg-green-50 border border-green-200 dark:bg-green-900/20 dark:border-green-800 px-3 py-2 text-xs text-green-700 dark:text-green-400">
             Marking as <strong>Converted</strong> will complete the follow-up journey.
           </div>
         )}
@@ -101,14 +102,15 @@ export function StatusModal({ open, onClose, lead, onUpdated }: Props) {
           label="Comment (optional)"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder="Add a note about this status change..."
+          placeholder="Add a note..."
+          rows={2}
         />
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="text-xs text-destructive">{error}</p>}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" loading={saving}>Update Status</Button>
+        <div className="flex gap-2 pt-1">
+          <Button type="button" variant="outline" size="sm" className="flex-1" onClick={onClose}>Cancel</Button>
+          <Button type="submit" size="sm" className="flex-1" loading={saving}>Update</Button>
         </div>
       </form>
     </Modal>

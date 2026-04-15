@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx skills:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(python -c ':*)",
+      "Bash(venv/Scripts/activate.bat)",
+      "Bash(venv/Scripts/python.exe -c ':*)",
+      "Bash(curl:*)",
+      "Bash(venv/Scripts/python.exe -c \"import app.main; print\\('OK'\\)\")"
+    ]
+  }
+}

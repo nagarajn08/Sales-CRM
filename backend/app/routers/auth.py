@@ -9,11 +9,16 @@ from app.models.user import User, UserRole
 from app.schemas.auth import (
     LoginRequest, TokenResponse,
     IndividualSignupRequest, CorporateSignupRequest,
+    OTPRequestBody, OTPVerifyBody, OTPRequestResponse, OTPVerifyResponse,
 )
 from app.schemas.user import UserRead
 from app.services.auth_service import (
     create_access_token, create_refresh_token,
     hash_password, verify_password,
+)
+from app.services.otp_service import (
+    create_otp_record, verify_otps,
+    create_verification_token, decode_verification_token,
 )
 from app.config import settings
 
@@ -49,11 +54,43 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
     return _tokens(user, response)
 
 
+# ── OTP: Request ──────────────────────────────────────────────────────────
+@router.post("/otp/request", response_model=OTPRequestResponse)
+def otp_request(body: OTPRequestBody, db: Session = Depends(get_db)):
+    # Check if email already registered
+    if db.query(User).filter(User.email == body.email).first():
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    result = create_otp_record(db, body.email, body.mobile)
+    return OTPRequestResponse(
+        detail="OTP sent. Check your email and mobile.",
+        email_sent=result["email_sent"],
+        dev_email_otp=result.get("dev_email_otp"),
+        dev_mobile_otp=result.get("dev_mobile_otp"),
+    )
+
+
+# ── OTP: Verify ───────────────────────────────────────────────────────────
+@router.post("/otp/verify", response_model=OTPVerifyResponse)
+def otp_verify(body: OTPVerifyBody, db: Session = Depends(get_db)):
+    ok = verify_otps(db, body.email, body.mobile, body.email_otp, body.mobile_otp)
+    if not ok:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    token = create_verification_token(body.email, body.mobile)
+    return OTPVerifyResponse(verification_token=token)
+
+
 # ── Signup: Individual ────────────────────────────────────────────────────
 @router.post("/signup/individual", response_model=TokenResponse, status_code=201)
 def signup_individual(body: IndividualSignupRequest, response: Response, db: Session = Depends(get_db)):
+    # Validate verification token
+    claims = decode_verification_token(body.verification_token)
+    if claims["email"] != body.email or claims["mobile"] != body.mobile:
+        raise HTTPException(status_code=400, detail="Verification token does not match email/mobile")
+
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=409, detail="Email already registered")
+
     org = Organization(
         name=body.name,
         type=OrgType.INDIVIDUAL,
@@ -79,8 +116,14 @@ def signup_individual(body: IndividualSignupRequest, response: Response, db: Ses
 # ── Signup: Corporate ─────────────────────────────────────────────────────
 @router.post("/signup/corporate", response_model=TokenResponse, status_code=201)
 def signup_corporate(body: CorporateSignupRequest, response: Response, db: Session = Depends(get_db)):
+    # Validate verification token
+    claims = decode_verification_token(body.verification_token)
+    if claims["email"] != body.email or claims["mobile"] != body.mobile:
+        raise HTTPException(status_code=400, detail="Verification token does not match email/mobile")
+
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=409, detail="Email already registered")
+
     org = Organization(
         name=body.company_name,
         type=OrgType.CORPORATE,

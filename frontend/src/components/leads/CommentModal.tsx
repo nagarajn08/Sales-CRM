@@ -35,20 +35,20 @@ export function CommentModal({ open, onClose, lead, onCommented }: Props) {
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Add Comment">
-      <form onSubmit={submit} className="space-y-4">
+    <Modal open={open} onClose={onClose} title="Add Comment" maxWidth="max-w-sm">
+      <form onSubmit={submit} className="space-y-3">
         <Textarea
-          label="Comment"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Write your comment here..."
           required
           autoFocus
+          rows={3}
         />
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" loading={saving}>Add Comment</Button>
+        {error && <p className="text-xs text-destructive">{error}</p>}
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" className="flex-1" onClick={onClose}>Cancel</Button>
+          <Button type="submit" size="sm" className="flex-1" loading={saving}>Add Comment</Button>
         </div>
       </form>
     </Modal>

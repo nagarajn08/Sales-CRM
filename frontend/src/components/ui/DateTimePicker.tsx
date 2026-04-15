@@ -95,42 +95,42 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
         <span className="ml-auto text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
       </button>
 
-      {/* Inline calendar — no absolute positioning, expands in flow */}
+      {/* Inline calendar */}
       {open && (
-        <div className="mt-2 w-full rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+        <div className="mt-1.5 w-full rounded-lg border border-border bg-card shadow-md overflow-hidden">
           {/* Month header */}
-          <div className="flex items-center justify-between px-3 py-2.5 bg-primary/5 border-b border-border">
+          <div className="flex items-center justify-between px-2 py-1.5 bg-primary/5 border-b border-border">
             <button
               type="button"
               onClick={() => setView(new Date(year, month - 1, 1))}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground font-bold text-lg"
+              className="w-6 h-6 flex items-center justify-center rounded hover:bg-secondary text-muted-foreground hover:text-foreground font-bold"
             >
               ‹
             </button>
-            <span className="text-sm font-semibold text-foreground">
-              {MONTHS[month]} {year}
+            <span className="text-xs font-semibold text-foreground">
+              {MONTHS[month].slice(0, 3)} {year}
             </span>
             <button
               type="button"
               onClick={() => setView(new Date(year, month + 1, 1))}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground font-bold text-lg"
+              className="w-6 h-6 flex items-center justify-center rounded hover:bg-secondary text-muted-foreground hover:text-foreground font-bold"
             >
               ›
             </button>
           </div>
 
-          <div className="p-3">
+          <div className="p-2">
             {/* Day name headers */}
-            <div className="grid grid-cols-7 mb-1">
+            <div className="grid grid-cols-7 mb-0.5">
               {DAYS.map((d) => (
-                <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-1">
+                <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-0.5">
                   {d}
                 </div>
               ))}
             </div>
 
             {/* Day cells */}
-            <div className="grid grid-cols-7 gap-0.5">
+            <div className="grid grid-cols-7 gap-px">
               {cells.map((day, i) => {
                 if (!day) return <div key={i} />;
                 const disabled = isDisabled(day);
@@ -143,9 +143,9 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
                     disabled={disabled}
                     onClick={() => selectDay(day)}
                     className={[
-                      "text-xs rounded-lg py-1.5 text-center font-medium transition-all",
+                      "text-[11px] rounded py-1 text-center font-medium transition-all",
                       sel
-                        ? "bg-primary text-primary-foreground shadow-sm"
+                        ? "bg-primary text-primary-foreground"
                         : today
                         ? "bg-primary/15 text-primary ring-1 ring-primary/30"
                         : "hover:bg-secondary text-foreground",
@@ -159,49 +159,35 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
             </div>
 
             {/* Time picker */}
-            <div className="mt-3 pt-3 border-t border-border">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Time</p>
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
-                  <label className="text-xs text-muted-foreground block mb-1">Hour</label>
-                  <select
-                    value={selected ? selected.getHours() : 10}
-                    onChange={(e) => setHour(parseInt(e.target.value))}
-                    className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  >
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i}>
-                        {i.toString().padStart(2, "0")} {i < 12 ? "AM" : "PM"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <span className="text-muted-foreground font-bold pb-2">:</span>
-                <div className="flex-1">
-                  <label className="text-xs text-muted-foreground block mb-1">Minute</label>
-                  <select
-                    value={selected ? Math.floor(selected.getMinutes() / 5) * 5 : 0}
-                    onChange={(e) => setMinute(parseInt(e.target.value))}
-                    className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  >
-                    {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
-                      <option key={m} value={m}>
-                        {m.toString().padStart(2, "0")}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+            <div className="mt-2 pt-2 border-t border-border flex items-center gap-2">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider shrink-0">Time</span>
+              <select
+                value={selected ? selected.getHours() : 10}
+                onChange={(e) => setHour(parseInt(e.target.value))}
+                className="flex-1 rounded border border-input bg-background px-1.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                {Array.from({ length: 24 }, (_, i) => (
+                  <option key={i} value={i}>{i.toString().padStart(2, "0")} {i < 12 ? "AM" : "PM"}</option>
+                ))}
+              </select>
+              <span className="text-muted-foreground font-bold text-xs">:</span>
+              <select
+                value={selected ? Math.floor(selected.getMinutes() / 5) * 5 : 0}
+                onChange={(e) => setMinute(parseInt(e.target.value))}
+                className="flex-1 rounded border border-input bg-background px-1.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
+                  <option key={m} value={m}>{m.toString().padStart(2, "0")}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="shrink-0 rounded bg-primary text-primary-foreground text-[11px] font-semibold px-2 py-1 hover:opacity-90 transition-opacity"
+              >
+                Done
+              </button>
             </div>
-
-            {/* Done */}
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="mt-3 w-full rounded-lg bg-primary text-primary-foreground text-sm font-semibold py-2 hover:opacity-90 transition-opacity"
-            >
-              Done ✓
-            </button>
           </div>
         </div>
       )}

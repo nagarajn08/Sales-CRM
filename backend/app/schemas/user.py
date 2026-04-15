@@ -21,11 +21,14 @@ class UserUpdate(BaseModel):
 
 class UserRead(BaseModel):
     id: int
+    organization_id: int | None
     email: str
     name: str
     mobile: str | None
     role: UserRole
     is_active: bool
+    is_owner: bool
+    is_superadmin: bool
     last_login: datetime | None
     created_at: datetime
 

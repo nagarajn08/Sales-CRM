@@ -1,0 +1,8 @@
+● Terminal 1 — Backend:                                                                                                            
+  cd C:\Users\Space\Desktop\sales-crm\backend                                                                                      
+  venv\Scripts\Activate.ps1                                                                                                          uvicorn app.main:app --reload
+                                                                                                                                     Terminal 2 — Frontend:                                                                                                           
+  cd C:\Users\Space\Desktop\sales-crm\frontend                                                                                     
+  npm run dev                                                                                                                      
+                                                                                                                                   
+  Then open http://localhost:5173 in your browser. 

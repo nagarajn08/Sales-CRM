@@ -40,6 +40,13 @@ def require_superadmin(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
+def require_platform_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Platform-level super admin only (admin@salescrm.com)."""
+    if not current_user.is_superadmin:
+        raise HTTPException(status_code=403, detail="Platform admin access required")
+    return current_user
+
+
 def get_refresh_token_payload(refresh_token: str | None = Cookie(default=None)) -> dict:
     if not refresh_token:
         raise HTTPException(status_code=401, detail="No refresh token")

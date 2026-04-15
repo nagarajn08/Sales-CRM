@@ -8,6 +8,7 @@ from app.database import Base
 class LeadStatus(str, enum.Enum):
     NEW = "new"
     CALL_BACK = "call_back"
+    INTERESTED_CALL_BACK = "interested_call_back"
     BUSY = "busy"
     NOT_REACHABLE = "not_reachable"
     NOT_INTERESTED = "not_interested"
@@ -55,6 +56,7 @@ class Lead(Base):
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     next_followup_at = Column(DateTime, nullable=True)
+    last_comment = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)

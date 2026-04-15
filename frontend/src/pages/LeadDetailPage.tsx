@@ -12,7 +12,7 @@ import { CommentModal } from "../components/leads/CommentModal";
 import { LeadFormModal } from "../components/leads/LeadFormModal";
 import { EmailModal } from "../components/leads/EmailModal";
 import { useAuth } from "../auth/AuthContext";
-import { cn } from "../lib/utils";
+import { cn, fmtDate, fmtDateTime } from "../lib/utils";
 
 const ACTIVITY_ICONS: Record<string, string> = {
   created: "✨",
@@ -86,7 +86,9 @@ export default function LeadDetailPage() {
   }
 
   const isTerminal = lead.status === "not_interested" || lead.status === "converted";
-  const followupDate = lead.next_followup_at ? new Date(lead.next_followup_at) : null;
+  const s = lead.next_followup_at;
+  // Force UTC parse for naive backend timestamps
+  const followupDate = s ? new Date(s.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(s) ? s : s + "Z") : null;
   const isOverdue = followupDate ? followupDate < new Date() : false;
 
   return (
@@ -152,8 +154,8 @@ export default function LeadDetailPage() {
               <InfoRow label="Source" value={lead.source.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())} />
               <InfoRow label="Assigned To" value={lead.assigned_to?.name ?? "Unassigned"} />
               <InfoRow label="Created By" value={lead.created_by?.name} />
-              <InfoRow label="Created" value={new Date(lead.created_at).toLocaleDateString()} />
-              <InfoRow label="Updated" value={new Date(lead.updated_at).toLocaleDateString()} />
+              <InfoRow label="Created" value={fmtDateTime(lead.created_at)} />
+              <InfoRow label="Updated" value={fmtDateTime(lead.updated_at)} />
             </div>
             {lead.notes && (
               <div className="mt-4 pt-4 border-t border-border">
@@ -176,7 +178,7 @@ export default function LeadDetailPage() {
                   {isOverdue ? "⚠️ OVERDUE" : "📅"}
                 </p>
                 <p className={cn("text-sm mt-1", isOverdue ? "text-destructive" : "text-foreground")}>
-                  {followupDate.toLocaleString()}
+                  {fmtDateTime(lead.next_followup_at)}
                 </p>
                 {isOverdue && (
                   <p className="text-xs text-muted-foreground mt-1">
@@ -241,11 +243,11 @@ export default function LeadDetailPage() {
                     )}
                     {activity.followup_date && (
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Scheduled: {new Date(activity.followup_date).toLocaleString()}
+                        Scheduled: {fmtDateTime(activity.followup_date)}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      by {activity.user?.name ?? "System"} · {new Date(activity.created_at).toLocaleString()}
+                      by {activity.user?.name ?? "System"} · {fmtDateTime(activity.created_at)}
                     </p>
                   </div>
                 </div>

@@ -68,7 +68,7 @@ export function Textarea({ label, error, helpText, className, ...props }: InputP
       <textarea
         {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
         className={cn(
-          "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 min-h-[80px] resize-y",
+          "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 min-h-[60px] resize-y",
           error && "border-destructive",
           className
         )}

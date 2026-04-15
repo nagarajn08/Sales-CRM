@@ -8,6 +8,7 @@ import app.models  # register all models
 from app.routers import auth, users, leads, dashboard, templates, notifications
 from app.routers import settings as settings_router
 from app.routers import webhook
+from app.routers import superadmin
 
 app = FastAPI(title="Sales CRM API", version="2.0.0")
 
@@ -27,6 +28,7 @@ app.include_router(templates.router)
 app.include_router(notifications.router)
 app.include_router(settings_router.router)
 app.include_router(webhook.router)
+app.include_router(superadmin.router)
 
 
 def run_migrations():
@@ -48,10 +50,12 @@ def run_migrations():
         add_col("leads", "web_id", "VARCHAR")
         add_col("leads", "organization_id", "INTEGER")
         add_col("leads", "campaign_name", "VARCHAR")
+        add_col("leads", "last_comment", "TEXT")
 
         # users
         add_col("users", "organization_id", "INTEGER")
         add_col("users", "is_owner", "BOOLEAN DEFAULT 0")
+        add_col("users", "is_superadmin", "BOOLEAN DEFAULT 0")
 
         # app_settings
         add_col("app_settings", "organization_id", "INTEGER")
@@ -87,18 +91,24 @@ def seed_admin():
                 hashed_password=hash_password(settings.ADMIN_PASSWORD),
                 role=UserRole.ADMIN,
                 is_owner=True,
+                is_superadmin=True,
             )
             db.add(admin)
             db.commit()
-            print(f"Admin created: {settings.ADMIN_EMAIL} / {settings.ADMIN_PASSWORD}")
-        elif not admin.organization_id:
-            # Existing admin without org — assign to default org
-            admin.organization_id = default_org.id
-            admin.is_owner = True
-            db.commit()
-            print(f"Assigned existing admin to org: {default_org.name}")
+            print(f"Super admin created: {settings.ADMIN_EMAIL} / {settings.ADMIN_PASSWORD}")
         else:
-            db.commit()
+            # Ensure existing admin has superadmin flag and org assigned
+            changed = False
+            if not admin.organization_id:
+                admin.organization_id = default_org.id
+                admin.is_owner = True
+                changed = True
+            if not admin.is_superadmin:
+                admin.is_superadmin = True
+                changed = True
+            if changed:
+                db.commit()
+                print(f"Updated admin: {admin.email} → superadmin=True")
     finally:
         db.close()
 
@@ -121,7 +131,7 @@ def on_startup():
         print(f"Migration warning: {e}")
     seed_admin()
     scheduler = BackgroundScheduler()
-    scheduler.add_job(run_notification_job, "interval", minutes=5)
+    scheduler.add_job(run_notification_job, "interval", minutes=1)
     scheduler.start()
 
 

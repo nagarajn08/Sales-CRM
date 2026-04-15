@@ -48,6 +48,16 @@ function IconUsers({ className }: { className?: string }) {
   );
 }
 
+function IconPlatform({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className={className}>
+      <rect x="1" y="1" width="14" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
+      <path d="M5 15h6M8 11v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      <path d="M4.5 5.5L6.5 7.5L9.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 function IconSettings({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 16 16" fill="none" className={className}>
@@ -121,6 +131,23 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             )}
           </NavLink>
         ))}
+
+        {user?.is_superadmin && (
+          <>
+            <div className="pt-4 pb-1.5 px-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+              Platform
+            </div>
+            <NavLink to="/platform" className={linkClass} onClick={onClose}>
+              {({ isActive }) => (
+                <>
+                  {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-full bg-primary" />}
+                  <IconPlatform className={iconClass(isActive)} />
+                  <span>Platform Admin</span>
+                </>
+              )}
+            </NavLink>
+          </>
+        )}
 
         {user?.role === "admin" && (
           <>

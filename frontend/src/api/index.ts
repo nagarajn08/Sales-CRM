@@ -1,5 +1,5 @@
 import api from "./axiosInstance";
-import type { Lead, User, EmailTemplate, DashboardStats, Activity, Notification } from "../types";
+import type { Lead, User, EmailTemplate, DashboardStats, Activity, Notification, OrgSummary, OrgDetail, PlatformStats } from "../types";
 
 // Auth
 export const authApi = {
@@ -7,9 +7,13 @@ export const authApi = {
   logout: () => api.post("/api/auth/logout"),
   refresh: () => api.post("/api/auth/refresh").then(r => r.data),
   me: () => api.get<User>("/api/auth/me").then(r => r.data),
-  signupIndividual: (data: { name: string; email: string; password: string; mobile?: string }) =>
+  otpRequest: (data: { email: string; mobile: string }) =>
+    api.post<{ detail: string; email_sent: boolean; dev_email_otp: string | null; dev_mobile_otp: string | null }>("/api/auth/otp/request", data).then(r => r.data),
+  otpVerify: (data: { email: string; mobile: string; email_otp: string; mobile_otp: string }) =>
+    api.post<{ verification_token: string }>("/api/auth/otp/verify", data).then(r => r.data),
+  signupIndividual: (data: { name: string; email: string; password: string; mobile: string; verification_token: string }) =>
     api.post("/api/auth/signup/individual", data).then(r => r.data),
-  signupCorporate: (data: { company_name: string; admin_name: string; email: string; password: string; mobile?: string }) =>
+  signupCorporate: (data: { company_name: string; admin_name: string; email: string; password: string; mobile: string; verification_token: string }) =>
     api.post("/api/auth/signup/corporate", data).then(r => r.data),
 };
 
@@ -58,6 +62,14 @@ export const notificationsApi = {
   unreadCount: () => api.get<{ count: number }>("/api/notifications/unread-count").then(r => r.data),
   markRead: (id: number) => api.put(`/api/notifications/${id}/read`),
   markAllRead: () => api.put("/api/notifications/read-all"),
+};
+
+// Super Admin
+export const superAdminApi = {
+  stats: () => api.get<PlatformStats>("/api/superadmin/stats").then(r => r.data),
+  listOrgs: () => api.get<OrgSummary[]>("/api/superadmin/orgs").then(r => r.data),
+  getOrg: (id: number) => api.get<OrgDetail>(`/api/superadmin/orgs/${id}`).then(r => r.data),
+  toggleOrg: (id: number) => api.patch<{ id: number; is_active: boolean }>(`/api/superadmin/orgs/${id}/toggle`).then(r => r.data),
 };
 
 // Settings

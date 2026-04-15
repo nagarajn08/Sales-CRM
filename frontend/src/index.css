@@ -2,20 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── LIGHT MODE ───────────────────────────────────────────────────── */
+/* ── LIGHT MODE (soft grey — easy on eyes) ────────────────────────── */
 :root {
-  --primary:            243 75% 59%;   /* indigo-500 */
+  --primary:            243 75% 59%;
   --primary-foreground: 0 0% 100%;
-  --secondary:          220 14% 96%;
-  --secondary-foreground: 220 9% 26%;
-  --background:         210 20% 98%;
-  --foreground:         222 47% 11%;
-  --muted:              220 14% 96%;
-  --muted-foreground:   220 9% 46%;
-  --card:               0 0% 100%;
-  --card-foreground:    222 47% 11%;
-  --border:             220 13% 91%;
-  --input:              220 13% 91%;
+  --secondary:          220 13% 89%;
+  --secondary-foreground: 220 12% 24%;
+  --background:         220 16% 93%;   /* soft blue-grey, not white */
+  --foreground:         222 35% 14%;
+  --muted:              220 13% 90%;
+  --muted-foreground:   220 10% 48%;
+  --card:               220 20% 97%;   /* near-white card on grey bg */
+  --card-foreground:    222 35% 14%;
+  --border:             220 13% 85%;
+  --input:              220 13% 88%;
   --ring:               243 75% 59%;
   --destructive:        0 84% 60%;
   --radius:             0.5rem;

@@ -26,7 +26,7 @@ class EmailSendRequest(BaseModel):
 
 router = APIRouter(prefix="/api/leads", tags=["leads"])
 
-FOLLOWUP_REQUIRED = {LeadStatus.CALL_BACK, LeadStatus.BUSY, LeadStatus.NOT_REACHABLE}
+FOLLOWUP_REQUIRED = {LeadStatus.CALL_BACK, LeadStatus.INTERESTED_CALL_BACK, LeadStatus.BUSY, LeadStatus.NOT_REACHABLE}
 TERMINAL_STATUSES = {LeadStatus.NOT_INTERESTED, LeadStatus.CONVERTED}
 
 
@@ -187,6 +187,8 @@ def update_status(lead_id: int, body: LeadStatusUpdate, current_user: User = Dep
 
     old_status = lead.status
     lead.status = body.status
+    if body.comment:
+        lead.last_comment = body.comment
     _log_activity(db, lead.id, current_user.id, ActivityType.STATUS_CHANGED,
                   old_status=old_status, new_status=body.status,
                   comment=body.comment, followup_date=body.next_followup_at)
@@ -209,6 +211,7 @@ def add_comment(lead_id: int, comment: str, current_user: User = Depends(get_cur
         raise HTTPException(status_code=404, detail="Lead not found")
     _check_lead_access(lead, current_user)
     _log_activity(db, lead.id, current_user.id, ActivityType.COMMENT, comment=comment)
+    lead.last_comment = comment
     db.commit()
     db.refresh(lead)
     return lead
@@ -237,7 +240,7 @@ def get_timeline(lead_id: int, current_user: User = Depends(get_current_user), d
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     _check_lead_access(lead, current_user)
-    return lead.activities
+    return sorted(lead.activities, key=lambda a: a.created_at, reverse=True)
 
 
 @router.post("/{lead_id}/email", status_code=status.HTTP_200_OK)

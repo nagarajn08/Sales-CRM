@@ -49,9 +49,11 @@ class LeadRead(BaseModel):
     status: LeadStatus
     priority: LeadPriority
     source: LeadSource
+    campaign_name: str | None = None
     assigned_to: UserSummary | None
     created_by: UserSummary
     next_followup_at: datetime | None
+    last_comment: str | None = None
     is_active: bool
     created_at: datetime
     updated_at: datetime

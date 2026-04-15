@@ -9,11 +9,13 @@ import { Input, Select } from "../components/ui/input";
 import { LeadFormModal } from "../components/leads/LeadFormModal";
 import { ImportModal } from "../components/leads/ImportModal";
 import { useAuth } from "../auth/AuthContext";
+import { fmtDateTime } from "../lib/utils";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "", label: "All Statuses" },
   { value: "new", label: "New" },
   { value: "call_back", label: "Call Back" },
+  { value: "interested_call_back", label: "Interested - Call Back" },
   { value: "busy", label: "Busy" },
   { value: "not_reachable", label: "Not Reachable" },
   { value: "not_interested", label: "Not Interested" },
@@ -63,10 +65,11 @@ export default function LeadsPage() {
 
   const formatFollowup = (date: string | null) => {
     if (!date) return null;
-    const d = new Date(date);
-    const now = new Date();
-    const isOverdue = d < now;
-    return { label: d.toLocaleString(), overdue: isOverdue };
+    // Append "Z" so JS treats the naive UTC timestamp from backend as UTC
+    const s = date.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(date) ? date : date + "Z";
+    const d = new Date(s);
+    const isOverdue = d < new Date();
+    return { label: fmtDateTime(date), overdue: isOverdue };
   };
 
   return (
@@ -138,6 +141,7 @@ export default function LeadsPage() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Priority</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Follow-up</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden xl:table-cell">Last Comment</th>
                   {isAdmin && (
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Assigned To</th>
                   )}
@@ -152,9 +156,9 @@ export default function LeadsPage() {
                       onClick={() => navigate(`/leads/${lead.id}`)}
                       className="hover:bg-secondary/40 cursor-pointer transition-colors group"
                     >
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-foreground group-hover:text-primary transition-colors">{lead.name}</p>
-                        {lead.company && <p className="text-xs text-muted-foreground mt-0.5">{lead.company}</p>}
+                      <td className="px-4 py-3 max-w-[180px]">
+                        <p className="font-medium text-foreground group-hover:text-primary transition-colors truncate">{lead.name}</p>
+                        {lead.company && <p className="text-xs text-muted-foreground mt-0.5 truncate">{lead.company}</p>}
                       </td>
                       <td className="px-4 py-3 hidden xl:table-cell">
                         <span className="font-data text-xs text-muted-foreground">
@@ -178,6 +182,15 @@ export default function LeadsPage() {
                           </span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 hidden xl:table-cell max-w-[200px]">
+                        {lead.last_comment ? (
+                          <p className="text-xs text-muted-foreground truncate" title={lead.last_comment}>
+                            💬 {lead.last_comment}
+                          </p>
+                        ) : (
+                          <span className="text-muted-foreground/40 text-xs">—</span>
                         )}
                       </td>
                       {isAdmin && (
