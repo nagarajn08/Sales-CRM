@@ -90,6 +90,7 @@ export interface Lead {
   source: LeadSource;
   campaign_name: string | null;
   tags: string | null;
+  deal_value: number | null;
   assigned_to: UserSummary | null;
   created_by: UserSummary;
   next_followup_at: string | null;
@@ -165,6 +166,8 @@ export interface DashboardStats {
   leads_by_source_all: SourceCount[];
   status_breakdown: StatusCount[];
   conversion_rate: number;
+  pipeline_value: number;
+  converted_value: number;
   user_stats: UserStats[];
   due_followups: Lead[];
 }

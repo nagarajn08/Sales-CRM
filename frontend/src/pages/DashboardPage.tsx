@@ -162,6 +162,7 @@ const I = {
   plus:      <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
   calendar:  <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M5 2v2M11 2v2M2 7h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
   lightning: <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><path d="M9 2L4 9h4l-1 5 5-7H8l1-5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>,
+  rupee:     <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><path d="M4 3h8M4 6h8M4 6c0 3 2.5 5 6 5M4 6l6 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   thumb:     <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><path d="M5 14V8l2-5a1.5 1.5 0 013 0v3h3l-1 8H5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>,
   week:      <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
   activity:  <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><path d="M1 8h3l2-5 3 10 2-5h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
@@ -189,6 +190,12 @@ export default function DashboardPage() {
   if (!stats) return <p className="text-sm text-muted-foreground">Failed to load dashboard.</p>;
 
   const sourceMax = Math.max(...stats.leads_by_source_today.map(s => s.count), 1);
+
+  const fmtCurrency = (v: number) =>
+    v >= 1_00_00_000 ? `₹${(v / 1_00_00_000).toFixed(1)}Cr`
+    : v >= 1_00_000 ? `₹${(v / 1_00_000).toFixed(1)}L`
+    : v >= 1_000 ? `₹${(v / 1_000).toFixed(1)}K`
+    : `₹${v.toLocaleString("en-IN")}`;
   const now = new Date();
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -236,6 +243,28 @@ export default function DashboardPage() {
         <KpiCard label="Not Interested" value={stats.not_interested_today} sub="lost today"
           icon={I.thumb} color="bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400" delay={120} />
       </div>
+
+      {/* ── Row 3: Deal value pipeline ── */}
+      {(stats.pipeline_value > 0 || stats.converted_value > 0) && (
+        <div className="grid grid-cols-2 gap-3">
+          <KpiCard
+            label="Active Pipeline Value"
+            value={fmtCurrency(stats.pipeline_value)}
+            sub="sum of all active deal values"
+            icon={I.rupee}
+            color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+            delay={0}
+          />
+          <KpiCard
+            label="Converted Deal Value"
+            value={fmtCurrency(stats.converted_value)}
+            sub="revenue from converted leads"
+            icon={I.check}
+            color="bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400"
+            delay={40}
+          />
+        </div>
+      )}
 
       {/* ── Row 3: 3-col grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

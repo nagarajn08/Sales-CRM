@@ -44,6 +44,7 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
     source: "manual",
     assigned_to_id: "",
     tags: "",
+    deal_value: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -67,11 +68,12 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
         source: lead.source,
         assigned_to_id: lead.assigned_to?.id?.toString() ?? "",
         tags: lead.tags ?? "",
+        deal_value: lead.deal_value?.toString() ?? "",
       });
     } else {
       setForm({
         name: "", email: "", mobile: "", whatsapp: "", company: "",
-        notes: "", priority: "warm", source: "manual", assigned_to_id: "", tags: "",
+        notes: "", priority: "warm", source: "manual", assigned_to_id: "", tags: "", deal_value: "",
       });
     }
     setErrors({});
@@ -100,6 +102,7 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
         priority: form.priority,
         source: form.source,
         tags: form.tags.trim() || null,
+        deal_value: form.deal_value.trim() ? parseFloat(form.deal_value) : null,
       };
       if (isAdmin && form.assigned_to_id) {
         payload.assigned_to_id = parseInt(form.assigned_to_id);
@@ -141,6 +144,16 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
           <Select label="Priority" value={form.priority} onChange={(e) => f("priority", e.target.value)} options={PRIORITY_OPTIONS} />
           <Select label="Source" value={form.source} onChange={(e) => f("source", e.target.value)} options={SOURCE_OPTIONS} />
         </div>
+
+        <Input
+          label="Deal Value (₹)"
+          type="number"
+          min="0"
+          step="0.01"
+          value={form.deal_value}
+          onChange={(e) => f("deal_value", e.target.value)}
+          placeholder="e.g. 50000"
+        />
 
         {isAdmin && users.length > 0 && (
           <Select

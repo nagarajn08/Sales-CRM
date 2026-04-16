@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, Enum as SQLEnum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Enum as SQLEnum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -55,6 +55,7 @@ class Lead(Base):
     assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
+    deal_value = Column(Float, nullable=True)
     next_followup_at = Column(DateTime, nullable=True)
     last_comment = Column(Text, nullable=True)
     tags = Column(Text, nullable=True)  # comma-separated tags e.g. "hot,referral,enterprise"

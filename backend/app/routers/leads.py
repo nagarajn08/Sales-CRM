@@ -237,7 +237,7 @@ def create_lead(body: LeadCreate, current_user: User = Depends(get_current_user)
         organization_id=current_user.organization_id,
         name=body.name, email=body.email, mobile=body.mobile, whatsapp=body.whatsapp,
         company=body.company, notes=body.notes, priority=body.priority, source=body.source,
-        assigned_to_id=assigned_to_id, created_by_id=current_user.id,
+        deal_value=body.deal_value, assigned_to_id=assigned_to_id, created_by_id=current_user.id,
     )
     db.add(lead)
     db.flush()

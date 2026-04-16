@@ -52,6 +52,7 @@ def run_migrations():
         add_col("leads", "campaign_name", "VARCHAR")
         add_col("leads", "last_comment", "TEXT")
         add_col("leads", "tags", "TEXT")
+        add_col("leads", "deal_value", "REAL")
 
         # users
         add_col("users", "organization_id", "INTEGER")

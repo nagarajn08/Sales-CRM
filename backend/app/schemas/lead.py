@@ -16,6 +16,7 @@ class LeadCreate(BaseModel):
     source: LeadSource = LeadSource.MANUAL
     assigned_to_id: int | None = None
     tags: str | None = None
+    deal_value: float | None = None
 
 
 class LeadUpdate(BaseModel):
@@ -28,6 +29,7 @@ class LeadUpdate(BaseModel):
     notes: str | None = None
     priority: LeadPriority | None = None
     tags: str | None = None
+    deal_value: float | None = None
 
 
 class LeadStatusUpdate(BaseModel):
@@ -68,6 +70,7 @@ class LeadRead(BaseModel):
     source: LeadSource
     campaign_name: str | None = None
     tags: str | None = None
+    deal_value: float | None = None
     assigned_to: UserSummary | None
     created_by: UserSummary
     next_followup_at: datetime | None

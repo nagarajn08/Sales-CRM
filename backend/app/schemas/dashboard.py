@@ -52,6 +52,10 @@ class DashboardStats(BaseModel):
     # ── Conversion ────────────────────────────────
     conversion_rate: float          # converted / total * 100
 
+    # ── Deal value pipeline ───────────────────────
+    pipeline_value: float           # sum of deal_value for all active leads
+    converted_value: float          # sum of deal_value for converted leads
+
     # ── Lists ─────────────────────────────────────
     user_stats: list[UserStats]
     due_followups: list[LeadRead]   # overdue + due today, soonest first

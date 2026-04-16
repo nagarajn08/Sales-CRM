@@ -6,3 +6,117 @@
   npm run dev                                                                                                                      
                                                                                                                                    
   Then open http://localhost:5173 in your browser. 
+
+
+Infrastructure                                                                                                                      
+                                                                                                                                      
+  Minimum VPS specs:                                                                                                                    - 1 vCPU, 2GB RAM (DigitalOcean, Hetzner, AWS EC2, or similar)
+  - Ubuntu 22.04 LTS recommended                                                                                                                                                                  
+  ---
+  Backend (FastAPI)
+
+  - Switch from SQLite → PostgreSQL (SQLite won't handle concurrent users in production)
+  - Run with Gunicorn + Uvicorn workers instead of --reload
+  - Use systemd or supervisor to keep it running
+  - Set a strong SECRET_KEY in .env
+
+  ---
+  Frontend (React/Vite)
+
+  - Run npm run build → produces a dist/ folder
+  - Serve via Nginx as static files
+
+  ---
+  Web Server
+
+  - Nginx as reverse proxy:
+    - Serves the frontend static files
+    - Proxies /api/* to the FastAPI backend
+
+  ---
+  Domain & SSL
+
+  - Point your domain DNS to the server IP
+  - Let's Encrypt (free SSL via Certbot)
+
+  ---
+  Email (SMTP)
+
+  - Currently no SMTP configured — OTPs/forgot password won't send real emails
+  - Options: Gmail SMTP, SendGrid, Resend, or Mailgun (free tiers available)
+  - Add to .env: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM
+
+  ---
+  Environment Variables to update for production
+
+  DATABASE_URL=postgresql://user:pass@localhost:5432/salescrm
+  SECRET_KEY=<strong-random-key>
+  FRONTEND_URL=https://yourdomain.com
+  SMTP_HOST=smtp.gmail.com
+  SMTP_PORT=587
+  SMTP_USER=you@gmail.com
+  SMTP_PASS=your-app-password
+  SMTP_FROM=you@gmail.com
+
+  ---
+  Checklist summary
+
+  ┌──────────────────────────────────┬──────────────────────────┐
+  │               Task               │          Status          │
+  ├──────────────────────────────────┼──────────────────────────┤
+  │ VPS / server                     │ Need                     │
+  ├──────────────────────────────────┼──────────────────────────┤
+  │ PostgreSQL setup                 │ Need                     │
+  ├──────────────────────────────────┼──────────────────────────┤
+  │ Nginx config                     │ Need                     │
+  ├──────────────────────────────────┼──────────────────────────┤
+  │ SSL certificate                  │ Need                     │
+  ├──────────────────────────────────┼──────────────────────────┤
+  │ SMTP provider                    │ Need                     │
+  ├──────────────────────────────────┼──────────────────────────┤
+  │ Domain name                      │ Optional but recommended │
+  ├──────────────────────────────────┼──────────────────────────┤
+  │ Switch SQLite → Postgres in .env │ Need                     │
+  └──────────────────────────────────┴──────────────────────────┘
+
+  ---
+  Want me to start with any specific part — like switching to PostgreSQL, writing the Nginx config, or the deployment steps?
+
+
+Pushed. Here's what to do when you have a server:                                                                                   
+                                                                                
+  ---                                                                                                                                 
+  On your server (one time setup)                         
+                                                                                                                                      
+  # 1. Install Docker                                                                                                                   curl -fsSL https://get.docker.com | sh                                                                                              
+                                                                                                                                        # 2. Clone the repo                                                                                                                 
+  git clone https://github.com/nagarajn08/Sales-CRM.git                                                                               
+  cd Sales-CRM                                                                                                                        
+                                                                                                                                      
+  # 3. Get SSL certificate (replace with your domain)                                                                                 
+  apt install certbot                                                                                                                 
+  certbot certonly --standalone -d YOURDOMAIN.com                                                                                     
+                                                                                                                                      
+  # 4. Fill in your production env                                                                                                    
+  cp .env.production .env.production                                                                                                  
+  nano .env.production   # fill in all CHANGE_ME values                                                                               
+                                                                                                                                      
+  # 5. Update domain in nginx config                                                                                                  
+  nano frontend/nginx.prod.conf   # replace YOURDOMAIN.com                                                                            
+                                                                                                                                      
+  # 6. Deploy                                                                                                                         
+  chmod +x deploy.sh
+  ./deploy.sh
+
+  ---
+  Future deployments (after any code change)
+
+  ./deploy.sh
+
+  That's it — pull, rebuild, restart in one command.
+
+  ---
+  What you still need:
+  - A server (DigitalOcean/Hetzner/AWS)
+  - A domain name pointed to the server IP
+  - Gmail App Password (or other SMTP) for emails

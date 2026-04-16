@@ -1,5 +1,6 @@
 from datetime import datetime, date, timedelta
 from fastapi import APIRouter, Depends
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user
@@ -117,6 +118,19 @@ def get_stats(current_user: User = Depends(get_current_user), db: Session = Depe
     # ── Conversion rate ───────────────────────────────────────────────────
     conversion_rate = round((converted_today / new_today * 100) if new_today else 0, 1)
 
+    # ── Deal value pipeline ───────────────────────────────────────────────
+    pipeline_value = db.query(func.coalesce(func.sum(Lead.deal_value), 0)).filter(
+        Lead.organization_id == org_id,
+        Lead.is_active == True,
+        Lead.deal_value.isnot(None),
+    ).scalar() or 0.0
+
+    converted_value = db.query(func.coalesce(func.sum(Lead.deal_value), 0)).filter(
+        Lead.organization_id == org_id,
+        Lead.status == LeadStatus.CONVERTED,
+        Lead.deal_value.isnot(None),
+    ).scalar() or 0.0
+
     # ── Due follow-up leads (overdue + due today, soonest first) ─────────
     due_leads = base.filter(
         Lead.next_followup_at <= today_end,
@@ -169,6 +183,8 @@ def get_stats(current_user: User = Depends(get_current_user), db: Session = Depe
         leads_by_source_all=source_all,
         status_breakdown=status_breakdown,
         conversion_rate=conversion_rate,
+        pipeline_value=float(pipeline_value),
+        converted_value=float(converted_value),
         user_stats=user_stats,
         due_followups=due_leads,
     )
