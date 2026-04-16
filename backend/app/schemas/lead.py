@@ -71,6 +71,7 @@ class LeadRead(BaseModel):
     campaign_name: str | None = None
     tags: str | None = None
     deal_value: float | None = None
+    score: int | None = None
     assigned_to: UserSummary | None
     created_by: UserSummary
     next_followup_at: datetime | None

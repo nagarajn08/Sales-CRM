@@ -19,6 +19,7 @@ from app.models.app_settings import AppSettings
 from app.models.user import User, UserRole
 from app.schemas.lead import ActivityRead, BulkActionRequest, CallLogRequest, LeadCreate, LeadRead, LeadReassign, LeadStatusUpdate, LeadUpdate
 from app.services.billing_service import check_lead_limit
+from app.services.scoring_service import recalculate_score
 
 
 class EmailSendRequest(BaseModel):
@@ -245,6 +246,7 @@ def create_lead(body: LeadCreate, current_user: User = Depends(get_current_user)
     db.flush()
     lead.web_id = f"WEB-{lead.id:04d}"
     _log_activity(db, lead.id, current_user.id, ActivityType.CREATED, new_status=LeadStatus.NEW)
+    recalculate_score(db, lead)
     db.commit()
     db.refresh(lead)
     return lead
@@ -314,6 +316,7 @@ def update_lead(lead_id: int, body: LeadUpdate, current_user: User = Depends(get
     _check_lead_access(lead, current_user)
     for field, value in body.model_dump(exclude_none=True).items():
         setattr(lead, field, value)
+    recalculate_score(db, lead)
     db.commit()
     db.refresh(lead)
     return lead
@@ -349,6 +352,7 @@ def update_status(lead_id: int, body: LeadStatusUpdate, current_user: User = Dep
             message=f"Follow-up due: {lead.name}", due_at=body.next_followup_at,
         ))
 
+    recalculate_score(db, lead)
     db.commit()
     db.refresh(lead)
     return lead
@@ -362,6 +366,7 @@ def add_comment(lead_id: int, comment: str, current_user: User = Depends(get_cur
     _check_lead_access(lead, current_user)
     _log_activity(db, lead.id, current_user.id, ActivityType.COMMENT, comment=comment)
     lead.last_comment = comment
+    recalculate_score(db, lead)
     db.commit()
     db.refresh(lead)
     return lead
@@ -436,6 +441,7 @@ def send_email_to_lead(
 
     _log_activity(db, lead.id, current_user.id, ActivityType.EMAIL_SENT,
                   comment=f"Subject: {body.subject}")
+    recalculate_score(db, lead)
     db.commit()
     return {"ok": True, "sent_to": lead.email}
 
@@ -462,6 +468,7 @@ def log_call(lead_id: int, body: CallLogRequest, current_user: User = Depends(ge
         meta=meta_str,
     )
     db.add(activity)
+    recalculate_score(db, lead)
     db.commit()
     db.refresh(activity)
     return activity

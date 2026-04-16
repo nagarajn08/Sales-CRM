@@ -56,6 +56,7 @@ class Lead(Base):
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     deal_value = Column(Float, nullable=True)
+    score = Column(Integer, default=0, nullable=True)
     next_followup_at = Column(DateTime, nullable=True)
     last_comment = Column(Text, nullable=True)
     tags = Column(Text, nullable=True)  # comma-separated tags e.g. "hot,referral,enterprise"

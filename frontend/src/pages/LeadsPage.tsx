@@ -11,6 +11,7 @@ import { ImportModal } from "../components/leads/ImportModal";
 import { KanbanView } from "../components/leads/KanbanView";
 import { useAuth } from "../auth/AuthContext";
 import { fmtDateTime, cn } from "../lib/utils";
+import { ScoreBadge } from "../components/ui/ScoreBadge";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "", label: "All Statuses" },
@@ -439,7 +440,10 @@ export default function LeadsPage() {
                         />
                       </td>
                       <td className="px-4 py-3 max-w-[180px]" onClick={() => navigate(`/leads/${lead.id}`)}>
-                        <p className="font-medium text-foreground group-hover:text-primary transition-colors truncate">{lead.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-medium text-foreground group-hover:text-primary transition-colors truncate">{lead.name}</p>
+                          <ScoreBadge score={lead.score} />
+                        </div>
                         {lead.company && <p className="text-xs text-muted-foreground mt-0.5 truncate">{lead.company}</p>}
                       </td>
                       <td className="px-4 py-3 hidden xl:table-cell" onClick={() => navigate(`/leads/${lead.id}`)}>

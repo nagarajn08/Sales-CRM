@@ -14,6 +14,7 @@ import { EmailModal } from "../components/leads/EmailModal";
 import { CallLogModal } from "../components/leads/CallLogModal";
 import { useAuth } from "../auth/AuthContext";
 import { cn, fmtDateTime } from "../lib/utils";
+import { ScoreBadge } from "../components/ui/ScoreBadge";
 
 const ACTIVITY_ICONS: Record<string, string> = {
   created: "✨",
@@ -142,7 +143,10 @@ export default function LeadDetailPage() {
           <CardHeader>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <CardTitle className="text-xl tracking-tight">{lead.name}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-xl tracking-tight">{lead.name}</CardTitle>
+                  <ScoreBadge score={lead.score} size="md" />
+                </div>
                 {lead.company && <p className="text-muted-foreground text-sm mt-0.5 font-medium">{lead.company}</p>}
               </div>
               <div className="flex gap-2 flex-wrap justify-end">

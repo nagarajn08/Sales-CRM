@@ -91,6 +91,7 @@ export interface Lead {
   campaign_name: string | null;
   tags: string | null;
   deal_value: number | null;
+  score: number | null;
   assigned_to: UserSummary | null;
   created_by: UserSummary;
   next_followup_at: string | null;
