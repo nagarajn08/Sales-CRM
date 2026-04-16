@@ -1,13 +1,59 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user, require_admin, require_superadmin
 from app.models.user import User
+from app.models.user_session import UserSession
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.services.auth_service import hash_password
 from app.services.billing_service import check_user_limit
 
+
+class SessionRead(BaseModel):
+    id: int
+    user_id: int
+    user_name: str
+    user_email: str
+    org_name: str | None
+    login_at: datetime
+    logout_at: datetime | None
+    ip_address: str | None
+    duration_minutes: int | None
+
+    model_config = {"from_attributes": True}
+
 router = APIRouter(prefix="/api/users", tags=["users"])
+
+
+@router.get("/sessions", response_model=list[SessionRead])
+def list_sessions(
+    limit: int = Query(200, le=500),
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    q = db.query(UserSession).join(User, UserSession.user_id == User.id)
+    if not admin.is_superadmin:
+        q = q.filter(User.organization_id == admin.organization_id)
+    q = q.order_by(UserSession.login_at.desc()).limit(limit)
+    rows = q.all()
+    result = []
+    for s in rows:
+        end = s.logout_at or datetime.utcnow()
+        duration = int((end - s.login_at).total_seconds() / 60) if s.login_at else None
+        result.append(SessionRead(
+            id=s.id,
+            user_id=s.user_id,
+            user_name=s.user.name,
+            user_email=s.user.email,
+            org_name=s.user.org_name,
+            login_at=s.login_at,
+            logout_at=s.logout_at,
+            ip_address=s.ip_address,
+            duration_minutes=duration,
+        ))
+    return result
 
 
 @router.get("/", response_model=list[UserRead])

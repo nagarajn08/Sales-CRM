@@ -252,6 +252,28 @@ def create_lead(body: LeadCreate, current_user: User = Depends(get_current_user)
     return lead
 
 
+def _normalize_columns(df) -> dict:
+    """Return a mapping of CRM field -> actual dataframe column (case-insensitive, aliased)."""
+    ALIASES = {
+        "name":      ["name", "full name", "fullname", "contact name", "lead name", "customer name", "client name"],
+        "mobile":    ["mobile", "phone", "phone number", "mobile number", "contact number", "cell", "cell phone"],
+        "email":     ["email", "email address", "mail", "e-mail"],
+        "whatsapp":  ["whatsapp", "whatsapp number", "wa", "wa number"],
+        "company":   ["company", "company name", "organization", "organisation", "business", "firm"],
+        "notes":     ["notes", "note", "remarks", "comment", "comments", "description"],
+        "priority":  ["priority", "lead priority"],
+        "source":    ["source", "lead source", "channel"],
+    }
+    col_map_lower = {c.strip().lower(): c for c in df.columns}
+    result = {}
+    for field, aliases in ALIASES.items():
+        for alias in aliases:
+            if alias in col_map_lower:
+                result[field] = col_map_lower[alias]
+                break
+    return result
+
+
 @router.post("/import", status_code=status.HTTP_201_CREATED)
 def import_leads(
     file: UploadFile = File(...),
@@ -261,40 +283,67 @@ def import_leads(
 ):
     content = file.file.read()
     try:
-        if file.filename.endswith(".csv"):
+        if file.filename.lower().endswith(".csv"):
             df = pd.read_csv(io.BytesIO(content))
         else:
             df = pd.read_excel(io.BytesIO(content))
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid file format")
+        raise HTTPException(status_code=400, detail="Invalid file. Please upload a .csv or .xlsx file.")
 
-    if "name" not in df.columns:
-        raise HTTPException(status_code=400, detail="Missing required column: 'name'")
+    col = _normalize_columns(df)
+
+    if "name" not in col:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not find a 'Name' column. Please make sure your file has a column called Name (or Full Name, Contact Name)."
+        )
 
     df = df.where(pd.notna(df), None)
+
+    VALID_PRIORITIES = {"hot", "warm", "cold"}
+    VALID_SOURCES = {"manual", "import", "website", "reference", "cold_call", "facebook", "instagram", "linkedin", "google_ads", "other"}
+
     created = 0
     skipped = 0
     for _, row in df.iterrows():
-        if not row.get("name"):
+        name_val = row.get(col["name"])
+        if not name_val or str(name_val).strip() == "":
             skipped += 1
             continue
+
+        def get(field):
+            c = col.get(field)
+            if not c:
+                return None
+            v = row.get(c)
+            return str(v).strip() if v else None
+
+        raw_priority = (get("priority") or "warm").lower()
+        priority = raw_priority if raw_priority in VALID_PRIORITIES else "warm"
+
+        raw_source = (get("source") or "import").lower().replace(" ", "_")
+        source = raw_source if raw_source in VALID_SOURCES else LeadSource.IMPORT
+
         lead = Lead(
             organization_id=current_user.organization_id,
-            name=str(row["name"]),
-            email=str(row["email"]) if row.get("email") else None,
-            mobile=str(row["mobile"]) if row.get("mobile") else None,
-            whatsapp=str(row["whatsapp"]) if row.get("whatsapp") else None,
-            company=str(row["company"]) if row.get("company") else None,
-            notes=str(row["notes"]) if row.get("notes") else None,
-            source=LeadSource.IMPORT,
+            name=str(name_val).strip(),
+            email=get("email"),
+            mobile=get("mobile"),
+            whatsapp=get("whatsapp"),
+            company=get("company"),
+            notes=get("notes"),
+            priority=priority,
+            source=source,
             assigned_to_id=assigned_to_id,
             created_by_id=current_user.id,
         )
         db.add(lead)
         db.flush()
         lead.web_id = f"WEB-{lead.id:04d}"
+        recalculate_score(db, lead)
         _log_activity(db, lead.id, current_user.id, ActivityType.IMPORTED)
         created += 1
+
     db.commit()
     return {"imported": created, "skipped": skipped}
 

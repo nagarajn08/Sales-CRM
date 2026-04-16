@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { usersApi } from "../api";
+import { usersApi, type UserSession } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import type { User, UserRole } from "../types";
 import { Button } from "../components/ui/button";
@@ -8,6 +8,7 @@ import { Badge } from "../components/ui/badge";
 import { Card } from "../components/ui/card";
 import { Modal } from "../components/ui/modal";
 import { Input, Select } from "../components/ui/input";
+import { cn } from "../lib/utils";
 
 const ROLE_OPTIONS = [
   { value: "user", label: "User" },
@@ -32,10 +33,24 @@ interface UserFormState {
 
 const emptyForm = (): UserFormState => ({ name: "", email: "", mobile: "", password: "", role: "user", is_active: true });
 
+type Tab = "users" | "sessions";
+
+function fmtDuration(mins: number | null): string {
+  if (mins === null) return "—";
+  if (mins < 1) return "< 1 min";
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const isSuperAdmin = currentUser?.is_superadmin;
+  const [tab, setTab] = useState<Tab>("users");
   const [users, setUsers] = useState<User[]>([]);
+  const [sessions, setSessions] = useState<UserSession[]>([]);
+  const [sessionsLoaded, setSessionsLoaded] = useState(false);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
@@ -50,7 +65,16 @@ export default function UsersPage() {
     usersApi.list().then(setUsers).finally(() => setLoading(false));
   };
 
+  const fetchSessions = () => {
+    setSessionsLoading(true);
+    usersApi.sessions().then(s => { setSessions(s); setSessionsLoaded(true); }).finally(() => setSessionsLoading(false));
+  };
+
   useEffect(fetchUsers, []);
+
+  useEffect(() => {
+    if (tab === "sessions" && !sessionsLoaded) fetchSessions();
+  }, [tab]);
 
   const openAdd = () => { setEditUser(null); setForm(emptyForm()); setErrors({}); setShowForm(true); };
   const openEdit = (u: User) => {
@@ -115,21 +139,104 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-lg font-bold text-foreground">Users</h1>
+          <h1 className="text-lg font-bold text-foreground">Team</h1>
           <p className="text-sm text-muted-foreground">
             {users.length} {isSuperAdmin ? "accounts across all organizations" : "accounts"}
           </p>
         </div>
-        {!isSuperAdmin && <Button onClick={openAdd}>+ Add User</Button>}
+        <div className="flex items-center gap-2">
+          {/* Tab switcher */}
+          <div className="flex items-center gap-1 bg-secondary rounded-xl p-1">
+            {(["users", "sessions"] as Tab[]).map(t => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={cn(
+                  "px-4 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all",
+                  tab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {t === "sessions" ? "Login Logs" : "Users"}
+              </button>
+            ))}
+          </div>
+          {!isSuperAdmin && tab === "users" && <Button onClick={openAdd}>+ Add User</Button>}
+        </div>
       </div>
 
-      {loading ? (
+      {tab === "sessions" && (
+        <div className="rounded-2xl border border-border bg-card overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
+            <p className="text-sm font-semibold text-foreground">Login / Logout Logs</p>
+            <button onClick={fetchSessions} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+              <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5"><path d="M2 8a6 6 0 1 0 .75-2.9M2 2v4h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Refresh
+            </button>
+          </div>
+          {sessionsLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <span className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="text-center py-12 text-sm text-muted-foreground">No login activity recorded yet.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-secondary/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    <th className="text-left px-5 py-3">User</th>
+                    {isSuperAdmin && <th className="text-left px-4 py-3 hidden md:table-cell">Organisation</th>}
+                    <th className="text-left px-4 py-3">Login Time</th>
+                    <th className="text-left px-4 py-3">Logout Time</th>
+                    <th className="text-left px-4 py-3">Duration</th>
+                    <th className="text-left px-4 py-3 hidden sm:table-cell">IP Address</th>
+                    <th className="text-center px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessions.map(s => (
+                    <tr key={s.id} className="border-t border-border hover:bg-secondary/20 transition-colors">
+                      <td className="px-5 py-3">
+                        <p className="font-medium text-foreground text-sm">{s.user_name}</p>
+                        <p className="text-[11px] text-muted-foreground">{s.user_email}</p>
+                      </td>
+                      {isSuperAdmin && <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">{s.org_name ?? "—"}</td>}
+                      <td className="px-4 py-3 text-sm text-foreground tabular-nums">{fmtDateTime(s.login_at)}</td>
+                      <td className="px-4 py-3 text-sm tabular-nums">
+                        {s.logout_at ? (
+                          <span className="text-foreground">{fmtDateTime(s.logout_at)}</span>
+                        ) : (
+                          <span className="text-emerald-600 font-medium">Active now</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground tabular-nums">{fmtDuration(s.duration_minutes)}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground hidden sm:table-cell font-mono">{s.ip_address ?? "—"}</td>
+                      <td className="px-4 py-3 text-center">
+                        {s.logout_at ? (
+                          <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Ended</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Online
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "users" && loading ? (
         <div className="flex items-center justify-center h-48">
           <span className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
-      ) : (
+      ) : tab === "users" && (
         <Card>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

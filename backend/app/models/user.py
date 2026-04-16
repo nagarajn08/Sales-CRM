@@ -42,3 +42,4 @@ class User(Base):
     activities = relationship("LeadActivity", back_populates="user")
     notifications = relationship("Notification", back_populates="user")
     email_templates = relationship("EmailTemplate", back_populates="user")
+    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan", order_by="UserSession.login_at.desc()")

@@ -1,6 +1,6 @@
 import secrets
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user, get_refresh_token_payload
@@ -25,6 +25,7 @@ from app.services.otp_service import (
 from app.config import settings
 from app.services.template_seeder import seed_predefined_templates
 from app.services.billing_service import get_or_create_subscription
+from app.models.user_session import UserSession
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 COOKIE = "refresh_token"
@@ -47,13 +48,17 @@ def _tokens(user: User, response: Response) -> dict:
 
 # ── Login ──────────────────────────────────────────────────────────────────
 @router.post("/login", response_model=TokenResponse)
-def login(body: LoginRequest, response: Response, db: Session = Depends(get_db)):
+def login(body: LoginRequest, response: Response, request: Request, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account is disabled")
     user.last_login = datetime.utcnow()
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    ip = forwarded_for.split(",")[0].strip() if forwarded_for else (request.client.host if request.client else None)
+    session = UserSession(user_id=user.id, organization_id=user.organization_id, ip_address=ip)
+    db.add(session)
     db.commit()
     return _tokens(user, response)
 
@@ -191,7 +196,20 @@ def refresh(response: Response, payload: dict = Depends(get_refresh_token_payloa
 
 
 @router.post("/logout")
-def logout(response: Response):
+def logout(response: Response, db: Session = Depends(get_db), payload: dict = Depends(get_refresh_token_payload)):
+    try:
+        user_id = int(payload["sub"])
+        session = (
+            db.query(UserSession)
+            .filter(UserSession.user_id == user_id, UserSession.logout_at.is_(None))
+            .order_by(UserSession.login_at.desc())
+            .first()
+        )
+        if session:
+            session.logout_at = datetime.utcnow()
+            db.commit()
+    except Exception:
+        pass
     response.delete_cookie(COOKIE, path="/api/auth")
     return {"detail": "Logged out"}
 

@@ -22,11 +22,24 @@ export const authApi = {
 };
 
 // Users
+export interface UserSession {
+  id: number;
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  org_name: string | null;
+  login_at: string;
+  logout_at: string | null;
+  ip_address: string | null;
+  duration_minutes: number | null;
+}
+
 export const usersApi = {
   list: () => api.get<User[]>("/api/users/").then(r => r.data),
   create: (data: object) => api.post<User>("/api/users/", data).then(r => r.data),
   update: (id: number, data: object) => api.put<User>(`/api/users/${id}`, data).then(r => r.data),
   delete: (id: number) => api.delete(`/api/users/${id}`),
+  sessions: () => api.get<UserSession[]>("/api/users/sessions").then(r => r.data),
 };
 
 // Leads

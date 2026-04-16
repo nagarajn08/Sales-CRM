@@ -57,6 +57,8 @@ def run_migrations():
         add_col("leads", "deal_value", "REAL")
         add_col("leads", "score", "INTEGER DEFAULT 0")
 
+        # user_sessions (created by SQLAlchemy metadata, no manual columns needed)
+
         # users
         add_col("users", "organization_id", "INTEGER")
         add_col("users", "is_owner", "BOOLEAN DEFAULT 0")
