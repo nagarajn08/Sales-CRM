@@ -11,6 +11,7 @@ backend/*.sqlite
 
 # Environment
 backend/.env
+.env.production
 
 # Node
 frontend/node_modules/
