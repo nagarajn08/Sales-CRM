@@ -126,6 +126,7 @@ export interface EmailTemplate {
   subject: string;
   body: string;
   is_global: boolean;
+  is_predefined: boolean;
   user_id: number | null;
   created_at: string;
 }

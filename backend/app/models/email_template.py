@@ -14,6 +14,7 @@ class EmailTemplate(Base):
     subject = Column(String, nullable=False)
     body = Column(Text, nullable=False)
     is_global = Column(Boolean, default=False)
+    is_predefined = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

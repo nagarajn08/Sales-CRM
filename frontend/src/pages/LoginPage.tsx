@@ -64,15 +64,22 @@ export default function LoginPage() {
               autoFocus
               autoComplete="email"
             />
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
+            <div>
+              <Input
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+              <div className="text-right mt-1">
+                <Link to="/forgot-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
+            </div>
 
             {error && (
               <div className="flex items-start gap-2.5 text-sm text-destructive bg-destructive/8 border border-destructive/15 rounded-lg px-3 py-2.5">

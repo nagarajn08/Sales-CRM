@@ -4,6 +4,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import DashboardPage from "./pages/DashboardPage";
 import LeadsPage from "./pages/LeadsPage";
@@ -27,6 +28,7 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route
         path="/"
         element={

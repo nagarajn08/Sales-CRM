@@ -81,3 +81,25 @@ class CorporateSignupRequest(BaseModel):
     @classmethod
     def password_strength(cls, v: str) -> str:
         return _validate_password(v)
+
+
+# ── Forgot / Reset Password Schemas ───────────────────────────────────────
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    detail: str
+    email_sent: bool
+    dev_otp: str | None = None
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        return _validate_password(v)

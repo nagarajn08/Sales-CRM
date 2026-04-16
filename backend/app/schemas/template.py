@@ -21,6 +21,7 @@ class TemplateRead(BaseModel):
     subject: str
     body: str
     is_global: bool
+    is_predefined: bool = False
     user_id: int | None
     created_at: datetime
 

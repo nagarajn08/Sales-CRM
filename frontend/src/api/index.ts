@@ -15,6 +15,10 @@ export const authApi = {
     api.post("/api/auth/signup/individual", data).then(r => r.data),
   signupCorporate: (data: { company_name: string; admin_name: string; email: string; password: string; mobile: string; verification_token: string }) =>
     api.post("/api/auth/signup/corporate", data).then(r => r.data),
+  forgotPassword: (email: string) =>
+    api.post<{ detail: string; email_sent: boolean; dev_otp: string | null }>("/api/auth/forgot-password", { email }).then(r => r.data),
+  resetPassword: (data: { email: string; otp: string; new_password: string }) =>
+    api.post("/api/auth/reset-password", data).then(r => r.data),
 };
 
 // Users

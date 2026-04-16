@@ -63,6 +63,7 @@ def run_migrations():
 
         # email_templates
         add_col("email_templates", "organization_id", "INTEGER")
+        add_col("email_templates", "is_predefined", "BOOLEAN DEFAULT 0")
 
 
 def seed_admin():
@@ -110,6 +111,8 @@ def seed_admin():
             if changed:
                 db.commit()
                 print(f"Updated admin: {admin.email} → superadmin=True")
+        from app.services.template_seeder import seed_predefined_templates
+        seed_predefined_templates(db, default_org.id)
     finally:
         db.close()
 

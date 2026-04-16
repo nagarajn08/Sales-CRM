@@ -22,12 +22,12 @@
   --destructive:          0 80% 58%;
   --radius:               0.6rem;
 
-  /* Sidebar — always dark regardless of theme */
-  --sidebar:              240 10% 8%;
-  --sidebar-border:       240 6% 14%;
-  --sidebar-foreground:   0 0% 96%;
-  --sidebar-muted:        240 5% 48%;
-  --sidebar-accent:       246 70% 68%;
+  /* Sidebar — light mode */
+  --sidebar:              0 0% 100%;
+  --sidebar-border:       40 14% 86%;
+  --sidebar-foreground:   240 14% 10%;
+  --sidebar-muted:        240 8% 46%;
+  --sidebar-accent:       246 70% 58%;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -51,6 +51,9 @@
 
   --sidebar:              240 10% 6%;
   --sidebar-border:       240 6% 12%;
+  --sidebar-foreground:   0 0% 96%;
+  --sidebar-muted:        240 5% 48%;
+  --sidebar-accent:       246 70% 68%;
 }
 
 /* ─────────────────────────────────────────────────────────

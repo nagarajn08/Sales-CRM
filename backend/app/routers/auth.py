@@ -10,6 +10,7 @@ from app.schemas.auth import (
     LoginRequest, TokenResponse,
     IndividualSignupRequest, CorporateSignupRequest,
     OTPRequestBody, OTPVerifyBody, OTPRequestResponse, OTPVerifyResponse,
+    ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordRequest,
 )
 from app.schemas.user import UserRead
 from app.services.auth_service import (
@@ -19,8 +20,10 @@ from app.services.auth_service import (
 from app.services.otp_service import (
     create_otp_record, verify_otps,
     create_verification_token, decode_verification_token,
+    create_password_reset_otp, verify_password_reset_otp,
 )
 from app.config import settings
+from app.services.template_seeder import seed_predefined_templates
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 COOKIE = "refresh_token"
@@ -110,6 +113,7 @@ def signup_individual(body: IndividualSignupRequest, response: Response, db: Ses
     db.add(user)
     db.commit()
     db.refresh(user)
+    seed_predefined_templates(db, org.id)
     return _tokens(user, response)
 
 
@@ -143,7 +147,35 @@ def signup_corporate(body: CorporateSignupRequest, response: Response, db: Sessi
     db.add(user)
     db.commit()
     db.refresh(user)
+    seed_predefined_templates(db, org.id)
     return _tokens(user, response)
+
+
+# ── Forgot Password ───────────────────────────────────────────────────────
+@router.post("/forgot-password", response_model=ForgotPasswordResponse)
+def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == body.email).first()
+    # Always return success to avoid email enumeration
+    if not user:
+        return ForgotPasswordResponse(detail="If that email exists, an OTP has been sent.", email_sent=False)
+    result = create_password_reset_otp(db, body.email)
+    return ForgotPasswordResponse(
+        detail="OTP sent to your email address.",
+        email_sent=result["email_sent"],
+        dev_otp=result.get("dev_otp"),
+    )
+
+
+@router.post("/reset-password")
+def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == body.email).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid request")
+    if not verify_password_reset_otp(db, body.email, body.otp):
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    user.hashed_password = hash_password(body.new_password)
+    db.commit()
+    return {"detail": "Password reset successfully"}
 
 
 # ── Token refresh / logout / me ───────────────────────────────────────────

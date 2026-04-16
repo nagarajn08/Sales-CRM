@@ -135,8 +135,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               className={({ isActive }) => cn(
                 "group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 relative",
                 isActive
-                  ? "bg-white/[0.08] text-sidebar-foreground nav-active-glow"
-                  : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-white/5"
+                  ? "bg-sidebar-accent/10 text-sidebar-foreground nav-active-glow"
+                  : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/5"
               )}
             >
               {({ isActive }) => (
@@ -168,8 +168,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                 className={({ isActive }) => cn(
                   "group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 relative",
                   isActive
-                    ? "bg-white/[0.08] text-sidebar-foreground nav-active-glow"
-                    : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-white/5"
+                    ? "bg-sidebar-accent/10 text-sidebar-foreground nav-active-glow"
+                    : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/5"
                 )}
               >
                 {({ isActive }) => (
@@ -223,7 +223,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
         {/* User footer */}
         <div className="px-2.5 py-3 border-t border-sidebar-border shrink-0">
-          <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-white/5 transition-colors cursor-default">
+          <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-sidebar-accent/5 transition-colors cursor-default">
             <div className="relative shrink-0">
               <div
                 className="h-7 w-7 rounded-lg flex items-center justify-center text-white text-[11px] font-bold"

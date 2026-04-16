@@ -89,8 +89,9 @@ export default function TemplatesPage() {
     }
   };
 
-  const myTemplates = templates.filter((t) => !t.is_global);
-  const globalTemplates = templates.filter((t) => t.is_global);
+  const predefinedTemplates = templates.filter((t) => t.is_predefined);
+  const globalTemplates = templates.filter((t) => t.is_global && !t.is_predefined);
+  const myTemplates = templates.filter((t) => !t.is_global && !t.is_predefined);
 
   return (
     <div className="space-y-6">
@@ -111,15 +112,24 @@ export default function TemplatesPage() {
         <div className="flex items-center justify-center h-48">
           <span className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
-      ) : templates.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <p className="text-4xl mb-3">✉️</p>
-          <p className="font-medium">No templates yet</p>
-          <p className="text-sm mt-1">Create your first email template</p>
-          <Button className="mt-4" onClick={openAdd}>Create Template</Button>
-        </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
+          {/* Predefined Templates */}
+          {predefinedTemplates.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Predefined Templates</h2>
+                <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">Built-in</span>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {predefinedTemplates.map((t) => (
+                  <TemplateCard key={t.id} template={t} onEdit={openEdit} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* My Templates */}
           {myTemplates.length > 0 && (
             <section>
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">My Templates</h2>
@@ -128,6 +138,8 @@ export default function TemplatesPage() {
               </div>
             </section>
           )}
+
+          {/* Global Templates (admin-created) */}
           {globalTemplates.length > 0 && (
             <section>
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Global Templates</h2>
@@ -198,7 +210,10 @@ function TemplateCard({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-sm font-semibold">{template.name}</CardTitle>
-          {template.is_global && <Badge className="bg-purple-100 text-purple-700 shrink-0">Global</Badge>}
+          {template.is_predefined
+            ? <Badge className="bg-primary/10 text-primary shrink-0">Built-in</Badge>
+            : template.is_global && <Badge className="bg-purple-100 text-purple-700 shrink-0">Global</Badge>
+          }
         </div>
         <p className="text-xs text-muted-foreground truncate">{template.subject}</p>
       </CardHeader>

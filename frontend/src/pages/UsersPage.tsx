@@ -137,6 +137,7 @@ export default function UsersPage() {
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Name</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Email</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Company</th>
                   {isSuperAdmin && <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Org ID</th>}
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Role</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Status</th>
@@ -154,11 +155,14 @@ export default function UsersPage() {
                         </div>
                         <div>
                           <p className="font-medium text-foreground">{u.name}</p>
-                          {u.is_owner && <span className="text-[10px] text-muted-foreground">Owner</span>}
+                          {u.is_owner && <span className="text-[10px] text-muted-foreground">Admin / Incharge</span>}
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground text-xs">{u.email}</td>
+                    <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">
+                      {u.org_name ?? "—"}
+                    </td>
                     {isSuperAdmin && (
                       <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground text-xs font-data">
                         #{u.organization_id ?? "—"}
