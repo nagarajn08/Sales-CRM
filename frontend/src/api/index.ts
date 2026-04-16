@@ -81,6 +81,23 @@ export const superAdminApi = {
   toggleOrg: (id: number) => api.patch<{ id: number; is_active: boolean }>(`/api/superadmin/orgs/${id}/toggle`).then(r => r.data),
 };
 
+// Billing
+export const billingApi = {
+  get: () => api.get<{
+    plan: string; plan_name: string; status: string; price: number;
+    users: { current: number; max: number };
+    leads: { current: number; max: number };
+    features: string[];
+    plans: Record<string, { name: string; price: number; original_price: number; discount_pct: number; max_users: number; max_leads: number; features: string[] }>;
+    razorpay_key_id: string | null; demo_mode: boolean;
+    current_period_end: string | null;
+  }>("/api/billing/").then(r => r.data),
+  upgrade: (plan: string) => api.post<{ subscription_id: string; plan: string; demo: boolean; razorpay_key_id: string | null }>("/api/billing/upgrade", { plan }).then(r => r.data),
+  activate: (data: { plan: string; razorpay_subscription_id: string; razorpay_payment_id?: string; razorpay_signature?: string }) =>
+    api.post("/api/billing/activate", data).then(r => r.data),
+  cancel: () => api.post("/api/billing/cancel").then(r => r.data),
+};
+
 // Settings
 export const settingsApi = {
   get: () => api.get<Record<string, string>>("/api/settings/").then(r => r.data),

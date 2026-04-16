@@ -8,15 +8,23 @@ import { useTheme, type ThemeColor } from "../hooks/useTheme";
 import { cn } from "../lib/utils";
 
 const THEMES: { value: ThemeColor; label: string; color: string }[] = [
-  { value: "blue", label: "Blue", color: "bg-blue-500" },
-  { value: "green", label: "Green", color: "bg-green-500" },
+  { value: "blue",   label: "Blue",   color: "bg-blue-500" },
+  { value: "indigo", label: "Indigo", color: "bg-indigo-500" },
   { value: "purple", label: "Purple", color: "bg-purple-500" },
+  { value: "pink",   label: "Pink",   color: "bg-pink-500" },
+  { value: "red",    label: "Red",    color: "bg-red-500" },
   { value: "orange", label: "Orange", color: "bg-orange-500" },
+  { value: "yellow", label: "Yellow", color: "bg-yellow-500" },
+  { value: "green",  label: "Green",  color: "bg-green-500" },
+  { value: "teal",   label: "Teal",   color: "bg-teal-500" },
+  { value: "cyan",   label: "Cyan",   color: "bg-cyan-500" },
+  { value: "sky",    label: "Sky Blue", color: "bg-sky-500" },
+  { value: "grey",   label: "Grey",   color: "bg-slate-500" },
 ];
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useTheme();
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme(user?.id);
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

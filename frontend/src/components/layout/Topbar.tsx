@@ -37,7 +37,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme(user?.id);
   const isDark = theme.dark;
   const toggle = () => setTheme({ dark: !theme.dark });
 

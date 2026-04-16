@@ -9,7 +9,9 @@
       "Bash(venv/Scripts/python.exe -c ':*)",
       "Bash(curl:*)",
       "Bash(venv/Scripts/python.exe -c \"import app.main; print\\('OK'\\)\")",
-      "Bash(xargs ls *)"
+      "Bash(xargs ls *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

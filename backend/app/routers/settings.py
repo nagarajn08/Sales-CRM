@@ -11,9 +11,8 @@ from app.models.user import User
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 DEFAULT_SETTINGS = {
-    "theme_mode": "light",
-    "primary_color": "blue",
     "company_name": "Sales CRM",
+    "followup_reminder_hours": "1",
 }
 
 

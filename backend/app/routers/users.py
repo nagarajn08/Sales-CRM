@@ -5,6 +5,7 @@ from app.dependencies import get_current_user, require_admin, require_superadmin
 from app.models.user import User
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.services.auth_service import hash_password
+from app.services.billing_service import check_user_limit
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -19,6 +20,7 @@ def list_users(admin: User = Depends(require_admin), db: Session = Depends(get_d
 
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(body: UserCreate, admin: User = Depends(require_superadmin), db: Session = Depends(get_db)):
+    check_user_limit(db, admin.organization_id, is_superadmin=admin.is_superadmin)
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=409, detail="Email already registered")
     user = User(

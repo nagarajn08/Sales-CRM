@@ -24,6 +24,7 @@ from app.services.otp_service import (
 )
 from app.config import settings
 from app.services.template_seeder import seed_predefined_templates
+from app.services.billing_service import get_or_create_subscription
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 COOKIE = "refresh_token"
@@ -114,6 +115,7 @@ def signup_individual(body: IndividualSignupRequest, response: Response, db: Ses
     db.commit()
     db.refresh(user)
     seed_predefined_templates(db, org.id)
+    get_or_create_subscription(db, org.id)
     return _tokens(user, response)
 
 
@@ -148,6 +150,7 @@ def signup_corporate(body: CorporateSignupRequest, response: Response, db: Sessi
     db.commit()
     db.refresh(user)
     seed_predefined_templates(db, org.id)
+    get_or_create_subscription(db, org.id)
     return _tokens(user, response)
 
 

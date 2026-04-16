@@ -56,6 +56,17 @@ const ADMIN_ITEMS = [
     ),
   },
   {
+    to: "/billing",
+    label: "Billing & Plans",
+    icon: (
+      <svg viewBox="0 0 16 16" fill="none" className="h-[15px] w-[15px]">
+        <rect x="1.5" y="3.5" width="13" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.35"/>
+        <path d="M1.5 6.5h13" stroke="currentColor" strokeWidth="1.35"/>
+        <path d="M4 10h2M9 10h3" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
     to: "/settings",
     label: "Settings",
     icon: (
@@ -194,7 +205,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               <div className="pt-5 pb-1.5 px-3">
                 <p className="text-[10px] font-semibold text-sidebar-muted uppercase tracking-[0.1em]">Admin</p>
               </div>
-              {ADMIN_ITEMS.map((item) => (
+              {ADMIN_ITEMS.filter(item => item.to !== "/billing" || !user?.is_superadmin).map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}

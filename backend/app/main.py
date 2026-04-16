@@ -9,6 +9,7 @@ from app.routers import auth, users, leads, dashboard, templates, notifications
 from app.routers import settings as settings_router
 from app.routers import webhook
 from app.routers import superadmin
+from app.routers import billing
 
 app = FastAPI(title="Sales CRM API", version="2.0.0")
 
@@ -29,6 +30,7 @@ app.include_router(notifications.router)
 app.include_router(settings_router.router)
 app.include_router(webhook.router)
 app.include_router(superadmin.router)
+app.include_router(billing.router)
 
 
 def run_migrations():
@@ -114,6 +116,8 @@ def seed_admin():
                 print(f"Updated admin: {admin.email} → superadmin=True")
         from app.services.template_seeder import seed_predefined_templates
         seed_predefined_templates(db, default_org.id)
+        from app.services.billing_service import get_or_create_subscription
+        get_or_create_subscription(db, default_org.id)
     finally:
         db.close()
 

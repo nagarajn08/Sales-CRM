@@ -12,6 +12,7 @@ import LeadDetailPage from "./pages/LeadDetailPage";
 import UsersPage from "./pages/UsersPage";
 import TemplatesPage from "./pages/TemplatesPage";
 import SettingsPage from "./pages/SettingsPage";
+import BillingPage from "./pages/BillingPage";
 
 function App() {
   const { isLoading } = useAuth();
@@ -55,6 +56,14 @@ function App() {
           element={
             <ProtectedRoute adminOnly>
               <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="billing"
+          element={
+            <ProtectedRoute adminOnly>
+              <BillingPage />
             </ProtectedRoute>
           }
         />

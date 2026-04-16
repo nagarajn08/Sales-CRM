@@ -18,6 +18,7 @@ from app.models.notification import Notification
 from app.models.app_settings import AppSettings
 from app.models.user import User, UserRole
 from app.schemas.lead import ActivityRead, BulkActionRequest, CallLogRequest, LeadCreate, LeadRead, LeadReassign, LeadStatusUpdate, LeadUpdate
+from app.services.billing_service import check_lead_limit
 
 
 class EmailSendRequest(BaseModel):
@@ -230,6 +231,7 @@ def bulk_action(
 
 @router.post("/", response_model=LeadRead, status_code=status.HTTP_201_CREATED)
 def create_lead(body: LeadCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_lead_limit(db, current_user.organization_id, is_superadmin=current_user.is_superadmin)
     assigned_to_id = body.assigned_to_id
     if current_user.role == UserRole.USER:
         assigned_to_id = current_user.id

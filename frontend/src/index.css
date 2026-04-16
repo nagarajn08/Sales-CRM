@@ -65,6 +65,22 @@
 [data-theme="purple"].dark { --primary: 274 68% 66%; }
 [data-theme="orange"]      { --primary: 28 92% 52%;  --sidebar-accent: 28 92% 62%; }
 [data-theme="orange"].dark { --primary: 28 88% 62%; }
+[data-theme="red"]         { --primary: 0 90% 38%;   --sidebar-accent: 0 88% 50%; }
+[data-theme="red"].dark    { --primary: 0 86% 46%; }
+[data-theme="pink"]        { --primary: 330 78% 56%; --sidebar-accent: 330 72% 68%; }
+[data-theme="pink"].dark   { --primary: 330 72% 64%; }
+[data-theme="teal"]        { --primary: 174 72% 36%; --sidebar-accent: 174 68% 52%; }
+[data-theme="teal"].dark   { --primary: 174 66% 50%; }
+[data-theme="indigo"]      { --primary: 238 84% 58%; --sidebar-accent: 238 76% 68%; }
+[data-theme="indigo"].dark { --primary: 238 76% 66%; }
+[data-theme="yellow"]      { --primary: 42 96% 44%;  --sidebar-accent: 42 96% 58%; }
+[data-theme="yellow"].dark { --primary: 42 92% 54%; }
+[data-theme="cyan"]        { --primary: 192 88% 38%; --sidebar-accent: 192 82% 54%; }
+[data-theme="cyan"].dark   { --primary: 192 80% 50%; }
+[data-theme="sky"]         { --primary: 200 92% 44%; --sidebar-accent: 200 88% 58%; }
+[data-theme="sky"].dark    { --primary: 200 86% 56%; }
+[data-theme="grey"]        { --primary: 220 14% 40%; --sidebar-accent: 220 12% 56%; }
+[data-theme="grey"].dark   { --primary: 220 12% 60%; }
 
 /* ─────────────────────────────────────────────────────────
    TYPOGRAPHY
