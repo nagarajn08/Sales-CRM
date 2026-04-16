@@ -13,6 +13,8 @@ const PAGE_TITLES: Record<string, { title: string; sub?: string }> = {
   "/templates":  { title: "Email Templates", sub: "Your saved email templates" },
   "/users":      { title: "Team", sub: "Manage team members" },
   "/settings":   { title: "Settings", sub: "App & integration settings" },
+  "/reports":    { title: "Reports", sub: "Pipeline analytics & team performance" },
+  "/billing":    { title: "Billing & Plans", sub: "Manage your subscription" },
   "/platform":   { title: "Platform Admin", sub: "Organisation management" },
 };
 

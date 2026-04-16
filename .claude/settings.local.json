@@ -11,7 +11,8 @@
       "Bash(venv/Scripts/python.exe -c \"import app.main; print\\('OK'\\)\")",
       "Bash(xargs ls *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(npm install *)"
     ]
   }
 }

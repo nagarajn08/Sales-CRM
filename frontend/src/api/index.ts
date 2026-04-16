@@ -55,6 +55,7 @@ export const leadsApi = {
 // Dashboard
 export const dashboardApi = {
   stats: () => api.get<DashboardStats>("/api/dashboard/stats").then(r => r.data),
+  trends: (days = 30) => api.get<{ date: string; new: number; converted: number }[]>("/api/dashboard/trends", { params: { days } }).then(r => r.data),
 };
 
 // Templates

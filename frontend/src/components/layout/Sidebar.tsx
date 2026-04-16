@@ -42,6 +42,16 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    to: "/reports",
+    label: "Reports",
+    icon: (
+      <svg viewBox="0 0 16 16" fill="none" className="h-[15px] w-[15px]">
+        <path d="M2 12.5V4.5M5.5 12.5V7.5M9 12.5V5.5M12.5 12.5V2.5" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"/>
+        <path d="M1 14h14" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
 ];
 
 const ADMIN_ITEMS = [

@@ -188,3 +188,43 @@ def get_stats(current_user: User = Depends(get_current_user), db: Session = Depe
         user_stats=user_stats,
         due_followups=due_leads,
     )
+
+
+@router.get("/trends")
+def get_trends(
+    days: int = 30,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Daily trend: new leads and conversions for the last N days."""
+    org_id = current_user.organization_id
+    today = date.today()
+    result = []
+
+    for i in range(days - 1, -1, -1):
+        d = today - timedelta(days=i)
+        d_start = datetime.combine(d, datetime.min.time())
+        d_end = d_start + timedelta(days=1)
+
+        base = db.query(Lead).filter(Lead.organization_id == org_id)
+        if current_user.role == UserRole.USER:
+            base = base.filter(Lead.assigned_to_id == current_user.id)
+
+        new_count = base.filter(
+            Lead.created_at >= d_start,
+            Lead.created_at < d_end,
+        ).count()
+
+        converted_count = base.filter(
+            Lead.status == LeadStatus.CONVERTED,
+            Lead.updated_at >= d_start,
+            Lead.updated_at < d_end,
+        ).count()
+
+        result.append({
+            "date": d.strftime("%d %b"),
+            "new": new_count,
+            "converted": converted_count,
+        })
+
+    return result

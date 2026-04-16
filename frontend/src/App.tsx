@@ -13,6 +13,7 @@ import UsersPage from "./pages/UsersPage";
 import TemplatesPage from "./pages/TemplatesPage";
 import SettingsPage from "./pages/SettingsPage";
 import BillingPage from "./pages/BillingPage";
+import ReportsPage from "./pages/ReportsPage";
 
 function App() {
   const { isLoading } = useAuth();
@@ -51,6 +52,7 @@ function App() {
           }
         />
         <Route path="templates" element={<TemplatesPage />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route
           path="settings"
           element={
