@@ -66,6 +66,18 @@ const ADMIN_ITEMS = [
     ),
   },
   {
+    to: "/custom-fields",
+    label: "Custom Fields",
+    icon: (
+      <svg viewBox="0 0 16 16" fill="none" className="h-[15px] w-[15px]">
+        <rect x="1.5" y="2" width="13" height="2.5" rx="1" stroke="currentColor" strokeWidth="1.35"/>
+        <rect x="1.5" y="6.75" width="13" height="2.5" rx="1" stroke="currentColor" strokeWidth="1.35"/>
+        <rect x="1.5" y="11.5" width="8" height="2.5" rx="1" stroke="currentColor" strokeWidth="1.35"/>
+        <path d="M13 12.75h1.5M13.75 12v1.5" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
     to: "/billing",
     label: "Billing & Plans",
     icon: (

@@ -92,6 +92,7 @@ export interface Lead {
   tags: string | null;
   deal_value: number | null;
   score: number | null;
+  custom_fields: Record<string, unknown> | null;
   assigned_to: UserSummary | null;
   created_by: UserSummary;
   next_followup_at: string | null;

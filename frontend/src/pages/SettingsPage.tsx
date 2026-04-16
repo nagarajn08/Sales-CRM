@@ -254,6 +254,31 @@ export default function SettingsPage() {
               placeholder="SalesCRM <noreply@yourcompany.com>"
             />
 
+            <div className="border-t border-border pt-4 mt-2">
+              <p className="text-sm font-semibold text-foreground mb-3">WhatsApp / SMS Reminders <span className="text-xs font-normal text-muted-foreground">(via Twilio)</span></p>
+              <div className="space-y-3">
+                <Input
+                  label="Twilio Account SID"
+                  value={settings.twilio_account_sid ?? ""}
+                  onChange={(e) => updateSetting("twilio_account_sid", e.target.value)}
+                  placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                />
+                <Input
+                  label="Twilio Auth Token"
+                  type="password"
+                  value={settings.twilio_auth_token ?? ""}
+                  onChange={(e) => updateSetting("twilio_auth_token", e.target.value)}
+                />
+                <Input
+                  label="From Number"
+                  value={settings.twilio_from_number ?? ""}
+                  onChange={(e) => updateSetting("twilio_from_number", e.target.value)}
+                  placeholder="whatsapp:+14155238886  or  +91XXXXXXXXXX"
+                  helpText="Use 'whatsapp:+number' for WhatsApp, or just '+number' for SMS"
+                />
+              </div>
+            </div>
+
             <div className="flex items-center justify-between pt-2">
               {saved && <span className="text-sm text-green-600">✓ Settings saved!</span>}
               <div className="ml-auto">

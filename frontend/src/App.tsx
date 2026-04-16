@@ -14,9 +14,11 @@ import TemplatesPage from "./pages/TemplatesPage";
 import SettingsPage from "./pages/SettingsPage";
 import BillingPage from "./pages/BillingPage";
 import ReportsPage from "./pages/ReportsPage";
+import CustomFieldsPage from "./pages/CustomFieldsPage";
+import LandingPage from "./pages/LandingPage";
 
 function App() {
-  const { isLoading } = useAuth();
+  const { isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -28,18 +30,22 @@ function App() {
 
   return (
     <Routes>
+      {/* Public landing — redirect to dashboard if already logged in */}
+      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+
+      {/* Auth pages */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+      {/* App — pathless layout route so all children keep their own paths */}
       <Route
-        path="/"
         element={
           <ProtectedRoute>
             <AppLayout />
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="leads" element={<LeadsPage />} />
         <Route path="leads/:id" element={<LeadDetailPage />} />
@@ -69,9 +75,18 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="custom-fields"
+          element={
+            <ProtectedRoute adminOnly>
+              <CustomFieldsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="platform" element={<SuperAdminPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

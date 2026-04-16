@@ -99,6 +99,27 @@ export const billingApi = {
   cancel: () => api.post("/api/billing/cancel").then(r => r.data),
 };
 
+// Custom Fields
+export type FieldType = "text" | "number" | "date" | "dropdown" | "checkbox";
+export interface CustomFieldDef {
+  id: number;
+  name: string;
+  label: string;
+  field_type: FieldType;
+  options: string[] | null;
+  required: boolean;
+  order: number;
+  is_active: boolean;
+}
+export const customFieldsApi = {
+  list: () => api.get<CustomFieldDef[]>("/api/custom-fields/").then(r => r.data),
+  create: (data: { name: string; label: string; field_type: FieldType; options?: string[]; required?: boolean; order?: number }) =>
+    api.post<CustomFieldDef>("/api/custom-fields/", data).then(r => r.data),
+  update: (id: number, data: Partial<{ label: string; options: string[]; required: boolean; order: number; is_active: boolean }>) =>
+    api.put<CustomFieldDef>(`/api/custom-fields/${id}`, data).then(r => r.data),
+  delete: (id: number) => api.delete(`/api/custom-fields/${id}`),
+};
+
 // Settings
 export const settingsApi = {
   get: () => api.get<Record<string, string>>("/api/settings/").then(r => r.data),

@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     RAZORPAY_KEY_SECRET: str = ""
     RAZORPAY_WEBHOOK_SECRET: str = ""
 
+    # Twilio — WhatsApp/SMS follow-up reminders (leave empty to disable)
+    # For WhatsApp: set TWILIO_FROM_NUMBER = "whatsapp:+14155238886"
+    # For SMS: set TWILIO_FROM_NUMBER = "+1XXXXXXXXXX"
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_FROM_NUMBER: str = ""
+
 
 settings = Settings()
 

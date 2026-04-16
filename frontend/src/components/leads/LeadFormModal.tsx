@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Modal } from "../ui/modal";
 import { Input, Select, Textarea } from "../ui/input";
 import { Button } from "../ui/button";
-import { leadsApi, usersApi } from "../../api";
+import { leadsApi, usersApi, customFieldsApi, type CustomFieldDef } from "../../api";
 import type { Lead, User } from "../../types";
 import { useAuth } from "../../auth/AuthContext";
 
@@ -33,6 +33,8 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
   const isAdmin = user?.role === "admin";
 
   const [users, setUsers] = useState<User[]>([]);
+  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDef[]>([]);
+  const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -50,9 +52,8 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (isAdmin) {
-      usersApi.list().then(setUsers).catch(() => {});
-    }
+    if (isAdmin) usersApi.list().then(setUsers).catch(() => {});
+    customFieldsApi.list().then(setCustomFieldDefs).catch(() => {});
   }, [isAdmin]);
 
   useEffect(() => {
@@ -70,11 +71,17 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
         tags: lead.tags ?? "",
         deal_value: lead.deal_value?.toString() ?? "",
       });
+      // Load existing custom field values
+      const existing = (lead.custom_fields ?? {}) as Record<string, unknown>;
+      const vals: Record<string, string> = {};
+      for (const [k, v] of Object.entries(existing)) vals[k] = String(v ?? "");
+      setCustomValues(vals);
     } else {
       setForm({
         name: "", email: "", mobile: "", whatsapp: "", company: "",
         notes: "", priority: "warm", source: "manual", assigned_to_id: "", tags: "", deal_value: "",
       });
+      setCustomValues({});
     }
     setErrors({});
   }, [lead, open]);
@@ -103,6 +110,7 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
         source: form.source,
         tags: form.tags.trim() || null,
         deal_value: form.deal_value.trim() ? parseFloat(form.deal_value) : null,
+        custom_fields: Object.keys(customValues).length > 0 ? customValues : null,
       };
       if (isAdmin && form.assigned_to_id) {
         payload.assigned_to_id = parseInt(form.assigned_to_id);
@@ -172,6 +180,59 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
         />
 
         <Textarea label="Notes" value={form.notes} onChange={(e) => f("notes", e.target.value)} placeholder="Any additional notes..." rows={2} />
+
+        {/* Custom Fields */}
+        {customFieldDefs.length > 0 && (
+          <div className="pt-1 border-t border-border space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Custom Fields</p>
+            {customFieldDefs.map(def => (
+              <div key={def.id}>
+                {def.field_type === "text" && (
+                  <Input
+                    label={def.label + (def.required ? " *" : "")}
+                    value={customValues[def.name] ?? ""}
+                    onChange={e => setCustomValues(v => ({ ...v, [def.name]: e.target.value }))}
+                  />
+                )}
+                {def.field_type === "number" && (
+                  <Input
+                    label={def.label + (def.required ? " *" : "")}
+                    type="number"
+                    value={customValues[def.name] ?? ""}
+                    onChange={e => setCustomValues(v => ({ ...v, [def.name]: e.target.value }))}
+                  />
+                )}
+                {def.field_type === "date" && (
+                  <Input
+                    label={def.label + (def.required ? " *" : "")}
+                    type="date"
+                    value={customValues[def.name] ?? ""}
+                    onChange={e => setCustomValues(v => ({ ...v, [def.name]: e.target.value }))}
+                  />
+                )}
+                {def.field_type === "dropdown" && def.options && (
+                  <Select
+                    label={def.label + (def.required ? " *" : "")}
+                    value={customValues[def.name] ?? ""}
+                    onChange={e => setCustomValues(v => ({ ...v, [def.name]: e.target.value }))}
+                    options={[{ value: "", label: "Select..." }, ...def.options.map(o => ({ value: o, label: o }))]}
+                  />
+                )}
+                {def.field_type === "checkbox" && (
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={customValues[def.name] === "true"}
+                      onChange={e => setCustomValues(v => ({ ...v, [def.name]: e.target.checked ? "true" : "false" }))}
+                      className="rounded"
+                    />
+                    <span className="text-sm text-foreground">{def.label}</span>
+                  </label>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {errors._ && <p className="text-xs text-destructive">{errors._}</p>}
 

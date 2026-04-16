@@ -10,6 +10,7 @@ from app.routers import settings as settings_router
 from app.routers import webhook
 from app.routers import superadmin
 from app.routers import billing
+from app.routers import custom_fields as custom_fields_router
 
 app = FastAPI(title="Sales CRM API", version="2.0.0")
 
@@ -31,6 +32,7 @@ app.include_router(settings_router.router)
 app.include_router(webhook.router)
 app.include_router(superadmin.router)
 app.include_router(billing.router)
+app.include_router(custom_fields_router.router)
 
 
 def run_migrations():
@@ -56,6 +58,7 @@ def run_migrations():
         add_col("leads", "tags", "TEXT")
         add_col("leads", "deal_value", "REAL")
         add_col("leads", "score", "INTEGER DEFAULT 0")
+        add_col("leads", "custom_fields", "TEXT")
 
         # users
         add_col("users", "organization_id", "INTEGER")

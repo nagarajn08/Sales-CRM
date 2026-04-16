@@ -13,6 +13,9 @@ router = APIRouter(prefix="/api/settings", tags=["settings"])
 DEFAULT_SETTINGS = {
     "company_name": "Sales CRM",
     "followup_reminder_hours": "1",
+    "twilio_account_sid": "",
+    "twilio_auth_token": "",
+    "twilio_from_number": "",
 }
 
 

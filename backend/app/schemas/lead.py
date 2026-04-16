@@ -1,6 +1,7 @@
+import json
 from datetime import datetime
-from typing import List, Optional
-from pydantic import BaseModel
+from typing import Any, List, Optional
+from pydantic import BaseModel, model_validator
 from app.models.lead import LeadStatus, LeadPriority, LeadSource
 from app.schemas.user import UserSummary
 
@@ -17,6 +18,7 @@ class LeadCreate(BaseModel):
     assigned_to_id: int | None = None
     tags: str | None = None
     deal_value: float | None = None
+    custom_fields: dict | None = None
 
 
 class LeadUpdate(BaseModel):
@@ -30,6 +32,7 @@ class LeadUpdate(BaseModel):
     priority: LeadPriority | None = None
     tags: str | None = None
     deal_value: float | None = None
+    custom_fields: dict | None = None
 
 
 class LeadStatusUpdate(BaseModel):
@@ -72,6 +75,7 @@ class LeadRead(BaseModel):
     tags: str | None = None
     deal_value: float | None = None
     score: int | None = None
+    custom_fields: dict | None = None
     assigned_to: UserSummary | None
     created_by: UserSummary
     next_followup_at: datetime | None
@@ -81,6 +85,17 @@ class LeadRead(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @model_validator(mode="before")
+    @classmethod
+    def parse_custom_fields(cls, data: Any) -> Any:
+        # If coming from ORM, custom_fields is a JSON string — parse it to dict
+        if hasattr(data, "custom_fields") and isinstance(data.custom_fields, str):
+            try:
+                object.__setattr__(data, "custom_fields", json.loads(data.custom_fields))
+            except Exception:
+                object.__setattr__(data, "custom_fields", None)
+        return data
 
 
 class ActivityRead(BaseModel):
