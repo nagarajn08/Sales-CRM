@@ -15,7 +15,6 @@ import { CallLogModal } from "../components/leads/CallLogModal";
 import { useAuth } from "../auth/AuthContext";
 import { cn, fmtDateTime } from "../lib/utils";
 import { ScoreBadge } from "../components/ui/ScoreBadge";
-import { customFieldsApi, type CustomFieldDef } from "../api";
 
 const ACTIVITY_ICONS: Record<string, string> = {
   created: "✨",
@@ -36,7 +35,6 @@ export default function LeadDetailPage() {
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [timeline, setTimeline] = useState<Activity[]>([]);
-  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDef[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showStatus, setShowStatus] = useState(false);
@@ -50,14 +48,12 @@ export default function LeadDetailPage() {
 
   const fetchLead = useCallback(async () => {
     if (!id) return;
-    const [leadData, timelineData, fieldDefs] = await Promise.all([
+    const [leadData, timelineData] = await Promise.all([
       leadsApi.get(parseInt(id)),
       leadsApi.timeline(parseInt(id)),
-      customFieldsApi.list().catch(() => []),
     ]);
     setLead(leadData);
     setTimeline(timelineData);
-    setCustomFieldDefs(fieldDefs);
   }, [id]);
 
   useEffect(() => {
@@ -196,19 +192,6 @@ export default function LeadDetailPage() {
               <InfoRow label="Created" value={fmtDateTime(lead.created_at)} />
               <InfoRow label="Updated" value={fmtDateTime(lead.updated_at)} />
 
-              {/* Custom Fields */}
-              {customFieldDefs.length > 0 && lead.custom_fields && Object.keys(lead.custom_fields).length > 0 && (
-                <>
-                  {customFieldDefs.map(def => {
-                    const val = (lead.custom_fields as Record<string, unknown>)?.[def.name];
-                    if (val === undefined || val === null || val === "") return null;
-                    const display = def.field_type === "checkbox"
-                      ? (val === "true" || val === true ? "Yes" : "No")
-                      : String(val);
-                    return <InfoRow key={def.id} label={def.label} value={display} />;
-                  })}
-                </>
-              )}
             </div>
 
             {/* Tags */}

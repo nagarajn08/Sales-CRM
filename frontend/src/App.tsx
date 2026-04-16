@@ -14,7 +14,6 @@ import TemplatesPage from "./pages/TemplatesPage";
 import SettingsPage from "./pages/SettingsPage";
 import BillingPage from "./pages/BillingPage";
 import ReportsPage from "./pages/ReportsPage";
-import CustomFieldsPage from "./pages/CustomFieldsPage";
 import LandingPage from "./pages/LandingPage";
 
 function App() {
@@ -72,14 +71,6 @@ function App() {
           element={
             <ProtectedRoute adminOnly>
               <BillingPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="custom-fields"
-          element={
-            <ProtectedRoute adminOnly>
-              <CustomFieldsPage />
             </ProtectedRoute>
           }
         />

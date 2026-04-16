@@ -7,4 +7,3 @@ from app.models.notification import Notification
 from app.models.app_settings import AppSettings
 from app.models.otp import OTPRecord
 from app.models.subscription import Subscription
-from app.models.custom_field import CustomFieldDef

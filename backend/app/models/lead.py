@@ -57,7 +57,6 @@ class Lead(Base):
 
     deal_value = Column(Float, nullable=True)
     score = Column(Integer, default=0, nullable=True)
-    custom_fields = Column(Text, nullable=True)   # JSON dict {"field_name": value}
     next_followup_at = Column(DateTime, nullable=True)
     last_comment = Column(Text, nullable=True)
     tags = Column(Text, nullable=True)  # comma-separated tags e.g. "hot,referral,enterprise"

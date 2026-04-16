@@ -20,7 +20,6 @@ from app.models.user import User, UserRole
 from app.schemas.lead import ActivityRead, BulkActionRequest, CallLogRequest, LeadCreate, LeadRead, LeadReassign, LeadStatusUpdate, LeadUpdate
 from app.services.billing_service import check_lead_limit
 from app.services.scoring_service import recalculate_score
-import json as _json
 
 
 class EmailSendRequest(BaseModel):
@@ -242,7 +241,6 @@ def create_lead(body: LeadCreate, current_user: User = Depends(get_current_user)
         name=body.name, email=body.email, mobile=body.mobile, whatsapp=body.whatsapp,
         company=body.company, notes=body.notes, priority=body.priority, source=body.source,
         deal_value=body.deal_value, assigned_to_id=assigned_to_id, created_by_id=current_user.id,
-        custom_fields=_json.dumps(body.custom_fields) if body.custom_fields else None,
     )
     db.add(lead)
     db.flush()
@@ -317,10 +315,7 @@ def update_lead(lead_id: int, body: LeadUpdate, current_user: User = Depends(get
         raise HTTPException(status_code=404, detail="Lead not found")
     _check_lead_access(lead, current_user)
     for field, value in body.model_dump(exclude_none=True).items():
-        if field == "custom_fields":
-            setattr(lead, field, _json.dumps(value) if value else None)
-        else:
-            setattr(lead, field, value)
+        setattr(lead, field, value)
     recalculate_score(db, lead)
     db.commit()
     db.refresh(lead)

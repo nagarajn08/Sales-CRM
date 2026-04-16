@@ -14,7 +14,6 @@ const PAGE_TITLES: Record<string, { title: string; sub?: string }> = {
   "/users":      { title: "Team", sub: "Manage team members" },
   "/settings":   { title: "Settings", sub: "App & integration settings" },
   "/reports":       { title: "Reports", sub: "Pipeline analytics & team performance" },
-  "/custom-fields": { title: "Custom Fields", sub: "Define extra fields for your leads" },
   "/billing":    { title: "Billing & Plans", sub: "Manage your subscription" },
   "/platform":   { title: "Platform Admin", sub: "Organisation management" },
 };
