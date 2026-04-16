@@ -92,9 +92,9 @@ const FEATURES = [
     iconColor: "text-indigo-500",
   },
   {
-    icon: Icon.custom,
-    title: "Custom Fields",
-    desc: "Add your own fields to every lead — text, number, date, dropdown, yes/no. Tailor the CRM to your exact business process.",
+    icon: Icon.score,
+    title: "Lead Scoring",
+    desc: "Every lead gets an auto-calculated 0–100 score based on status, activities, deal value and recency. Focus on what's hot.",
     color: "from-orange-500/10 to-orange-500/5 border-orange-500/20",
     iconColor: "text-orange-500",
   },
@@ -115,7 +115,6 @@ const PRO_FEATURES = [
   "Call log & activity timeline",
   "Reports with trend charts",
   "Lead scoring (auto 0–100)",
-  "Custom fields per org",
   "Follow-up reminders (WhatsApp/SMS)",
   "Social media lead capture",
   "Team management & roles",
@@ -222,7 +221,7 @@ export default function LandingPage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-xs font-semibold mb-8 tracking-wide uppercase">
             <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse" />
-            Now with lead scoring & custom fields
+            Now with lead scoring & WhatsApp reminders
           </div>
 
           {/* Headline */}
