@@ -347,6 +347,140 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Why SalesCRM ── */}
+      <section className="py-24 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto">
+
+          {/* Header */}
+          <div className="text-center mb-16">
+            <p className="text-xs font-bold uppercase tracking-widest text-rose-400 mb-3">The problem with doing it the old way</p>
+            <h2 className="font-display text-4xl sm:text-5xl font-bold text-white mb-5 leading-tight">
+              Most sales don't fail on the call.<br />
+              <span className="bg-gradient-to-r from-rose-400 via-orange-400 to-amber-400 bg-clip-text text-transparent">
+                They fail in the follow-up.
+              </span>
+            </h2>
+            <p className="text-white/40 text-lg max-w-2xl mx-auto leading-relaxed">
+              Spreadsheets get messy. WhatsApp chats get buried. Leads go cold because nobody remembered to call back.
+              SalesCRM fixes that — completely.
+            </p>
+          </div>
+
+          {/* Before / After */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-20 max-w-4xl mx-auto">
+            {/* Without */}
+            <div className="rounded-2xl border border-red-500/20 bg-gradient-to-b from-red-500/8 to-red-500/3 p-6">
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="h-7 w-7 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 text-red-400"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                </div>
+                <p className="font-display font-bold text-red-300 text-sm uppercase tracking-wide">Without a CRM</p>
+              </div>
+              <ul className="space-y-3">
+                {[
+                  "Leads scattered across WhatsApp, Excel, sticky notes",
+                  "You forget who to call and when",
+                  "No idea which source is actually bringing business",
+                  "Manager can't see what the team is doing",
+                  "Deals slip through because of missed follow-ups",
+                  "No data to improve — just gut feel",
+                ].map(t => (
+                  <li key={t} className="flex items-start gap-2.5 text-sm text-white/40">
+                    <span className="text-red-500/60 mt-0.5 shrink-0">
+                      <svg viewBox="0 0 14 14" fill="none" className="h-3.5 w-3.5"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+                    </span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* With */}
+            <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-b from-emerald-500/8 to-emerald-500/3 p-6">
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="h-7 w-7 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 text-emerald-400"><path d="M2.5 8.5l3.5 3.5 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <p className="font-display font-bold text-emerald-300 text-sm uppercase tracking-wide">With SalesCRM</p>
+              </div>
+              <ul className="space-y-3">
+                {[
+                  "Every lead in one place — always organised, never lost",
+                  "Reminders tell you exactly who to call and when",
+                  "See which source drives the most conversions",
+                  "Real-time team dashboard for managers",
+                  "Automated follow-up alerts so nothing slips",
+                  "Reports show what's working — double down on it",
+                ].map(t => (
+                  <li key={t} className="flex items-start gap-2.5 text-sm text-white/60">
+                    <span className="text-emerald-400 mt-0.5 shrink-0">
+                      <svg viewBox="0 0 14 14" fill="none" className="h-3.5 w-3.5"><path d="M2 7.5l3.5 3.5 6.5-6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* 4 value pillars */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              {
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6"/><path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                ),
+                color: "from-violet-500/10 to-violet-500/4 border-violet-500/20",
+                iconColor: "text-violet-400",
+                tag: "Save time",
+                title: "Stop wasting hours on admin",
+                body: "Log a call in 10 seconds. Import 500 leads in one click. Send a follow-up email without leaving the app. SalesCRM cuts the busywork so your team spends time selling, not managing spreadsheets.",
+              },
+              {
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6"><path d="M3 17l4-8 4 5 3-3 4 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 21h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                ),
+                color: "from-indigo-500/10 to-indigo-500/4 border-indigo-500/20",
+                iconColor: "text-indigo-400",
+                tag: "Clear picture",
+                title: "See your pipeline at a glance",
+                body: "Dashboard shows total leads, active pipeline value in ₹, conversions today, overdue follow-ups and team performance — all on one screen. No digging. No guesswork. Just clarity.",
+              },
+              {
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                ),
+                color: "from-amber-500/10 to-amber-500/4 border-amber-500/20",
+                iconColor: "text-amber-400",
+                tag: "Never miss",
+                title: "Follow up before it's too late",
+                body: "Scheduled follow-ups with WhatsApp and SMS reminders via Twilio. Overdue leads are highlighted in red. Hot leads get auto-scored so you always know who to call first — not last.",
+              },
+              {
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6"><path d="M3 17l4-8 4 5 3-3 4 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.6"/></svg>
+                ),
+                color: "from-emerald-500/10 to-emerald-500/4 border-emerald-500/20",
+                iconColor: "text-emerald-400",
+                tag: "Grow faster",
+                title: "Data that actually drives decisions",
+                body: "See which sources convert best, which agents close the most, and where leads are dropping off. Reports with trend charts, source breakdowns and team rankings make your next move obvious.",
+              },
+            ].map(p => (
+              <div key={p.title} className={`rounded-2xl border bg-gradient-to-b p-5 flex flex-col gap-3 ${p.color}`}>
+                <div className={`h-10 w-10 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center ${p.iconColor}`}>
+                  {p.icon}
+                </div>
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${p.iconColor}`}>{p.tag}</p>
+                <h3 className="font-display font-bold text-white text-sm leading-snug">{p.title}</h3>
+                <p className="text-white/40 text-xs leading-relaxed flex-1">{p.body}</p>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
       {/* ── Features ── */}
       <section id="features" className="py-24 px-4 sm:px-6 max-w-6xl mx-auto">
         <div className="text-center mb-16">
@@ -502,21 +636,105 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-white/6 py-10 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-              <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3 text-white">
-                <path d="M8 2C4.68 2 2 4.68 2 8s2.68 6 6 6 6-2.68 6-6-2.68-6-6-6z" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M5 8h6M8 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+      <footer className="border-t border-white/6 bg-white/[0.015]">
+        {/* Main footer grid */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-14 pb-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+
+          {/* Brand col */}
+          <div className="lg:col-span-1 flex flex-col gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+                <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-white">
+                  <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.4"/>
+                  <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.4"/>
+                  <path d="M8 2.5V1M8 15v-1.5M2.5 8H1M15 8h-1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <span className="font-display font-bold text-base text-white tracking-tight">SalesCRM</span>
             </div>
-            <span className="font-display font-bold text-sm text-white/70">SalesCRM</span>
+            <p className="text-sm text-white/35 leading-relaxed">
+              The all-in-one sales CRM built for Indian teams. Manage leads, track follow-ups, and close more deals — faster.
+            </p>
+            {/* Contact */}
+            <a
+              href="mailto:support@salescrm.in"
+              className="flex items-center gap-2 text-xs text-white/30 hover:text-indigo-400 transition-colors group w-fit"
+            >
+              <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 shrink-0">
+                <rect x="1.5" y="3" width="13" height="10" rx="1.8" stroke="currentColor" strokeWidth="1.3"/>
+                <path d="M1.5 6l6.5 4 6.5-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              support@salescrm.in
+            </a>
           </div>
-          <p className="text-sm text-white/25">Built for Indian sales teams · {new Date().getFullYear()}</p>
-          <div className="flex gap-5 text-sm text-white/30">
-            <button onClick={() => navigate("/login")} className="hover:text-white/60 transition-colors">Login</button>
-            <button onClick={() => navigate("/signup")} className="hover:text-white/60 transition-colors">Sign up</button>
+
+          {/* Product */}
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-white/25 mb-4">Product</p>
+            <ul className="space-y-2.5">
+              {[
+                { label: "Features", href: "#features" },
+                { label: "How it works", href: "#how-it-works" },
+                { label: "Pricing", href: "#pricing" },
+                { label: "Lead Scoring", href: "#features" },
+                { label: "Reports & Analytics", href: "#features" },
+              ].map(l => (
+                <li key={l.label}>
+                  <a href={l.href} className="text-sm text-white/40 hover:text-white transition-colors">{l.label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Account */}
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-white/25 mb-4">Account</p>
+            <ul className="space-y-2.5">
+              {[
+                { label: "Log in", action: () => navigate("/login") },
+                { label: "Sign up free", action: () => navigate("/signup") },
+              ].map(l => (
+                <li key={l.label}>
+                  <button onClick={l.action} className="text-sm text-white/40 hover:text-white transition-colors">{l.label}</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* CTA mini */}
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-white/25 mb-4">Get started</p>
+            <p className="text-sm text-white/35 leading-relaxed mb-4">
+              Free forever plan. No credit card. Up and running in 2 minutes.
+            </p>
+            <button
+              onClick={() => navigate("/signup")}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/20 hover:-translate-y-0.5"
+            >
+              Create free account
+            </button>
+            <div className="flex items-center justify-center gap-1.5 mt-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[11px] text-white/25">Live · Trusted by sales teams across India</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-t border-white/5 px-4 sm:px-6 py-5">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-white/20">
+              © {new Date().getFullYear()} SalesCRM · Built for Indian sales teams
+            </p>
+            <div className="flex items-center gap-5">
+              {["Privacy Policy", "Terms of Use", "Refund Policy"].map(t => (
+                <span key={t} className="text-xs text-white/20 hover:text-white/40 transition-colors cursor-pointer">{t}</span>
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-white/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              All systems operational
+            </div>
           </div>
         </div>
       </footer>
