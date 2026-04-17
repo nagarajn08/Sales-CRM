@@ -70,6 +70,29 @@ def get_webhook_info(current_user: User = Depends(get_current_user), db: Session
     }
 
 
+class OrgNamePayload(BaseModel):
+    name: str
+
+
+@router.patch("/org-name")
+def update_org_name(
+    body: OrgNamePayload,
+    admin: User = Depends(require_superadmin),
+    db: Session = Depends(get_db),
+):
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Organization name cannot be empty")
+    if not admin.organization_id:
+        raise HTTPException(status_code=400, detail="No organization associated")
+    org = db.get(Organization, admin.organization_id)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    org.name = name
+    db.commit()
+    return {"ok": True, "name": org.name}
+
+
 @router.post("/webhook/regenerate")
 def regenerate_webhook(admin: User = Depends(require_superadmin), db: Session = Depends(get_db)):
     if not admin.organization_id:

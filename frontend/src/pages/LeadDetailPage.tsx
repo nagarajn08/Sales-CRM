@@ -144,7 +144,7 @@ export default function LeadDetailPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-xl tracking-tight">{lead.name}</CardTitle>
+                  <CardTitle className="text-xl tracking-tight capitalize">{lead.name}</CardTitle>
                   <ScoreBadge score={lead.score} size="md" />
                 </div>
                 {lead.company && <p className="text-muted-foreground text-sm mt-0.5 font-medium">{lead.company}</p>}

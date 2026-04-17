@@ -45,7 +45,7 @@ export function ReassignModal({ open, onClose, lead, onReassigned }: Props) {
     <Modal open={open} onClose={onClose} title="Reassign Lead">
       <form onSubmit={submit} className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Reassigning: <span className="font-medium text-foreground">{lead.name}</span>
+          Reassigning: <span className="font-medium text-foreground capitalize">{lead.name}</span>
         </p>
         <Select
           label="Assign To"

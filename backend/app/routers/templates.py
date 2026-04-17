@@ -11,11 +11,22 @@ router = APIRouter(prefix="/api/templates", tags=["templates"])
 
 @router.get("/", response_model=list[TemplateRead])
 def list_templates(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Global/predefined templates are cross-org (superadmin creates them for everyone).
+    # Per-org templates are scoped to the user's own org (own templates + org-level globals).
+    from sqlalchemy import or_, and_
     return (
         db.query(EmailTemplate)
         .filter(
-            EmailTemplate.organization_id == current_user.organization_id,
-            (EmailTemplate.user_id == current_user.id) | (EmailTemplate.is_global == True),
+            or_(
+                # Cross-org: predefined or globally published templates
+                EmailTemplate.is_predefined == True,
+                EmailTemplate.is_global == True,
+                # Org-scoped: user's own private templates
+                and_(
+                    EmailTemplate.organization_id == current_user.organization_id,
+                    EmailTemplate.user_id == current_user.id,
+                ),
+            )
         )
         .order_by(EmailTemplate.created_at.desc())
         .all()
@@ -24,7 +35,7 @@ def list_templates(current_user: User = Depends(get_current_user), db: Session =
 
 @router.post("/", response_model=TemplateRead, status_code=status.HTTP_201_CREATED)
 def create_template(body: TemplateCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if body.is_global and current_user.role != UserRole.ADMIN:
+    if body.is_global and current_user.role != UserRole.ADMIN and not current_user.is_superadmin:
         raise HTTPException(status_code=403, detail="Only admins can create global templates")
     t = EmailTemplate(
         organization_id=current_user.organization_id,

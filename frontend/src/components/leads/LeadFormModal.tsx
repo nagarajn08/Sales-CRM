@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 import { leadsApi, usersApi } from "../../api";
 import type { Lead, User } from "../../types";
 import { useAuth } from "../../auth/AuthContext";
-import { isValidEmail, isValidMobile, digitsOnly } from "../../lib/validators";
+import { isValidEmail, isValidMobile, digitsOnly, capitalizeName } from "../../lib/validators";
 
 interface Props {
   open: boolean;
@@ -129,7 +129,7 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
   return (
     <Modal open={open} onClose={onClose} title={lead ? "Edit Lead" : "Add New Lead"} maxWidth="max-w-lg">
       <form onSubmit={submit} className="space-y-3">
-        <Input label="Full Name" value={form.name} onChange={(e) => f("name", e.target.value)} required error={errors.name} />
+        <Input label="Full Name" value={form.name} onChange={(e) => f("name", capitalizeName(e.target.value))} required error={errors.name} />
 
         <Input
           label="Mobile"

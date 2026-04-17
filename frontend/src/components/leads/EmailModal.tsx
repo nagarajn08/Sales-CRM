@@ -76,7 +76,7 @@ export function EmailModal({ open, onClose, lead }: Props) {
         <form onSubmit={send} className="space-y-4">
           <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary text-sm">
             <span className="text-muted-foreground">To:</span>
-            <span className="font-medium text-foreground">{lead.name}</span>
+            <span className="font-medium text-foreground capitalize">{lead.name}</span>
             <span className="text-muted-foreground">({lead.email ?? "No email address"})</span>
           </div>
 

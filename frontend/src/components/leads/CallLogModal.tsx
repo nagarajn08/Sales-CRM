@@ -76,7 +76,7 @@ export function CallLogModal({ open, onClose, lead, onLogged }: Props) {
         <div className="flex items-center gap-3 p-3 bg-secondary rounded-lg text-sm">
           <span className="text-2xl">📞</span>
           <div>
-            <p className="font-medium text-foreground">{lead.name}</p>
+            <p className="font-medium text-foreground capitalize">{lead.name}</p>
             <p className="text-muted-foreground text-xs">{lead.mobile || lead.whatsapp || "No phone"}</p>
           </div>
         </div>

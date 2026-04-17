@@ -118,4 +118,5 @@ export const settingsApi = {
   update: (settings: Record<string, string>) => api.put("/api/settings/", { settings }),
   getWebhook: () => api.get<{ webhook_token: string; webhook_url: string; verify_token: string; org_name: string; org_type: string }>("/api/settings/webhook").then(r => r.data),
   regenerateWebhook: () => api.post<{ webhook_token: string; webhook_url: string }>("/api/settings/webhook/regenerate").then(r => r.data),
+  updateOrgName: (name: string) => api.patch<{ ok: boolean; name: string }>("/api/settings/org-name", { name }).then(r => r.data),
 };

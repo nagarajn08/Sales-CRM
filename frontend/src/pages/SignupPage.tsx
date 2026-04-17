@@ -6,7 +6,7 @@ import { tokenStore } from "../api/axiosInstance";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
-import { isValidEmail, isValidMobile, isValidPassword, digitsOnly } from "../lib/validators";
+import { isValidEmail, isValidMobile, isValidPassword, digitsOnly, capitalizeName } from "../lib/validators";
 
 type AccountType = "individual" | "corporate";
 type Step = "form" | "otp";
@@ -236,11 +236,11 @@ export default function SignupPage() {
             <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <form onSubmit={submitForm} className="space-y-4">
                 {type === "individual" ? (
-                  <Input label="Full Name" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} required autoFocus />
+                  <Input label="Full Name" placeholder="John Doe" value={name} onChange={e => setName(capitalizeName(e.target.value))} required autoFocus />
                 ) : (
                   <>
-                    <Input label="Company Name" placeholder="Acme Corporation" value={companyName} onChange={e => setCompanyName(e.target.value)} required autoFocus />
-                    <Input label="Your Name" placeholder="John Doe" value={adminName} onChange={e => setAdminName(e.target.value)} required />
+                    <Input label="Company Name" placeholder="Acme Corporation" value={companyName} onChange={e => setCompanyName(capitalizeName(e.target.value))} required autoFocus />
+                    <Input label="Your Name" placeholder="John Doe" value={adminName} onChange={e => setAdminName(capitalizeName(e.target.value))} required />
                   </>
                 )}
                 <Input label="Work Email" type="email" placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" />

@@ -15,3 +15,7 @@ export const isValidPassword = (v: string): boolean =>
 
 /** Strip all non-digit characters (for mobile inputs). */
 export const digitsOnly = (v: string): string => v.replace(/[^0-9]/g, "");
+
+/** Capitalize the first letter of each word. */
+export const capitalizeName = (v: string): string =>
+  v.replace(/\b\w/g, (c) => c.toUpperCase());

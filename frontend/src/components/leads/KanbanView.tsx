@@ -128,7 +128,7 @@ export function KanbanView({ leads, onLeadsChange }: Props) {
                       )}
                     >
                       <div className="flex items-start justify-between gap-1 mb-1.5">
-                        <p className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 flex-1">
+                        <p className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 flex-1 capitalize">
                           {lead.name}
                         </p>
                         <Badge className={cn(PRIORITY_COLORS[lead.priority], "shrink-0 text-[10px] px-1.5")}>

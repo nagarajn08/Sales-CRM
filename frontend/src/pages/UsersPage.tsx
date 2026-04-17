@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { usersApi, type UserSession } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import type { User, UserRole } from "../types";
-import { isValidEmail, isValidMobile, isValidPassword, digitsOnly } from "../lib/validators";
+import { isValidEmail, isValidMobile, isValidPassword, digitsOnly, capitalizeName } from "../lib/validators";
 import { Button } from "../components/ui/button";
 import { fmtDateTime } from "../lib/utils";
 import { Badge } from "../components/ui/badge";
@@ -266,7 +266,7 @@ export default function UsersPage() {
                           {u.name[0]?.toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">{u.name}</p>
+                          <p className="font-medium text-foreground capitalize">{u.name}</p>
                           {u.is_owner && <span className="text-[10px] text-muted-foreground">Admin / Incharge</span>}
                         </div>
                       </div>
@@ -310,7 +310,7 @@ export default function UsersPage() {
       {/* User Form Modal */}
       <Modal open={showForm} onClose={() => setShowForm(false)} title={editUser ? "Edit User" : "Add User"}>
         <form onSubmit={save} className="space-y-4">
-          <Input label="Full Name" value={form.name} onChange={(e) => f("name", e.target.value)} required error={errors.name} />
+          <Input label="Full Name" value={form.name} onChange={(e) => f("name", capitalizeName(e.target.value))} required error={errors.name} />
           <Input label="Email" type="email" value={form.email} onChange={(e) => f("email", e.target.value)} required error={errors.email} />
           <Input label="Mobile" type="tel" inputMode="numeric" value={form.mobile} onChange={(e) => f("mobile", digitsOnly(e.target.value))} placeholder="9876543210" error={errors.mobile} />
           <Input

@@ -10,24 +10,25 @@ import { useAuth } from "../auth/AuthContext";
 // ── Tiny helpers ──────────────────────────────────────────────────────────
 
 function KpiCard({
-  label, value, sub, icon, color, delay = 0,
+  label, value, sub, icon, color, bar, delay = 0,
 }: {
   label: string; value: string | number; sub?: string;
-  icon: React.ReactNode; color: string; delay?: number;
+  icon: React.ReactNode; color: string; bar?: string; delay?: number;
 }) {
   return (
     <div
-      className="animate-fade-up bg-card border border-border rounded-xl p-4 shadow-card hover:shadow-card-hover transition-shadow group"
+      className="animate-fade-up bg-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-shadow group h-full flex flex-col"
       style={{ "--delay": `${delay}ms` } as React.CSSProperties}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide truncate">{label}</p>
-          <p className="font-display text-[26px] font-bold text-foreground mt-1.5 tabular-nums leading-none tracking-tight">{value}</p>
-          {sub && <p className="text-[11px] text-muted-foreground mt-1.5">{sub}</p>}
-        </div>
-        <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 transition-transform group-hover:scale-110", color)}>
+      {bar && <div className={cn("h-0.5 w-full", bar)} />}
+      <div className="px-4 py-3.5 flex items-center gap-3 flex-1">
+        <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110", color)}>
           {icon}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate leading-none">{label}</p>
+          <p className="font-display text-xl font-bold text-foreground mt-1 tabular-nums leading-none tracking-tight">{value}</p>
+          {sub && <p className="text-[10px] text-muted-foreground mt-1">{sub}</p>}
         </div>
       </div>
     </div>
@@ -80,24 +81,24 @@ function BarList({ data }: { data: Array<{ label: string; count: number; color: 
   const total = data.reduce((s, d) => s + d.count, 0);
   if (total === 0) return <div className="py-6 text-center text-xs text-muted-foreground">No data</div>;
   return (
-    <div className="space-y-3 px-1">
+    <div className="space-y-3">
       {data.map(d => {
         const pct = total > 0 ? Math.round(d.count / total * 100) : 0;
         const hex = COLOR_MAP[d.color] ?? "#6366f1";
         return (
           <div key={d.label}>
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: hex }} />
+                <span className="h-2 w-2 rounded-full shrink-0" style={{ background: hex }} />
                 <span className="text-xs font-medium text-foreground truncate">{d.label}</span>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-3">
-                <span className="text-xs text-muted-foreground tabular-nums">{d.count}</span>
-                <span className="text-[10px] font-semibold text-muted-foreground w-8 text-right tabular-nums">{pct}%</span>
+                <span className="text-xs font-semibold text-foreground tabular-nums">{d.count}</span>
+                <span className="text-[10px] text-muted-foreground w-7 text-right tabular-nums">{pct}%</span>
               </div>
             </div>
-            <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: hex }} />
+            <div className="h-2 rounded-full bg-secondary overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: hex, opacity: 0.85 }} />
             </div>
           </div>
         );
@@ -122,6 +123,11 @@ const SOURCE_COLORS: Record<string, string> = {
   import: "bg-slate-500",
   other: "bg-gray-400",
 };
+
+const AVATAR_COLORS = [
+  "bg-indigo-500","bg-emerald-500","bg-amber-500",
+  "bg-pink-500","bg-cyan-500","bg-violet-500","bg-rose-500",
+];
 
 const STATUS_BAR_COLORS: Record<string, string> = {
   new: "bg-blue-500",
@@ -186,7 +192,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="animate-fade-up flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-bold text-foreground tracking-tight">{greeting}, {user?.name?.split(" ")[0]} 👋</h1>
+          <h1 className="font-display text-xl font-bold text-foreground tracking-tight">{greeting}, <span className="capitalize">{user?.name?.split(" ")[0]}</span> 👋</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" })}
           </p>
@@ -201,38 +207,39 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Row 1: Today's pulse (4 cols) ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-stretch">
         <KpiCard label="New Leads Today" value={stats.new_leads_today} sub={`${stats.new_leads_this_week} this week`}
-          icon={I.plus} color="bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400" delay={0} />
+          icon={I.plus} color="bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400" bar="bg-violet-500" delay={0} />
         <KpiCard label="Converted Today" value={stats.converted_today} sub={`${stats.converted_this_week} this week`}
-          icon={I.check} color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" delay={40} />
+          icon={I.check} color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" bar="bg-emerald-500" delay={40} />
         <KpiCard label="Follow-ups Done" value={stats.followups_done_today} sub="status updates today"
-          icon={I.lightning} color="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" delay={80} />
+          icon={I.lightning} color="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" bar="bg-amber-500" delay={80} />
         <KpiCard label="Activities Today" value={stats.activities_today} sub="comments, calls, emails"
-          icon={I.activity} color="bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400" delay={120} />
+          icon={I.activity} color="bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400" bar="bg-sky-500" delay={120} />
       </div>
 
       {/* ── Row 2: Pipeline health (4 cols) ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-stretch">
         <KpiCard label="Total Leads" value={stats.total_leads} sub={`${stats.active_leads} active`}
-          icon={I.total} color="bg-primary/10 text-primary" delay={0} />
+          icon={I.total} color="bg-primary/10 text-primary" bar="bg-primary" delay={0} />
         <KpiCard label="Due Today" value={stats.followups_due_today} sub="scheduled for today"
-          icon={I.calendar} color="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" delay={40} />
+          icon={I.calendar} color="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" bar="bg-blue-500" delay={40} />
         <KpiCard label="Overdue" value={stats.followups_overdue} sub="past follow-up date"
-          icon={I.alert} color="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" delay={80} />
+          icon={I.alert} color="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" bar="bg-red-500" delay={80} />
         <KpiCard label="Not Interested" value={stats.not_interested_today} sub="lost today"
-          icon={I.thumb} color="bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400" delay={120} />
+          icon={I.thumb} color="bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400" bar="bg-rose-500" delay={120} />
       </div>
 
       {/* ── Row 3: Deal value pipeline ── */}
       {(stats.pipeline_value > 0 || stats.converted_value > 0) && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 items-stretch">
           <KpiCard
             label="Active Pipeline Value"
             value={fmtCurrency(stats.pipeline_value)}
             sub="sum of all active deal values"
             icon={I.rupee}
             color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+            bar="bg-emerald-500"
             delay={0}
           />
           <KpiCard
@@ -241,6 +248,7 @@ export default function DashboardPage() {
             sub="revenue from converted leads"
             icon={I.check}
             color="bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400"
+            bar="bg-teal-500"
             delay={40}
           />
         </div>
@@ -273,11 +281,13 @@ export default function DashboardPage() {
           {stats.status_breakdown.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground">No active leads</div>
           ) : (
-            <BarList data={stats.status_breakdown.map(s => ({
-              label: s.label,
-              count: s.count,
-              color: STATUS_BAR_COLORS[s.status] ?? "bg-primary",
-            }))} />
+            <div className="px-4 py-3">
+              <BarList data={stats.status_breakdown.map(s => ({
+                label: s.label,
+                count: s.count,
+                color: STATUS_BAR_COLORS[s.status] ?? "bg-primary",
+              }))} />
+            </div>
           )}
         </SectionCard>
 
@@ -286,11 +296,13 @@ export default function DashboardPage() {
           {stats.leads_by_source_all.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground">No leads yet</div>
           ) : (
-            <BarList data={stats.leads_by_source_all.slice(0, 6).map((s: SourceCount) => ({
-              label: sourceLabel(s.source),
-              count: s.count,
-              color: SOURCE_COLORS[s.source] ?? "bg-primary",
-            }))} />
+            <div className="px-4 py-3">
+              <BarList data={stats.leads_by_source_all.slice(0, 6).map((s: SourceCount) => ({
+                label: sourceLabel(s.source),
+                count: s.count,
+                color: SOURCE_COLORS[s.source] ?? "bg-primary",
+              }))} />
+            </div>
           )}
         </SectionCard>
 
@@ -321,7 +333,7 @@ export default function DashboardPage() {
                     className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-secondary/50 transition-colors text-left group"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">{lead.name}</p>
+                      <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate capitalize">{lead.name}</p>
                       <p className={cn("text-[11px] mt-0.5 font-mono", isOverdue ? "text-red-500" : "text-muted-foreground")}>
                         {isOverdue ? "⚠ " : "📅 "}{fmtDateTime(lead.next_followup_at)}
                       </p>
@@ -364,19 +376,31 @@ export default function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {stats.user_stats.map((u) => (
+                    {stats.user_stats.map((u, idx) => {
+                      const initials = u.user_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
+                      return (
                       <tr key={u.user_id} className="hover:bg-secondary/40 transition-colors">
-                        <td className="px-4 py-2.5 font-medium text-foreground truncate max-w-[110px]">{u.user_name}</td>
-                        <td className="px-2 py-2.5 text-center tabular-nums">{u.total_leads}</td>
-                        <td className="px-2 py-2.5 text-center tabular-nums text-blue-500">{u.new}</td>
-                        <td className="px-2 py-2.5 text-center tabular-nums text-yellow-600">{u.call_back}</td>
-                        <td className="px-2 py-2.5 text-center tabular-nums text-teal-600">{u.interested_call_back}</td>
-                        <td className="px-2 py-2.5 text-center tabular-nums font-semibold text-emerald-600">{u.converted}</td>
-                        <td className={cn("px-2 py-2.5 text-center tabular-nums font-semibold", u.overdue_followups > 0 ? "text-red-500" : "text-muted-foreground")}>
-                          {u.overdue_followups}
+                        <td className="px-4 py-2 font-medium text-foreground max-w-[130px]">
+                          <div className="flex items-center gap-2">
+                            <div className={cn("h-6 w-6 rounded-md flex items-center justify-center text-white text-[9px] font-bold shrink-0", AVATAR_COLORS[idx % AVATAR_COLORS.length])}>
+                              {initials}
+                            </div>
+                            <span className="truncate capitalize text-xs">{u.user_name}</span>
+                          </div>
+                        </td>
+                        <td className="px-2 py-2 text-center tabular-nums text-xs">{u.total_leads}</td>
+                        <td className="px-2 py-2 text-center tabular-nums text-xs text-blue-500">{u.new}</td>
+                        <td className="px-2 py-2 text-center tabular-nums text-xs text-yellow-600">{u.call_back}</td>
+                        <td className="px-2 py-2 text-center tabular-nums text-xs text-teal-600">{u.interested_call_back}</td>
+                        <td className="px-2 py-2 text-center tabular-nums text-xs font-semibold text-emerald-600">{u.converted}</td>
+                        <td className={cn("px-2 py-2 text-center tabular-nums text-xs font-semibold", u.overdue_followups > 0 ? "text-red-500" : "text-muted-foreground")}>
+                          {u.overdue_followups > 0
+                            ? <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />{u.overdue_followups}</span>
+                            : "—"}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
                 <div className="px-4 py-2 border-t border-border flex gap-4 text-[10px] text-muted-foreground">
