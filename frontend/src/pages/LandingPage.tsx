@@ -268,57 +268,171 @@ export default function LandingPage() {
 
         {/* Hero app mockup */}
         <div className="relative max-w-5xl mx-auto mt-16">
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/8 to-white/3 backdrop-blur-sm shadow-2xl shadow-black/60 overflow-hidden">
-            {/* Fake browser bar */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8 bg-white/4">
+          <div className="rounded-2xl border border-white/10 shadow-2xl shadow-black/70 overflow-hidden" style={{ background: "#0f0f16" }}>
+
+            {/* Browser chrome */}
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.07]" style={{ background: "#0f0f16" }}>
               <div className="flex gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-red-500/60" />
-                <div className="h-3 w-3 rounded-full bg-yellow-500/60" />
-                <div className="h-3 w-3 rounded-full bg-green-500/60" />
+                <div className="h-2.5 w-2.5 rounded-full bg-red-500/50" />
+                <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/50" />
+                <div className="h-2.5 w-2.5 rounded-full bg-green-500/50" />
               </div>
-              <div className="flex-1 mx-4 bg-white/5 border border-white/8 rounded-md h-6 flex items-center px-3">
-                <span className="text-[10px] text-white/30 font-mono">app.salescrm.in/dashboard</span>
+              <div className="flex-1 mx-4 rounded-md h-5 flex items-center px-3 border border-white/[0.07]" style={{ background: "#ffffff08" }}>
+                <span className="text-[9px] text-white/25 font-mono">app.salescrm.in/dashboard</span>
               </div>
             </div>
 
-            {/* Fake dashboard UI */}
-            <div className="p-5 space-y-4">
-              {/* Stats row */}
-              <div className="grid grid-cols-4 gap-3">
-                {[
-                  { label: "Total Leads", val: "1,284", color: "text-white" },
-                  { label: "Active Pipeline", val: "₹24.8L", color: "text-indigo-300" },
-                  { label: "Converted Today", val: "7", color: "text-emerald-400" },
-                  { label: "Overdue", val: "3", color: "text-amber-400" },
-                ].map(s => (
-                  <div key={s.label} className="bg-white/5 border border-white/8 rounded-xl p-3">
-                    <p className="text-[10px] text-white/40 mb-1">{s.label}</p>
-                    <p className={cn("text-lg font-bold font-display", s.color)}>{s.val}</p>
+            {/* App shell: sidebar + main */}
+            <div className="flex" style={{ minHeight: 340 }}>
+
+              {/* Sidebar */}
+              <div className="w-[160px] shrink-0 flex flex-col border-r border-white/[0.07]" style={{ background: "#12121a" }}>
+                {/* Brand */}
+                <div className="flex items-center gap-2 px-3 py-3 border-b border-white/[0.06]">
+                  <div className="h-6 w-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                    <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3 text-white">
+                      <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.4"/>
+                      <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.4"/>
+                      <path d="M8 2.5V1M8 15v-1.5M2.5 8H1M15 8h-1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                    </svg>
                   </div>
-                ))}
+                  <div>
+                    <p className="text-[10px] font-bold text-white/80 leading-none">Acme Corp</p>
+                    <p className="text-[8px] text-white/30 mt-0.5">SalesCRM</p>
+                  </div>
+                </div>
+                {/* Nav */}
+                <nav className="flex-1 px-2 py-2 space-y-0.5">
+                  {[
+                    { label: "Dashboard", active: true, icon: <svg viewBox="0 0 14 14" fill="none" className="h-3 w-3"><rect x="1" y="1" width="4" height="4" rx="1" stroke="currentColor" strokeWidth="1.2"/><rect x="8" y="1" width="4" height="4" rx="1" stroke="currentColor" strokeWidth="1.2"/><rect x="1" y="8" width="4" height="4" rx="1" stroke="currentColor" strokeWidth="1.2"/><rect x="8" y="8" width="4" height="4" rx="1" stroke="currentColor" strokeWidth="1.2"/></svg> },
+                    { label: "Leads", active: false, icon: <svg viewBox="0 0 14 14" fill="none" className="h-3 w-3"><circle cx="5.5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2"/><path d="M1 13c0-2.5 2-4.5 4.5-4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><circle cx="10" cy="5" r="2" stroke="currentColor" strokeWidth="1.2"/><path d="M7.5 13c0-2.5 1.5-4.5 3.5-4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+                    { label: "Reports", active: false, icon: <svg viewBox="0 0 14 14" fill="none" className="h-3 w-3"><path d="M2 11V4M5 11V6.5M8 11V5M11 11V2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M1 12.5h12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+                    { label: "Email Templates", active: false, icon: <svg viewBox="0 0 14 14" fill="none" className="h-3 w-3"><rect x="1" y="2.5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M1 5.5l6 4 6-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+                  ].map(item => (
+                    <div key={item.label} className="relative flex items-center gap-2 px-2 py-1.5 rounded-md" style={{ background: item.active ? "rgba(99,102,241,0.12)" : "transparent" }}>
+                      {item.active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-3.5 rounded-full" style={{ background: "#6366f1" }} />}
+                      <span style={{ color: item.active ? "#818cf8" : "rgba(255,255,255,0.3)" }}>{item.icon}</span>
+                      <span className="text-[9.5px] font-medium truncate" style={{ color: item.active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.3)" }}>{item.label}</span>
+                      {item.active && <span className="ml-auto h-1.5 w-1.5 rounded-full shrink-0" style={{ background: "#6366f1" }} />}
+                    </div>
+                  ))}
+                </nav>
+                {/* User footer */}
+                <div className="px-2 pb-2 pt-1.5 border-t border-white/[0.06]">
+                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/[0.06]" style={{ background: "rgba(255,255,255,0.02)" }}>
+                    <div className="h-5 w-5 rounded-md flex items-center justify-center text-[8px] font-bold text-white shrink-0" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>NA</div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-semibold text-white/70 truncate">Krish</p>
+                      <p className="text-[8px] text-white/30">Admin</p>
+                    </div>
+                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
+                  </div>
+                </div>
               </div>
 
-              {/* Lead rows */}
-              <div className="bg-white/4 border border-white/8 rounded-xl overflow-hidden">
-                <div className="px-4 py-2.5 border-b border-white/8 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-white/60">Recent Leads</span>
-                  <span className="text-[10px] text-indigo-400 font-medium">View all →</span>
-                </div>
-                {[
-                  { name: "Rahul Sharma", co: "Infosys Ltd", status: "Interested", score: 87, badge: "bg-red-500/20 text-red-300" },
-                  { name: "Priya Nair", co: "TCS", status: "Call Back", score: 65, badge: "bg-amber-500/20 text-amber-300" },
-                  { name: "Amit Patel", co: "Wipro", status: "New", score: 42, badge: "bg-blue-500/20 text-blue-300" },
-                ].map((l, i) => (
-                  <div key={i} className={cn("flex items-center gap-3 px-4 py-3 text-xs", i < 2 && "border-b border-white/5")}>
-                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-indigo-500/30 to-violet-500/30 flex items-center justify-center text-[10px] font-bold text-indigo-300 shrink-0">{l.name[0]}</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-white/90 truncate">{l.name}</p>
-                      <p className="text-white/40 truncate">{l.co}</p>
-                    </div>
-                    <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full", l.badge)}>{l.status}</span>
-                    <span className="text-[10px] font-bold text-white/30 tabular-nums">{l.score}</span>
+              {/* Main content */}
+              <div className="flex-1 flex flex-col min-w-0">
+
+                {/* Topbar */}
+                <div className="flex items-center gap-3 px-4 h-10 border-b border-white/[0.07] shrink-0" style={{ background: "rgba(255,255,255,0.02)" }}>
+                  <div className="h-5 w-5 rounded-md flex items-center justify-center" style={{ background: "rgba(99,102,241,0.15)" }}>
+                    <svg viewBox="0 0 14 14" fill="none" className="h-3 w-3" style={{ color: "#818cf8" }}><rect x="1" y="1" width="4" height="4" rx="1" stroke="currentColor" strokeWidth="1.2"/><rect x="8" y="1" width="4" height="4" rx="1" stroke="currentColor" strokeWidth="1.2"/><rect x="1" y="8" width="4" height="4" rx="1" stroke="currentColor" strokeWidth="1.2"/><rect x="8" y="8" width="4" height="4" rx="1" stroke="currentColor" strokeWidth="1.2"/></svg>
                   </div>
-                ))}
+                  <div>
+                    <p className="text-[10px] font-bold text-white/80 leading-none">Dashboard</p>
+                    <p className="text-[8px] text-white/30">Your pipeline at a glance</p>
+                  </div>
+                  <div className="flex-1" />
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-5 w-5 rounded-md flex items-center justify-center" style={{ color: "rgba(255,255,255,0.3)" }}>
+                      <svg viewBox="0 0 14 14" fill="none" className="h-3 w-3"><path d="M7 1.5v.8M7 11.7v.8M1.5 7h.8M11.7 7h.8M3 3l.6.6M10.4 10.4l.6.6M3 11l.6-.6M10.4 3.6l.6-.6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/><circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.1"/></svg>
+                    </div>
+                    <div className="h-5 w-5 rounded-md flex items-center justify-center bg-indigo-500/20 text-[8px] font-bold text-indigo-300">KR</div>
+                  </div>
+                </div>
+
+                {/* Dashboard body */}
+                <div className="flex-1 p-3 space-y-3 overflow-hidden">
+
+                  {/* KPI cards */}
+                  <div className="grid grid-cols-5 gap-2">
+                    {[
+                      { label: "TOTAL LEADS", val: "1,284", sub: "↑ 12 this week", bar: "#6366f1", icon: "👥" },
+                      { label: "CONVERTED TODAY", val: "7", sub: "↑ 3 vs yesterday", bar: "#10b981", icon: "✅" },
+                      { label: "OVERDUE", val: "3", sub: "Follow-ups due", bar: "#f59e0b", icon: "⏰" },
+                      { label: "FOLLOWUPS DUE", val: "11", sub: "Scheduled today", bar: "#8b5cf6", icon: "📅" },
+                      { label: "FOLLOWUPS DONE", val: "8", sub: "Completed today", bar: "#06b6d4", icon: "📞" },
+                    ].map(k => (
+                      <div key={k.label} className="rounded-lg overflow-hidden border border-white/[0.07]" style={{ background: "#1a1a26" }}>
+                        <div className="h-0.5 w-full" style={{ background: k.bar }} />
+                        <div className="px-2.5 py-2 flex items-center gap-2">
+                          <div className="h-6 w-6 rounded-md flex items-center justify-center text-sm shrink-0" style={{ background: `${k.bar}22` }}>{k.icon}</div>
+                          <div className="min-w-0">
+                            <p className="text-[7.5px] font-bold text-white/30 uppercase tracking-wide leading-none truncate">{k.label}</p>
+                            <p className="text-sm font-bold text-white mt-0.5 leading-none tabular-nums">{k.val}</p>
+                            <p className="text-[7px] text-white/30 mt-0.5">{k.sub}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Bottom row: leads table + bar chart */}
+                  <div className="grid grid-cols-5 gap-2">
+
+                    {/* Recent leads table */}
+                    <div className="col-span-3 rounded-lg border border-white/[0.07] overflow-hidden" style={{ background: "#1a1a26" }}>
+                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06]" style={{ background: "rgba(255,255,255,0.02)" }}>
+                        <span className="text-[9px] font-bold text-white/60">Recent Leads</span>
+                        <span className="text-[8px] text-indigo-400">View all →</span>
+                      </div>
+                      {[
+                        { name: "Rahul Sharma", co: "Infosys Ltd", status: "Interested", statusColor: "#14b8a6", av: "RS", avColor: "#6366f1" },
+                        { name: "Priya Nair", co: "TCS", status: "Call Back", statusColor: "#f59e0b", av: "PN", avColor: "#10b981" },
+                        { name: "Amit Patel", co: "Wipro", status: "New", statusColor: "#6366f1", av: "AP", avColor: "#f97316" },
+                        { name: "Sunita Rao", co: "HCL Tech", status: "Converted", statusColor: "#10b981", av: "SR", avColor: "#ec4899" },
+                      ].map((l, i) => (
+                        <div key={i} className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.04] last:border-0">
+                          <div className="h-5 w-5 rounded-md flex items-center justify-center text-[7px] font-bold text-white shrink-0" style={{ background: l.avColor }}>{l.av}</div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[9px] font-semibold text-white/80 truncate">{l.name}</p>
+                            <p className="text-[7.5px] text-white/30 truncate">{l.co}</p>
+                          </div>
+                          <span className="text-[7.5px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: `${l.statusColor}22`, color: l.statusColor }}>{l.status}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Source bar chart */}
+                    <div className="col-span-2 rounded-lg border border-white/[0.07] overflow-hidden" style={{ background: "#1a1a26" }}>
+                      <div className="px-3 py-2 border-b border-white/[0.06]" style={{ background: "rgba(255,255,255,0.02)" }}>
+                        <span className="text-[9px] font-bold text-white/60">Leads by Source</span>
+                      </div>
+                      <div className="px-3 py-2.5 space-y-2.5">
+                        {[
+                          { label: "Facebook", pct: 78, color: "#6366f1" },
+                          { label: "Website", pct: 55, color: "#8b5cf6" },
+                          { label: "Reference", pct: 42, color: "#14b8a6" },
+                          { label: "Cold Call", pct: 28, color: "#f97316" },
+                        ].map(b => (
+                          <div key={b.label}>
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="h-1.5 w-1.5 rounded-full" style={{ background: b.color }} />
+                                <span className="text-[8px] text-white/50">{b.label}</span>
+                              </div>
+                              <span className="text-[8px] font-semibold text-white/50">{b.pct}%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                              <div className="h-full rounded-full" style={{ width: `${b.pct}%`, background: b.color, opacity: 0.85 }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -332,14 +446,14 @@ export default function LandingPage() {
       <section className="border-y border-white/6 bg-white/[0.02] py-14">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 grid grid-cols-2 sm:grid-cols-4 gap-8 text-center">
           {[
-            { val: 10000, suffix: "+", label: "Leads tracked" },
-            { val: 98, suffix: "%", label: "Uptime SLA" },
-            { val: 60, suffix: "%", label: "Launch discount" },
-            { val: 2, suffix: " min", label: "Setup time" },
+            { display: null, val: 10000, suffix: "+", label: "Leads tracked every day" },
+            { display: "99.9%", val: 0, suffix: "", label: "Uptime SLA" },
+            { display: null, val: 500, suffix: "+", label: "Active sales teams" },
+            { display: null, val: 2, suffix: " min", label: "Setup time" },
           ].map(s => (
             <div key={s.label}>
               <p className="font-display text-4xl font-bold text-white mb-1">
-                <Counter to={s.val} suffix={s.suffix} />
+                {s.display ? s.display : <Counter to={s.val} suffix={s.suffix} />}
               </p>
               <p className="text-sm text-white/40">{s.label}</p>
             </div>
@@ -566,21 +680,13 @@ export default function LandingPage() {
 
             {/* Pro */}
             <div className="relative rounded-2xl border border-indigo-500/50 bg-gradient-to-b from-indigo-500/10 to-violet-500/5 p-7 flex flex-col shadow-2xl shadow-indigo-500/10">
-              {/* Badge */}
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-[11px] font-bold px-4 py-1 rounded-full uppercase tracking-wide whitespace-nowrap shadow-lg shadow-indigo-500/30">
-                60% OFF — Limited time
-              </div>
-
               <div className="mb-6">
                 <h3 className="font-display text-xl font-bold text-white mb-1">Pro</h3>
                 <div className="flex items-baseline gap-2 mt-3">
                   <p className="text-4xl font-bold text-white font-display">₹3,999</p>
                   <span className="text-white/40 text-sm">/mo</span>
                 </div>
-                <p className="text-sm mt-1">
-                  <span className="line-through text-white/30">₹9,999/mo</span>
-                  <span className="ml-2 text-emerald-400 font-semibold">Save ₹6,000/mo</span>
-                </p>
+                <p className="text-sm mt-1 text-white/35">Billed monthly · Cancel anytime</p>
               </div>
 
               <ul className="space-y-2.5 flex-1 mb-7">
@@ -601,7 +707,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-white/30 text-sm mt-8">
-            Cancel anytime. Lock in the launch price — stays discounted as long as you're subscribed.
+            Cancel anytime. No hidden fees. Your data is always yours.
           </p>
         </div>
       </section>
@@ -727,13 +833,9 @@ export default function LandingPage() {
               © {new Date().getFullYear()} SalesCRM · Built for Indian sales teams
             </p>
             <div className="flex items-center gap-5">
-              {["Privacy Policy", "Terms of Use", "Refund Policy"].map(t => (
+              {["Privacy Policy", "Terms of Use"].map(t => (
                 <span key={t} className="text-xs text-white/20 hover:text-white/40 transition-colors cursor-pointer">{t}</span>
               ))}
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-white/20">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              All systems operational
             </div>
           </div>
         </div>

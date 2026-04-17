@@ -33,6 +33,34 @@ app.include_router(superadmin.router)
 app.include_router(billing.router)
 
 
+def create_performance_indexes():
+    """Add composite indexes that dramatically speed up dashboard and list queries."""
+    from sqlalchemy import text
+    is_pg = not settings.DATABASE_URL.startswith("sqlite")
+    indexes = [
+        # leads — cover the most common WHERE clauses
+        "CREATE INDEX IF NOT EXISTS ix_leads_org_active       ON leads (organization_id, is_active)",
+        "CREATE INDEX IF NOT EXISTS ix_leads_org_status       ON leads (organization_id, status)",
+        "CREATE INDEX IF NOT EXISTS ix_leads_org_created      ON leads (organization_id, created_at DESC)",
+        "CREATE INDEX IF NOT EXISTS ix_leads_org_updated      ON leads (organization_id, updated_at DESC)",
+        "CREATE INDEX IF NOT EXISTS ix_leads_assigned_status  ON leads (assigned_to_id, status)",
+        # partial index on followup (only non-null rows) — PG only
+        *(["CREATE INDEX IF NOT EXISTS ix_leads_followup ON leads (next_followup_at) WHERE next_followup_at IS NOT NULL"] if is_pg else []),
+        # lead_activities
+        "CREATE INDEX IF NOT EXISTS ix_activities_lead_created  ON lead_activities (lead_id, created_at DESC)",
+        "CREATE INDEX IF NOT EXISTS ix_activities_type_created  ON lead_activities (activity_type, created_at DESC)",
+        # notifications
+        "CREATE INDEX IF NOT EXISTS ix_notif_user_read ON notifications (user_id, is_read)",
+    ]
+    with engine.connect() as conn:
+        for sql in indexes:
+            try:
+                conn.execute(text(sql))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+
+
 def run_migrations():
     """Safely add any missing columns to existing tables."""
     from sqlalchemy import text, inspect
@@ -54,22 +82,22 @@ def run_migrations():
         add_col("leads", "campaign_name", "VARCHAR")
         add_col("leads", "last_comment", "TEXT")
         add_col("leads", "tags", "TEXT")
-        add_col("leads", "deal_value", "REAL")
+        add_col("leads", "deal_value", "DOUBLE PRECISION")
         add_col("leads", "score", "INTEGER DEFAULT 0")
 
         # user_sessions (created by SQLAlchemy metadata, no manual columns needed)
 
         # users
         add_col("users", "organization_id", "INTEGER")
-        add_col("users", "is_owner", "BOOLEAN DEFAULT 0")
-        add_col("users", "is_superadmin", "BOOLEAN DEFAULT 0")
+        add_col("users", "is_owner", "BOOLEAN DEFAULT FALSE")
+        add_col("users", "is_superadmin", "BOOLEAN DEFAULT FALSE")
 
         # app_settings
         add_col("app_settings", "organization_id", "INTEGER")
 
         # email_templates
         add_col("email_templates", "organization_id", "INTEGER")
-        add_col("email_templates", "is_predefined", "BOOLEAN DEFAULT 0")
+        add_col("email_templates", "is_predefined", "BOOLEAN DEFAULT FALSE")
 
 
 def seed_admin():
@@ -141,6 +169,7 @@ def on_startup():
         run_migrations()
     except Exception as e:
         print(f"Migration warning: {e}")
+    create_performance_indexes()
     seed_admin()
     scheduler = BackgroundScheduler()
     scheduler.add_job(run_notification_job, "interval", minutes=1)

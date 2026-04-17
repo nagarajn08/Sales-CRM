@@ -143,35 +143,41 @@ def export_leads(
     q = _build_lead_query(db, current_user, status=status, priority=priority, source=source,
                           assigned_to_id=assigned_to_id, search=search, tag=tag,
                           date_from=date_from, date_to=date_to)
-    leads = q.order_by(Lead.created_at.desc()).all()
 
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["Web ID", "Name", "Mobile", "WhatsApp", "Email", "Company",
-                     "Status", "Priority", "Source", "Tags", "Assigned To",
-                     "Next Follow-up", "Last Comment", "Notes", "Created At"])
-    for lead in leads:
-        writer.writerow([
-            lead.web_id or "",
-            lead.name,
-            lead.mobile or "",
-            lead.whatsapp or "",
-            lead.email or "",
-            lead.company or "",
-            lead.status.value,
-            lead.priority.value,
-            lead.source.value,
-            lead.tags or "",
-            lead.assigned_to.name if lead.assigned_to else "",
-            lead.next_followup_at.isoformat() if lead.next_followup_at else "",
-            lead.last_comment or "",
-            lead.notes or "",
-            lead.created_at.isoformat(),
-        ])
-    output.seek(0)
+    HEADERS = ["Web ID", "Name", "Mobile", "WhatsApp", "Email", "Company",
+               "Status", "Priority", "Source", "Tags", "Assigned To",
+               "Next Follow-up", "Last Comment", "Notes", "Created At"]
+
+    def generate():
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(HEADERS)
+        yield buf.getvalue()
+        # Stream 500 rows at a time — never loads the full result into RAM
+        for lead in q.order_by(Lead.created_at.desc()).yield_per(500):
+            buf.seek(0); buf.truncate(0)
+            writer.writerow([
+                lead.web_id or "",
+                lead.name,
+                lead.mobile or "",
+                lead.whatsapp or "",
+                lead.email or "",
+                lead.company or "",
+                lead.status.value,
+                lead.priority.value,
+                lead.source.value,
+                lead.tags or "",
+                lead.assigned_to.name if lead.assigned_to else "",
+                lead.next_followup_at.isoformat() if lead.next_followup_at else "",
+                lead.last_comment or "",
+                lead.notes or "",
+                lead.created_at.isoformat(),
+            ])
+            yield buf.getvalue()
+
     filename = f"leads_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
     return StreamingResponse(
-        iter([output.getvalue()]),
+        generate(),
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
@@ -325,17 +331,19 @@ def import_leads(
 
     created = 0
     skipped = 0
-    for _, row in df.iterrows():
+    BATCH = 100  # flush every N rows instead of every row
+
+    for idx, (_, row) in enumerate(df.iterrows()):
         name_val = row.get(col["name"])
         if not name_val or str(name_val).strip() == "":
             skipped += 1
             continue
 
-        def get(field):
+        def get(field, _row=row):
             c = col.get(field)
             if not c:
                 return None
-            v = row.get(c)
+            v = _row.get(c)
             return str(v).strip() if v else None
 
         raw_priority = (get("priority") or "warm").lower()
@@ -357,11 +365,25 @@ def import_leads(
             created_by_id=current_user.id,
         )
         db.add(lead)
-        db.flush()
-        lead.web_id = f"WEB-{lead.id:04d}"
-        recalculate_score(db, lead)
-        _log_activity(db, lead.id, current_user.id, ActivityType.IMPORTED)
         created += 1
+
+        # Flush every BATCH rows to get IDs for web_id, then continue
+        if created % BATCH == 0:
+            db.flush()
+            # Assign web_ids and activities for this batch
+            for obj in db.new:
+                if isinstance(obj, Lead) and obj.web_id is None:
+                    obj.web_id = f"WEB-{obj.id:04d}"
+                    recalculate_score(db, obj)
+                    _log_activity(db, obj.id, current_user.id, ActivityType.IMPORTED)
+
+    # Final flush for remaining rows
+    db.flush()
+    for obj in list(db.new):
+        if isinstance(obj, Lead) and obj.web_id is None:
+            obj.web_id = f"WEB-{obj.id:04d}"
+            recalculate_score(db, obj)
+            _log_activity(db, obj.id, current_user.id, ActivityType.IMPORTED)
 
     db.commit()
     return {"imported": created, "skipped": skipped}
@@ -400,7 +422,7 @@ def update_status(lead_id: int, body: LeadStatusUpdate, current_user: User = Dep
     if body.status in FOLLOWUP_REQUIRED and not body.next_followup_at:
         raise HTTPException(status_code=400, detail=f"Follow-up date required for status '{body.status}'")
 
-    # Strip timezone info before saving (SQLite uses naive datetimes)
+    # Strip timezone info — DB stores naive datetimes (TIMESTAMP WITHOUT TIME ZONE)
     followup_dt = body.next_followup_at.replace(tzinfo=None) if body.next_followup_at and body.next_followup_at.tzinfo else body.next_followup_at
 
     if body.status in TERMINAL_STATUSES:
