@@ -11,7 +11,6 @@ import { ImportModal } from "../components/leads/ImportModal";
 import { KanbanView } from "../components/leads/KanbanView";
 import { useAuth } from "../auth/AuthContext";
 import { fmtDateTime, cn } from "../lib/utils";
-import { ScoreBadge } from "../components/ui/ScoreBadge";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "", label: "All Statuses" },
@@ -432,7 +431,6 @@ export default function LeadsPage() {
                       <td className="px-4 py-2.5 max-w-[180px]" onClick={() => navigate(`/leads/${lead.id}`)}>
                         <div className="flex items-center gap-1.5">
                           <p className="font-medium text-foreground group-hover:text-primary transition-colors truncate capitalize text-xs">{lead.name}</p>
-                          <ScoreBadge score={lead.score} />
                         </div>
                         {lead.company && <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{lead.company}</p>}
                       </td>

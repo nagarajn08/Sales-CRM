@@ -30,7 +30,13 @@ def get_stats(current_user: User = Depends(get_current_user), db: Session = Depe
     week_start = today_start - timedelta(days=today_start.weekday())  # Monday
 
     org_id = current_user.organization_id
-    org_base = db.query(Lead).filter(Lead.organization_id == org_id)
+    is_superadmin = current_user.is_superadmin
+
+    # Superadmin sees all leads across every org; others are scoped to their org
+    if is_superadmin:
+        org_base = db.query(Lead)
+    else:
+        org_base = db.query(Lead).filter(Lead.organization_id == org_id)
 
     if current_user.role == UserRole.USER:
         base = org_base.filter(Lead.assigned_to_id == current_user.id)
