@@ -248,6 +248,34 @@ export default function ReportsPage() {
         </div>
       </div>
 
+      {/* ── Today's follow-ups ── */}
+      <div>
+        <SectionTitle>Today</SectionTitle>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          <KpiCard
+            label="Follow-ups Done Today"
+            value={stats.followups_done_today}
+            sub="status updates made"
+            accent={stats.followups_done_today > 0 ? "bg-violet-500/10 text-violet-500" : "bg-secondary text-muted-foreground"}
+            icon={<svg viewBox="0 0 20 20" fill="none" className="h-5 w-5"><path d="M4 10l4 4 8-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.4"/></svg>}
+          />
+          <KpiCard
+            label="Due Today"
+            value={stats.followups_due_today}
+            sub="scheduled for today"
+            accent={stats.followups_due_today > 0 ? "bg-sky-500/10 text-sky-500" : "bg-secondary text-muted-foreground"}
+            icon={<svg viewBox="0 0 20 20" fill="none" className="h-5 w-5"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M7 2v3M13 2v3M3 8h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>}
+          />
+          <KpiCard
+            label="New Leads Today"
+            value={stats.new_leads_today}
+            sub="added today"
+            accent={stats.new_leads_today > 0 ? "bg-teal-500/10 text-teal-600" : "bg-secondary text-muted-foreground"}
+            icon={<svg viewBox="0 0 20 20" fill="none" className="h-5 w-5"><circle cx="10" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.6"/><path d="M3 17c0-3.5 3-6 7-6s7 2.5 7 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M15 4v4M13 6h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>}
+          />
+        </div>
+      </div>
+
       {/* ── Trend chart ── */}
       <div>
         <SectionTitle>Lead Trend</SectionTitle>

@@ -14,13 +14,26 @@ interface Props {
 
 const FIELDS = [
   { label: "Name",     note: "Required",  aliases: "Name, Full Name, Contact Name" },
-  { label: "Mobile",   note: "Optional",  aliases: "Mobile, Phone, Phone Number, Cell" },
-  { label: "Email",    note: "Optional",  aliases: "Email, Email Address" },
-  { label: "WhatsApp", note: "Optional",  aliases: "WhatsApp, WA Number" },
+  { label: "Mobile",   note: "Required",  aliases: "Mobile, Phone, Phone Number, Cell" },
+  { label: "Email",    note: "Required",  aliases: "Email, Email Address" },
   { label: "Company",  note: "Optional",  aliases: "Company, Company Name, Organisation" },
   { label: "Notes",    note: "Optional",  aliases: "Notes, Remarks, Comments" },
   { label: "Priority", note: "Optional",  aliases: "Priority → hot / warm / cold (defaults to warm)" },
 ];
+
+const REQUIRED_HEADERS = ["name", "mobile", "email"];
+const HEADER_ALIASES: Record<string, string[]> = {
+  name:   ["name", "full name", "fullname", "contact name", "lead name"],
+  mobile: ["mobile", "phone", "phone number", "mobile number", "contact number", "cell"],
+  email:  ["email", "email address", "mail", "e-mail"],
+};
+
+function matchesRequired(headers: string[]): string[] {
+  const lower = headers.map(h => h.trim().toLowerCase());
+  return REQUIRED_HEADERS.filter(req =>
+    !HEADER_ALIASES[req].some(alias => lower.includes(alias))
+  );
+}
 
 function downloadTemplate() {
   const header = "Name,Mobile,Email,Company,Notes,Priority";
@@ -52,8 +65,27 @@ export function ImportModal({ open, onClose, onImported }: Props) {
   const pickFile = (f: File) => {
     const ok = f.name.match(/\.(csv|xlsx|xls)$/i);
     if (!ok) { setError("Only .csv, .xlsx, or .xls files are supported."); return; }
-    setError("");
-    setFile(f);
+
+    // For CSV files: validate required headers client-side immediately
+    if (f.name.toLowerCase().endsWith(".csv")) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const firstLine = (e.target?.result as string).split("\n")[0] ?? "";
+        const headers = firstLine.split(",");
+        const missing = matchesRequired(headers);
+        if (missing.length > 0) {
+          setError(`Wrong format: missing required column(s): ${missing.map(m => m.charAt(0).toUpperCase() + m.slice(1)).join(", ")}. Expected columns: Name, Mobile, Email (required) + Company, Notes, Priority (optional).`);
+          return;
+        }
+        setError("");
+        setFile(f);
+      };
+      reader.readAsText(f);
+    } else {
+      // For xlsx/xls: backend will validate and return error if wrong format
+      setError("");
+      setFile(f);
+    }
   };
 
   const submit = async (e: React.FormEvent) => {

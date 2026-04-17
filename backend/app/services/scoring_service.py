@@ -40,7 +40,8 @@ def calculate_score(lead: Lead, activity_count: int) -> int:
     # 4. Follow-up scheduled (max 15)
     if lead.next_followup_at:
         now = datetime.utcnow()
-        if lead.next_followup_at >= now:
+        followup = lead.next_followup_at.replace(tzinfo=None) if lead.next_followup_at.tzinfo else lead.next_followup_at
+        if followup >= now:
             score += 15   # upcoming follow-up
         else:
             score += 5    # overdue but at least was tracked

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { authApi } from "../api";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
+import { isValidPassword, digitsOnly } from "../lib/validators";
 
 type Step = "email" | "otp";
 
@@ -38,6 +39,10 @@ export default function ForgotPasswordPage() {
   const resetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!isValidPassword(newPassword)) {
+      setError("Password must be min 8 chars, include 1 uppercase and 1 number");
+      return;
+    }
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -107,8 +112,9 @@ export default function ForgotPasswordPage() {
               <Input
                 label="Reset Code"
                 placeholder="6-digit code"
+                inputMode="numeric"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(e) => setOtp(digitsOnly(e.target.value))}
                 required
                 autoFocus
                 maxLength={6}

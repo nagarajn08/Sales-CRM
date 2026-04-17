@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import { leadsApi, usersApi } from "../../api";
 import type { Lead, User } from "../../types";
 import { useAuth } from "../../auth/AuthContext";
+import { isValidEmail, isValidMobile, digitsOnly } from "../../lib/validators";
 
 interface Props {
   open: boolean;
@@ -81,6 +82,8 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = "Name is required";
     if (!form.mobile.trim() && !form.email.trim()) e.mobile = "Mobile or email is required";
+    if (form.mobile.trim() && !isValidMobile(form.mobile)) e.mobile = "Mobile must be a 10-digit number";
+    if (form.email.trim() && !isValidEmail(form.email)) e.email = "Enter a valid email address";
     return e;
   };
 
@@ -128,13 +131,18 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
       <form onSubmit={submit} className="space-y-3">
         <Input label="Full Name" value={form.name} onChange={(e) => f("name", e.target.value)} required error={errors.name} />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <Input label="Mobile" value={form.mobile} onChange={(e) => f("mobile", e.target.value)} placeholder="+91..." error={errors.mobile} />
-          <Input label="WhatsApp" value={form.whatsapp} onChange={(e) => f("whatsapp", e.target.value)} placeholder="+91..." />
-        </div>
+        <Input
+          label="Mobile"
+          type="tel"
+          inputMode="numeric"
+          value={form.mobile}
+          onChange={(e) => f("mobile", digitsOnly(e.target.value))}
+          placeholder="9876543210"
+          error={errors.mobile}
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <Input label="Email" type="email" value={form.email} onChange={(e) => f("email", e.target.value)} />
+          <Input label="Email" type="email" value={form.email} onChange={(e) => f("email", e.target.value)} error={errors.email} />
           <Input label="Company" value={form.company} onChange={(e) => f("company", e.target.value)} />
         </div>
 
@@ -142,16 +150,6 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
           <Select label="Priority" value={form.priority} onChange={(e) => f("priority", e.target.value)} options={PRIORITY_OPTIONS} />
           <Select label="Source" value={form.source} onChange={(e) => f("source", e.target.value)} options={SOURCE_OPTIONS} />
         </div>
-
-        <Input
-          label="Deal Value (₹)"
-          type="number"
-          min="0"
-          step="0.01"
-          value={form.deal_value}
-          onChange={(e) => f("deal_value", e.target.value)}
-          placeholder="e.g. 50000"
-        />
 
         {isAdmin && users.length > 0 && (
           <Select

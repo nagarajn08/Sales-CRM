@@ -35,6 +35,8 @@ TERMINAL_STATUSES = {LeadStatus.NOT_INTERESTED, LeadStatus.CONVERTED}
 
 
 def _check_lead_access(lead: Lead, user: User):
+    if user.is_superadmin:
+        return  # superadmins can access any lead across all orgs
     if lead.organization_id != user.organization_id:
         raise HTTPException(status_code=403, detail="Access denied")
     if user.role in (UserRole.ADMIN, UserRole.MANAGER):
@@ -62,10 +64,13 @@ def _build_lead_query(
     date_to: Optional[str] = None,
     include_inactive: bool = False,
 ):
-    q = db.query(Lead).filter(Lead.organization_id == current_user.organization_id)
+    if current_user.is_superadmin:
+        q = db.query(Lead)
+    else:
+        q = db.query(Lead).filter(Lead.organization_id == current_user.organization_id)
     if not include_inactive:
         q = q.filter(Lead.is_active == True)
-    if current_user.role == UserRole.USER:
+    if not current_user.is_superadmin and current_user.role == UserRole.USER:
         q = q.filter(Lead.assigned_to_id == current_user.id)
     if status:
         q = q.filter(Lead.status == status)
@@ -178,10 +183,10 @@ def bulk_action(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    leads = db.query(Lead).filter(
-        Lead.id.in_(body.lead_ids),
-        Lead.organization_id == current_user.organization_id,
-    ).all()
+    q = db.query(Lead).filter(Lead.id.in_(body.lead_ids))
+    if not current_user.is_superadmin:
+        q = q.filter(Lead.organization_id == current_user.organization_id)
+    leads = q.all()
 
     if not leads:
         raise HTTPException(status_code=404, detail="No leads found")
@@ -216,7 +221,9 @@ def bulk_action(
         if not body.assigned_to_id:
             raise HTTPException(status_code=400, detail="assigned_to_id required")
         new_user = db.get(User, body.assigned_to_id)
-        if not new_user or new_user.organization_id != current_user.organization_id:
+        if not new_user:
+            raise HTTPException(status_code=404, detail="Target user not found")
+        if not current_user.is_superadmin and new_user.organization_id != current_user.organization_id:
             raise HTTPException(status_code=404, detail="Target user not found")
         for lead in leads:
             old_name = lead.assigned_to.name if lead.assigned_to else "Unassigned"
@@ -232,12 +239,18 @@ def bulk_action(
 
 @router.post("/", response_model=LeadRead, status_code=status.HTTP_201_CREATED)
 def create_lead(body: LeadCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    check_lead_limit(db, current_user.organization_id, is_superadmin=current_user.is_superadmin)
     assigned_to_id = body.assigned_to_id
     if current_user.role == UserRole.USER:
         assigned_to_id = current_user.id
+    # When superadmin assigns cross-org, put the lead in the assignee's org
+    org_id = current_user.organization_id
+    if current_user.is_superadmin and assigned_to_id:
+        assignee = db.get(User, assigned_to_id)
+        if assignee and assignee.organization_id:
+            org_id = assignee.organization_id
+    check_lead_limit(db, org_id, is_superadmin=current_user.is_superadmin)
     lead = Lead(
-        organization_id=current_user.organization_id,
+        organization_id=org_id,
         name=body.name, email=body.email, mobile=body.mobile, whatsapp=body.whatsapp,
         company=body.company, notes=body.notes, priority=body.priority, source=body.source,
         deal_value=body.deal_value, assigned_to_id=assigned_to_id, created_by_id=current_user.id,
@@ -258,7 +271,6 @@ def _normalize_columns(df) -> dict:
         "name":      ["name", "full name", "fullname", "contact name", "lead name", "customer name", "client name"],
         "mobile":    ["mobile", "phone", "phone number", "mobile number", "contact number", "cell", "cell phone"],
         "email":     ["email", "email address", "mail", "e-mail"],
-        "whatsapp":  ["whatsapp", "whatsapp number", "wa", "wa number"],
         "company":   ["company", "company name", "organization", "organisation", "business", "firm"],
         "notes":     ["notes", "note", "remarks", "comment", "comments", "description"],
         "priority":  ["priority", "lead priority"],
@@ -292,10 +304,18 @@ def import_leads(
 
     col = _normalize_columns(df)
 
+    missing = []
     if "name" not in col:
+        missing.append("Name")
+    if "mobile" not in col:
+        missing.append("Mobile")
+    if "email" not in col:
+        missing.append("Email")
+    if missing:
         raise HTTPException(
             status_code=400,
-            detail="Could not find a 'Name' column. Please make sure your file has a column called Name (or Full Name, Contact Name)."
+            detail=f"Wrong format: missing required column(s): {', '.join(missing)}. "
+                   f"Expected columns: Name, Mobile, Email (required) + Company, Notes, Priority (optional)."
         )
 
     df = df.where(pd.notna(df), None)
@@ -329,7 +349,6 @@ def import_leads(
             name=str(name_val).strip(),
             email=get("email"),
             mobile=get("mobile"),
-            whatsapp=get("whatsapp"),
             company=get("company"),
             notes=get("notes"),
             priority=priority,
@@ -381,11 +400,14 @@ def update_status(lead_id: int, body: LeadStatusUpdate, current_user: User = Dep
     if body.status in FOLLOWUP_REQUIRED and not body.next_followup_at:
         raise HTTPException(status_code=400, detail=f"Follow-up date required for status '{body.status}'")
 
+    # Strip timezone info before saving (SQLite uses naive datetimes)
+    followup_dt = body.next_followup_at.replace(tzinfo=None) if body.next_followup_at and body.next_followup_at.tzinfo else body.next_followup_at
+
     if body.status in TERMINAL_STATUSES:
         lead.is_active = False
         lead.next_followup_at = None
     else:
-        lead.next_followup_at = body.next_followup_at
+        lead.next_followup_at = followup_dt
 
     old_status = lead.status
     lead.status = body.status
@@ -393,12 +415,12 @@ def update_status(lead_id: int, body: LeadStatusUpdate, current_user: User = Dep
         lead.last_comment = body.comment
     _log_activity(db, lead.id, current_user.id, ActivityType.STATUS_CHANGED,
                   old_status=old_status, new_status=body.status,
-                  comment=body.comment, followup_date=body.next_followup_at)
+                  comment=body.comment, followup_date=followup_dt)
 
-    if body.next_followup_at and lead.assigned_to_id:
+    if followup_dt and lead.assigned_to_id:
         db.add(Notification(
             user_id=lead.assigned_to_id, lead_id=lead.id,
-            message=f"Follow-up due: {lead.name}", due_at=body.next_followup_at,
+            message=f"Follow-up due: {lead.name}", due_at=followup_dt,
         ))
 
     recalculate_score(db, lead)
@@ -424,10 +446,10 @@ def add_comment(lead_id: int, comment: str, current_user: User = Depends(get_cur
 @router.post("/{lead_id}/reassign", response_model=LeadRead)
 def reassign_lead(lead_id: int, body: LeadReassign, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     lead = db.get(Lead, lead_id)
-    if not lead or lead.organization_id != admin.organization_id:
+    if not lead or (not admin.is_superadmin and lead.organization_id != admin.organization_id):
         raise HTTPException(status_code=404, detail="Lead not found")
     new_user = db.get(User, body.assigned_to_id)
-    if not new_user or new_user.organization_id != admin.organization_id:
+    if not new_user or (not admin.is_superadmin and new_user.organization_id != admin.organization_id):
         raise HTTPException(status_code=404, detail="Target user not found")
     old_name = lead.assigned_to.name if lead.assigned_to else "Unassigned"
     lead.assigned_to_id = body.assigned_to_id

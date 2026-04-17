@@ -35,7 +35,6 @@ export default function BillingPage() {
   const [billing, setBilling] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const fetchBilling = () => {
@@ -98,17 +97,6 @@ export default function BillingPage() {
     }
   };
 
-  const handleCancel = async () => {
-    if (!confirm("Downgrade to Free plan? You will lose access to all Pro features immediately.")) return;
-    setCancelling(true);
-    try {
-      await billingApi.cancel();
-      setMessage({ type: "success", text: "Subscription cancelled. Downgraded to Free plan." });
-      fetchBilling();
-    } finally {
-      setCancelling(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -142,8 +130,7 @@ export default function BillingPage() {
           <div>
             <p className="font-semibold">Demo Mode — No payment required</p>
             <p className="mt-0.5 text-amber-700">
-              Razorpay keys are not configured. Upgrades are instant and free for testing.
-              Add <code className="bg-amber-100 px-1 rounded">RAZORPAY_KEY_ID</code> and <code className="bg-amber-100 px-1 rounded">RAZORPAY_KEY_SECRET</code> to enable real payments.
+              Upgrades are instant and free for testing.
             </p>
           </div>
         </div>
@@ -184,13 +171,6 @@ export default function BillingPage() {
               Renews on {new Date(billing.current_period_end).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
             </p>
           )}
-          {isPro && (
-            <div className="pt-1">
-              <Button variant="outline" size="sm" loading={cancelling} onClick={handleCancel}>
-                Cancel Subscription
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -224,10 +204,8 @@ export default function BillingPage() {
             ))}
           </ul>
 
-          {currentPlan === "free" ? (
+          {currentPlan === "free" && (
             <div className="text-center text-xs text-muted-foreground py-1 font-medium">Your current plan</div>
-          ) : (
-            <div className="text-center text-xs text-muted-foreground py-1">Downgrade by cancelling Pro</div>
           )}
         </div>
 
@@ -293,8 +271,6 @@ export default function BillingPage() {
             { q: "Can I upgrade anytime?", a: "Yes. Upgrade is instant — you get full Pro access immediately after payment." },
             { q: "What happens when I hit the Free limit?", a: "You'll see an upgrade prompt. Existing data is safe — you just can't add more until you upgrade." },
             { q: "Is the 60% discount permanent?", a: "It's a limited-time launch offer. Lock it in now and the discounted price stays as long as your subscription is active." },
-            { q: "Can I cancel anytime?", a: "Yes. Cancel anytime and you'll be downgraded to Free immediately. No questions asked." },
-            { q: "How do I add Razorpay keys?", a: "Add RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, and RAZORPAY_WEBHOOK_SECRET to your server environment to enable real payments." },
           ].map(({ q, a }) => (
             <div key={q} className="pb-3 border-b border-border last:border-0 last:pb-0">
               <p className="font-medium text-foreground">{q}</p>

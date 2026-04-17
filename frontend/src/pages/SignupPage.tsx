@@ -6,6 +6,7 @@ import { tokenStore } from "../api/axiosInstance";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
+import { isValidEmail, isValidMobile, isValidPassword, digitsOnly } from "../lib/validators";
 
 type AccountType = "individual" | "corporate";
 type Step = "form" | "otp";
@@ -105,6 +106,9 @@ export default function SignupPage() {
   const submitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!isValidEmail(email)) { setError("Enter a valid email address"); return; }
+    if (!isValidMobile(mobile)) { setError("Mobile must be a 10-digit number"); return; }
+    if (!isValidPassword(password)) { setError("Password must be min 8 chars, include 1 uppercase and 1 number"); return; }
     if (password !== confirm) { setError("Passwords do not match"); return; }
     setLoading(true);
     try {
@@ -243,9 +247,10 @@ export default function SignupPage() {
                 <Input
                   label="Mobile Number"
                   type="tel"
-                  placeholder="+91 98765 43210"
+                  inputMode="numeric"
+                  placeholder="9876543210"
                   value={mobile}
-                  onChange={e => setMobile(e.target.value)}
+                  onChange={e => setMobile(digitsOnly(e.target.value))}
                   required
                 />
                 <Input label="Password" type="password" placeholder="Min 8 chars, 1 uppercase, 1 number" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="new-password" />

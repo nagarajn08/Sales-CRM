@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { usersApi, type UserSession } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import type { User, UserRole } from "../types";
+import { isValidEmail, isValidMobile, isValidPassword, digitsOnly } from "../lib/validators";
 import { Button } from "../components/ui/button";
 import { fmtDateTime } from "../lib/utils";
 import { Badge } from "../components/ui/badge";
@@ -88,7 +89,11 @@ export default function UsersPage() {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = "Name is required";
     if (!form.email.trim()) e.email = "Email is required";
+    else if (!isValidEmail(form.email)) e.email = "Enter a valid email address";
+    if (form.mobile.trim() && !isValidMobile(form.mobile)) e.mobile = "Mobile must be a 10-digit number";
     if (!editUser && !form.password.trim()) e.password = "Password is required for new users";
+    else if (form.password.trim() && !isValidPassword(form.password))
+      e.password = "Min 8 chars, 1 uppercase, 1 number";
     return e;
   };
 
@@ -307,7 +312,7 @@ export default function UsersPage() {
         <form onSubmit={save} className="space-y-4">
           <Input label="Full Name" value={form.name} onChange={(e) => f("name", e.target.value)} required error={errors.name} />
           <Input label="Email" type="email" value={form.email} onChange={(e) => f("email", e.target.value)} required error={errors.email} />
-          <Input label="Mobile" value={form.mobile} onChange={(e) => f("mobile", e.target.value)} />
+          <Input label="Mobile" type="tel" inputMode="numeric" value={form.mobile} onChange={(e) => f("mobile", digitsOnly(e.target.value))} placeholder="9876543210" error={errors.mobile} />
           <Input
             label={editUser ? "New Password (leave blank to keep)" : "Password"}
             type="password"
