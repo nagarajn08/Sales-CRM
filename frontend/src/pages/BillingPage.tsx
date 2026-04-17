@@ -149,45 +149,93 @@ export default function BillingPage() {
       )}
 
       {/* Current usage */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <CardTitle className="text-base">Current Plan</CardTitle>
-            <span className={cn(
-              "text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide",
-              isPro ? "bg-violet-100 text-violet-700" : "bg-secondary text-muted-foreground"
-            )}>
-              {billing.plan_name}
-            </span>
+      <div className={cn(
+        "relative rounded-2xl p-6 overflow-hidden border",
+        isPro
+          ? "bg-gradient-to-br from-violet-600 to-indigo-700 border-violet-500 text-white"
+          : "bg-gradient-to-br from-slate-700 to-slate-800 border-slate-600 text-white"
+      )}>
+        {/* Background decoration */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className={cn("absolute -top-10 -right-10 h-40 w-40 rounded-full opacity-20", isPro ? "bg-violet-300" : "bg-slate-400")} />
+          <div className={cn("absolute -bottom-6 -left-6 h-28 w-28 rounded-full opacity-10", isPro ? "bg-indigo-300" : "bg-slate-300")} />
+        </div>
+
+        <div className="relative flex items-start justify-between gap-4 mb-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest opacity-70 mb-1">Current Plan</p>
+            <p className="text-2xl font-bold tracking-tight">{billing.plan_name}</p>
+            {billing.current_period_end && (
+              <p className="text-xs opacity-60 mt-1">
+                Renews on {new Date(billing.current_period_end).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+              </p>
+            )}
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <UsageBar label="Users" current={billing.users.current} max={billing.users.max} />
-            <UsageBar label="Leads" current={billing.leads.current} max={billing.leads.max} />
+          <div className={cn(
+            "flex items-center justify-center h-12 w-12 rounded-xl shrink-0",
+            isPro ? "bg-white/15" : "bg-white/10"
+          )}>
+            {isPro ? (
+              <svg viewBox="0 0 20 20" fill="none" className="h-6 w-6 text-white">
+                <path d="M10 2l2.4 5.6 6 .6-4.4 4 1.4 5.8L10 15l-5.4 3 1.4-5.8L1.6 8.2l6-.6z" fill="currentColor" opacity=".9"/>
+              </svg>
+            ) : (
+              <svg viewBox="0 0 20 20" fill="none" className="h-6 w-6 text-white">
+                <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.8"/>
+                <path d="M10 6v4l2.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+            )}
           </div>
-          {billing.current_period_end && (
-            <p className="text-xs text-muted-foreground">
-              Renews on {new Date(billing.current_period_end).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+
+        <div className="relative grid grid-cols-2 gap-3">
+          {[
+            { label: "Users", current: billing.users.current, max: billing.users.max },
+            { label: "Leads", current: billing.leads.current, max: billing.leads.max },
+          ].map(({ label, current, max }) => {
+            const unlimited = max === -1;
+            const pct = unlimited ? 0 : Math.min((current / max) * 100, 100);
+            const warn = !unlimited && pct >= 80;
+            return (
+              <div key={label} className="bg-white/10 rounded-xl px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-widest opacity-70 mb-1">{label}</p>
+                <p className="text-xl font-bold tabular-nums">
+                  {current}
+                  <span className="text-sm font-normal opacity-60 ml-1">/ {unlimited ? "∞" : max}</span>
+                </p>
+                {!unlimited && (
+                  <div className="mt-2 h-1 rounded-full bg-white/20 overflow-hidden">
+                    <div
+                      className={cn("h-full rounded-full transition-all duration-500", warn ? "bg-amber-300" : "bg-white/70")}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Plan comparison */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
         {/* Free Plan */}
         <div className={cn(
-          "relative rounded-xl border-2 p-6 flex flex-col gap-5 bg-card",
-          currentPlan === "free" ? "border-border shadow-md" : "border-border"
+          "relative rounded-xl border-2 p-6 flex flex-col gap-5 transition-all",
+          currentPlan === "free"
+            ? "border-indigo-400 bg-gradient-to-br from-indigo-50 to-slate-50 dark:from-indigo-950/40 dark:to-slate-900 shadow-lg shadow-indigo-100 dark:shadow-indigo-900/20"
+            : "border-border bg-card"
         )}>
+          {currentPlan === "free" && (
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-indigo-500 text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wide whitespace-nowrap shadow">
+              <svg viewBox="0 0 12 12" fill="none" className="h-3 w-3"><path d="M6 1l1.2 3.6H11L8.2 6.8l1 3.2L6 8.2 2.8 10l1-3.2L1 4.6h3.8z" fill="currentColor"/></svg>
+              Your Current Plan
+            </div>
+          )}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-lg text-foreground">Free</h3>
-              {currentPlan === "free" && (
-                <span className="text-[10px] font-bold bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">Current</span>
-              )}
+              <h3 className={cn("font-bold text-lg", currentPlan === "free" ? "text-indigo-700 dark:text-indigo-300" : "text-foreground")}>Free</h3>
             </div>
             <p className="text-3xl font-bold text-foreground">₹0</p>
             <p className="text-xs text-muted-foreground mt-1">Forever free · No card required</p>
@@ -196,37 +244,39 @@ export default function BillingPage() {
           <ul className="space-y-2 flex-1">
             {plans["free"]?.features.map((f) => (
               <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
-                <svg viewBox="0 0 12 12" fill="none" className="h-3.5 w-3.5 mt-0.5 shrink-0 text-border">
+                <svg viewBox="0 0 12 12" fill="none" className={cn("h-3.5 w-3.5 mt-0.5 shrink-0", currentPlan === "free" ? "text-indigo-400" : "text-border")}>
                   <path d="M2 6l2.5 2.5L10 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
                 {f}
               </li>
             ))}
           </ul>
-
-          {currentPlan === "free" && (
-            <div className="text-center text-xs text-muted-foreground py-1 font-medium">Your current plan</div>
-          )}
         </div>
 
         {/* Pro Plan */}
         <div className={cn(
-          "relative rounded-xl border-2 p-6 flex flex-col gap-5 bg-card",
-          isPro ? "border-violet-500 shadow-md" : "border-violet-500/60 ring-2 ring-violet-500/10"
+          "relative rounded-xl border-2 p-6 flex flex-col gap-5 transition-all",
+          isPro
+            ? "border-violet-500 bg-gradient-to-br from-violet-50 to-slate-50 dark:from-violet-950/40 dark:to-slate-900 shadow-lg shadow-violet-100 dark:shadow-violet-900/20"
+            : "border-violet-400/50 bg-card ring-2 ring-violet-500/10"
         )}>
-          {/* Discount badge */}
-          {proPlan?.discount_pct > 0 && (
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-bold bg-violet-500 text-white px-3 py-1 rounded-full uppercase tracking-wide whitespace-nowrap">
+          {/* Current plan ribbon for Pro */}
+          {isPro && (
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-violet-600 text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wide whitespace-nowrap shadow">
+              <svg viewBox="0 0 12 12" fill="none" className="h-3 w-3"><path d="M6 1l1.2 3.6H11L8.2 6.8l1 3.2L6 8.2 2.8 10l1-3.2L1 4.6h3.8z" fill="currentColor"/></svg>
+              Your Current Plan
+            </div>
+          )}
+          {/* Discount badge (only when not current) */}
+          {!isPro && proPlan?.discount_pct > 0 && (
+            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[11px] font-bold bg-violet-500 text-white px-3 py-1 rounded-full uppercase tracking-wide whitespace-nowrap shadow">
               {proPlan.discount_pct}% OFF — Limited time
             </span>
           )}
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-lg text-foreground">Pro</h3>
-              {isPro && (
-                <span className="text-[10px] font-bold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">Active</span>
-              )}
+              <h3 className={cn("font-bold text-lg", isPro ? "text-violet-700 dark:text-violet-300" : "text-foreground")}>Pro</h3>
             </div>
             <div className="flex items-baseline gap-2">
               <p className="text-3xl font-bold text-foreground tabular-nums">
@@ -245,7 +295,7 @@ export default function BillingPage() {
           <ul className="space-y-2 flex-1">
             {proPlan?.features.map((f) => (
               <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
-                <svg viewBox="0 0 12 12" fill="none" className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary">
+                <svg viewBox="0 0 12 12" fill="none" className={cn("h-3.5 w-3.5 mt-0.5 shrink-0", isPro ? "text-violet-500" : "text-primary")}>
                   <path d="M2 6l2.5 2.5L10 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
                 {f}
@@ -253,12 +303,10 @@ export default function BillingPage() {
             ))}
           </ul>
 
-          {!isPro ? (
+          {!isPro && (
             <Button className="w-full" loading={upgrading} onClick={handleUpgrade}>
               Upgrade to Pro →
             </Button>
-          ) : (
-            <div className="text-center text-sm font-semibold text-violet-600 py-1">✓ You're on Pro</div>
           )}
         </div>
       </div>
