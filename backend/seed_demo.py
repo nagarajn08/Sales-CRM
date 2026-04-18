@@ -36,9 +36,16 @@ if db.query(Organization).filter(Organization.name == "Demo Corp").first():
     db.close()
     sys.exit(0)
 
+from app.models.subscription import Subscription, PlanName, SubStatus
+
 # ── 1. Organisation ────────────────────────────────────────────────────────────
 org = Organization(name="Demo Corp", type=OrgType.CORPORATE)
 db.add(org)
+db.flush()
+
+# Pro plan so demo has no lead/user limits
+sub = Subscription(organization_id=org.id, plan=PlanName.PRO, status=SubStatus.ACTIVE)
+db.add(sub)
 db.flush()
 
 # ── 2. Users ───────────────────────────────────────────────────────────────────
@@ -172,10 +179,10 @@ def random_tags():
         return None
     return ",".join(random.sample(TAGS_POOL, n))
 
-# ── 4. Generate 120 leads ──────────────────────────────────────────────────────
-print("Creating 120 leads...")
+# ── 4. Generate 1000 leads ─────────────────────────────────────────────────────
+print("Creating 1000 leads...")
 leads = []
-for i in range(120):
+for i in range(1000):
     first = random.choice(FIRST_NAMES)
     last  = random.choice(LAST_NAMES)
     name  = f"{first} {last}"
@@ -285,7 +292,8 @@ print("  Organisation : Demo Corp")
 print("  Admin login  : admin@demo.com  /  Demo@1234")
 print("  Sales users  : priya@demo.com, rohit@demo.com, sneha@demo.com, karan@demo.com")
 print("  Password     : Demo@1234  (same for all)")
-print("  Leads        : 120")
-print("  Activities   : ~600+")
+print("  Plan         : Pro (unlimited)")
+print("  Leads        : 1000")
+print("  Activities   : ~5000+")
 
 db.close()
