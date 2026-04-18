@@ -25,6 +25,7 @@ class User(Base):
     is_owner = Column(Boolean, default=False)
     is_superadmin = Column(Boolean, default=False)
     last_login = Column(DateTime, nullable=True)
+    password_changed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

@@ -43,7 +43,8 @@ def _set_cookie(response: Response, token: str):
 
 
 def _tokens(user: User, response: Response) -> dict:
-    data = {"sub": str(user.id), "email": user.email, "role": user.role}
+    pwd_ts = user.password_changed_at.isoformat() if user.password_changed_at else ""
+    data = {"sub": str(user.id), "email": user.email, "role": user.role, "pwd_ts": pwd_ts}
     access = create_access_token(data)
     refresh = create_refresh_token(data)
     _set_cookie(response, refresh)
@@ -191,6 +192,12 @@ def reset_password(body: ResetPasswordRequest, request: Request, db: Session = D
     if not verify_password_reset_otp(db, body.email, body.otp):
         raise HTTPException(status_code=400, detail="Invalid or expired OTP")
     user.hashed_password = hash_password(body.new_password)
+    user.password_changed_at = datetime.utcnow()
+    # Invalidate all active sessions
+    db.query(UserSession).filter(
+        UserSession.user_id == user.id,
+        UserSession.logout_at.is_(None),
+    ).update({"logout_at": datetime.utcnow()})
     db.commit()
     return {"detail": "Password reset successfully"}
 
@@ -201,6 +208,11 @@ def refresh(response: Response, payload: dict = Depends(get_refresh_token_payloa
     user = db.get(User, int(payload["sub"]))
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="User not found")
+    # Reject tokens issued before a password change
+    token_pwd_ts = payload.get("pwd_ts", "")
+    current_pwd_ts = user.password_changed_at.isoformat() if user.password_changed_at else ""
+    if token_pwd_ts != current_pwd_ts:
+        raise HTTPException(status_code=401, detail="Session expired — please log in again")
     return _tokens(user, response)
 
 

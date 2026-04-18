@@ -106,6 +106,11 @@ def update_user(user_id: int, body: UserUpdate, admin: User = Depends(require_su
         user.is_active = body.is_active
     if body.password:
         user.hashed_password = hash_password(body.password)
+        user.password_changed_at = datetime.utcnow()
+        db.query(UserSession).filter(
+            UserSession.user_id == user.id,
+            UserSession.logout_at.is_(None),
+        ).update({"logout_at": datetime.utcnow()})
     db.commit()
     db.refresh(user)
     return user

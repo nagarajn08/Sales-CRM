@@ -1,4 +1,5 @@
 import secrets
+import smtplib
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -91,6 +92,41 @@ def update_org_name(
     org.name = name
     db.commit()
     return {"ok": True, "name": org.name}
+
+
+@router.post("/smtp-test")
+def test_smtp(admin: User = Depends(require_superadmin), db: Session = Depends(get_db)):
+    """Verify SMTP connection using stored settings without sending an email."""
+    rows = db.query(AppSettings).filter(AppSettings.organization_id == admin.organization_id).all()
+    s = {r.key: r.value for r in rows}
+    host = s.get("smtp_host", "").strip()
+    port_str = s.get("smtp_port", "587").strip()
+    user = s.get("smtp_user", "").strip()
+    password = s.get("smtp_password", "").strip()
+    if not host:
+        raise HTTPException(status_code=400, detail="SMTP host is not configured")
+    try:
+        port = int(port_str)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid SMTP port")
+    try:
+        if port == 465:
+            server = smtplib.SMTP_SSL(host, port, timeout=10)
+        else:
+            server = smtplib.SMTP(host, port, timeout=10)
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+        if user and password:
+            server.login(user, password)
+        server.quit()
+    except smtplib.SMTPAuthenticationError:
+        raise HTTPException(status_code=400, detail="Authentication failed — check username and password")
+    except smtplib.SMTPConnectError:
+        raise HTTPException(status_code=400, detail=f"Could not connect to {host}:{port}")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"SMTP error: {str(e)}")
+    return {"ok": True, "detail": f"Connected to {host}:{port} successfully"}
 
 
 @router.post("/webhook/regenerate")

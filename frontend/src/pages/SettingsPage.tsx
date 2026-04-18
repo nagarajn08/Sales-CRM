@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { settingsApi } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { capitalizeName } from "../lib/validators";
@@ -71,6 +72,7 @@ export default function SettingsPage() {
   // Per-section save state
   const [savingEmail, setSavingEmail] = useState(false);
   const [savedEmail, setSavedEmail] = useState(false);
+  const [testingSmtp, setTestingSmtp] = useState(false);
   const [savingWa, setSavingWa] = useState(false);
   const [savedWa, setSavedWa] = useState(false);
 
@@ -296,15 +298,39 @@ export default function SettingsPage() {
               onChange={(e) => set("smtp_from", e.target.value)}
               placeholder="SalesCRM <noreply@yourcompany.com>"
             />
-            <SaveRow
-              saving={savingEmail}
-              saved={savedEmail}
-              savedMsg="Email settings saved!"
-              onSave={() => saveSection(
-                ["support_email", "smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from"],
-                setSavingEmail, setSavedEmail,
-              )}
-            />
+            <div className="flex items-center justify-between pt-3 border-t border-border mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                loading={testingSmtp}
+                onClick={async () => {
+                  setTestingSmtp(true);
+                  try {
+                    const r = await settingsApi.testSmtp();
+                    toast.success(r.detail);
+                  } catch {
+                    // error toast shown by global interceptor
+                  } finally {
+                    setTestingSmtp(false);
+                  }
+                }}
+              >
+                Test Connection
+              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                  loading={savingEmail}
+                  size="sm"
+                  onClick={() => saveSection(
+                    ["support_email", "smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from"],
+                    setSavingEmail, setSavedEmail,
+                  )}
+                >
+                  Save
+                </Button>
+                {savedEmail && <span className="text-xs font-medium text-green-600">✓ Email settings saved!</span>}
+              </div>
+            </div>
           </div>
         </SectionCard>
       )}

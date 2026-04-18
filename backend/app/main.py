@@ -119,7 +119,7 @@ def run_migrations():
 
         _allowed_tables = {"leads", "users", "app_settings", "email_templates", "user_sessions"}
         _allowed_types = {"VARCHAR", "INTEGER", "BOOLEAN DEFAULT FALSE", "BOOLEAN DEFAULT TRUE",
-                          "TEXT", "DOUBLE PRECISION", "INTEGER DEFAULT 0"}
+                          "TEXT", "DOUBLE PRECISION", "INTEGER DEFAULT 0", "TIMESTAMP"}
 
         def add_col(table, col, col_type):
             if table not in _allowed_tables or col_type not in _allowed_types:
@@ -146,6 +146,7 @@ def run_migrations():
         add_col("users", "organization_id", "INTEGER")
         add_col("users", "is_owner", "BOOLEAN DEFAULT FALSE")
         add_col("users", "is_superadmin", "BOOLEAN DEFAULT FALSE")
+        add_col("users", "password_changed_at", "TIMESTAMP")
 
         # app_settings
         add_col("app_settings", "organization_id", "INTEGER")
