@@ -1,6 +1,8 @@
 import secrets
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user, get_refresh_token_payload
@@ -29,11 +31,13 @@ from app.models.user_session import UserSession
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 COOKIE = "refresh_token"
+limiter = Limiter(key_func=get_remote_address)
 
 
 def _set_cookie(response: Response, token: str):
+    is_production = not settings.FRONTEND_URL.startswith("http://localhost")
     response.set_cookie(
-        COOKIE, token, httponly=True, secure=False, samesite="lax",
+        COOKIE, token, httponly=True, secure=is_production, samesite="lax",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400, path="/api/auth",
     )
 
@@ -48,6 +52,7 @@ def _tokens(user: User, response: Response) -> dict:
 
 # ── Login ──────────────────────────────────────────────────────────────────
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("10/minute")
 def login(body: LoginRequest, response: Response, request: Request, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.hashed_password):
@@ -65,7 +70,8 @@ def login(body: LoginRequest, response: Response, request: Request, db: Session 
 
 # ── OTP: Request ──────────────────────────────────────────────────────────
 @router.post("/otp/request", response_model=OTPRequestResponse)
-def otp_request(body: OTPRequestBody, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def otp_request(body: OTPRequestBody, request: Request, db: Session = Depends(get_db)):
     # Check if email already registered
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=409, detail="Email already registered")
@@ -81,7 +87,8 @@ def otp_request(body: OTPRequestBody, db: Session = Depends(get_db)):
 
 # ── OTP: Verify ───────────────────────────────────────────────────────────
 @router.post("/otp/verify", response_model=OTPVerifyResponse)
-def otp_verify(body: OTPVerifyBody, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def otp_verify(body: OTPVerifyBody, request: Request, db: Session = Depends(get_db)):
     ok = verify_otps(db, body.email, body.mobile, body.email_otp, body.mobile_otp)
     if not ok:
         raise HTTPException(status_code=400, detail="Invalid or expired OTP")
@@ -161,7 +168,8 @@ def signup_corporate(body: CorporateSignupRequest, response: Response, db: Sessi
 
 # ── Forgot Password ───────────────────────────────────────────────────────
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
-def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def forgot_password(body: ForgotPasswordRequest, request: Request, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     # Always return success to avoid email enumeration
     if not user:
@@ -175,7 +183,8 @@ def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/reset-password")
-def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def reset_password(body: ResetPasswordRequest, request: Request, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user:
         raise HTTPException(status_code=400, detail="Invalid request")

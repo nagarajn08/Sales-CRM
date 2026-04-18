@@ -520,9 +520,10 @@ def send_email_to_lead(
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = body.subject
-        msg["From"] = smtp_from
-        msg["To"] = lead.email
+        # Strip newlines to prevent email header injection
+        msg["Subject"] = body.subject.replace("\r", "").replace("\n", "")
+        msg["From"] = smtp_from.replace("\r", "").replace("\n", "")
+        msg["To"] = lead.email.replace("\r", "").replace("\n", "")
         msg.attach(MIMEText(body.body, "plain"))
         with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
             server.ehlo()

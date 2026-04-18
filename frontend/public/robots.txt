@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /leads/
+Disallow: /dashboard/
+Disallow: /users/
+Disallow: /settings/
+Disallow: /billing/
+
+Sitemap: https://salescrm.in/sitemap.xml

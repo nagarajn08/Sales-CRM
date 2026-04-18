@@ -160,12 +160,22 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
           />
         )}
 
-        <Input
-          label="Tags"
-          value={form.tags}
-          onChange={(e) => f("tags", e.target.value)}
-          placeholder="hot, referral, enterprise (comma separated)"
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <Input
+            label="Tags"
+            value={form.tags}
+            onChange={(e) => f("tags", e.target.value)}
+            placeholder="hot, referral, enterprise"
+          />
+          <Input
+            label="Deal Value (₹)"
+            type="number"
+            inputMode="numeric"
+            value={form.deal_value}
+            onChange={(e) => f("deal_value", e.target.value)}
+            placeholder="e.g. 50000"
+          />
+        </div>
 
         <Textarea label="Notes" value={form.notes} onChange={(e) => f("notes", e.target.value)} placeholder="Any additional notes..." rows={2} />
 

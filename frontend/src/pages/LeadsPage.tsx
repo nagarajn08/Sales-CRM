@@ -406,6 +406,7 @@ export default function LeadsPage() {
                   <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Status</th>
                   <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Priority</th>
                   <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Follow-up</th>
+                  <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Deal Value</th>
                   <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden xl:table-cell">Tags</th>
                   <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden xl:table-cell">Last Comment</th>
                   {isAdmin && (
@@ -467,6 +468,11 @@ export default function LeadsPage() {
                             {followup.overdue && <span className="mr-1">⚠</span>}{followup.label}
                           </span>
                         ) : <span className="text-muted-foreground/40 text-xs">—</span>}
+                      </td>
+                      <td className="px-4 py-2.5 hidden lg:table-cell" onClick={() => navigate(`/leads/${lead.id}`)}>
+                        {lead.deal_value != null
+                          ? <span className="text-xs font-medium text-foreground">₹{lead.deal_value.toLocaleString("en-IN")}</span>
+                          : <span className="text-muted-foreground/30 text-xs">—</span>}
                       </td>
                       <td className="px-4 py-2.5 hidden xl:table-cell" onClick={() => navigate(`/leads/${lead.id}`)}>
                         {tags.length > 0 ? (

@@ -1,15 +1,29 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, field_validator
 from app.models.lead import LeadStatus, LeadPriority, LeadSource
 from app.schemas.user import UserSummary
 
 
 class LeadCreate(BaseModel):
     name: str
-    email: str | None = None
+    email: EmailStr | None = None
     mobile: str | None = None
     whatsapp: str | None = None
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Name cannot be blank")
+        return v.strip()
+
+    @field_validator("mobile", "whatsapp")
+    @classmethod
+    def digits_only(cls, v: str | None) -> str | None:
+        if v is not None and v.strip() and not v.strip().lstrip("+").isdigit():
+            raise ValueError("Must contain only digits")
+        return v
     company: str | None = None
     notes: str | None = None
     priority: LeadPriority = LeadPriority.WARM

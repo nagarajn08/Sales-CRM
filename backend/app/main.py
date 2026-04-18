@@ -1,8 +1,31 @@
 import secrets
-from fastapi import FastAPI
+import logging
+import sentry_sdk
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.config import settings
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+)
+logger = logging.getLogger("salescrm")
+
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        integrations=[FastApiIntegration(), SqlalchemyIntegration()],
+        traces_sample_rate=0.2,
+        environment="production" if not settings.FRONTEND_URL.startswith("http://localhost") else "development",
+    )
+    logger.info("Sentry initialized")
 from app.database import Base, engine, SessionLocal
 import app.models  # register all models
 from app.routers import auth, users, leads, dashboard, templates, notifications
@@ -11,7 +34,10 @@ from app.routers import webhook
 from app.routers import superadmin
 from app.routers import billing
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Sales CRM API", version="2.0.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,6 +46,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response: Response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        if not settings.FRONTEND_URL.startswith("http://localhost"):
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(auth.router)
 app.include_router(users.router)
@@ -68,7 +110,13 @@ def run_migrations():
         inspector = inspect(engine)
         tables = inspector.get_table_names()
 
+        _allowed_tables = {"leads", "users", "app_settings", "email_templates", "user_sessions"}
+        _allowed_types = {"VARCHAR", "INTEGER", "BOOLEAN DEFAULT FALSE", "BOOLEAN DEFAULT TRUE",
+                          "TEXT", "DOUBLE PRECISION", "INTEGER DEFAULT 0"}
+
         def add_col(table, col, col_type):
+            if table not in _allowed_tables or col_type not in _allowed_types:
+                return
             if table not in tables:
                 return
             existing = [c["name"] for c in inspector.get_columns(table)]
@@ -131,7 +179,7 @@ def seed_admin():
             )
             db.add(admin)
             db.commit()
-            print(f"Super admin created: {settings.ADMIN_EMAIL} / {settings.ADMIN_PASSWORD}")
+            logger.info(f"Super admin created: {settings.ADMIN_EMAIL}")
         else:
             # Ensure existing admin has superadmin flag and org assigned
             changed = False
@@ -144,7 +192,7 @@ def seed_admin():
                 changed = True
             if changed:
                 db.commit()
-                print(f"Updated admin: {admin.email} → superadmin=True")
+                logger.info(f"Updated admin: {admin.email} → superadmin=True")
         from app.services.template_seeder import seed_predefined_templates
         seed_predefined_templates(db, default_org.id)
         from app.services.billing_service import get_or_create_subscription
@@ -168,7 +216,7 @@ def on_startup():
     try:
         run_migrations()
     except Exception as e:
-        print(f"Migration warning: {e}")
+        logger.warning(f"Migration warning: {e}")
     create_performance_indexes()
     seed_admin()
     scheduler = BackgroundScheduler()
