@@ -1,13 +1,15 @@
 import secrets
+import warnings
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_FALLBACK_SECRET = secrets.token_hex(32)
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     DATABASE_URL: str = "postgresql://salescrm:salescrm123@localhost:5432/salescrm"
-    # Must be set in .env — do NOT use a generated default in production
-    SECRET_KEY: str = secrets.token_hex(32)
+    SECRET_KEY: str = _FALLBACK_SECRET
     FRONTEND_URL: str = "http://localhost:5173"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7

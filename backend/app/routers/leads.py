@@ -5,13 +5,17 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 import pandas as pd
 from app.database import get_db
 from app.dependencies import get_current_user, require_admin
+
+limiter = Limiter(key_func=get_remote_address)
 from app.models.lead import Lead, LeadSource, LeadStatus
 from app.models.lead_activity import LeadActivity, ActivityType
 from app.models.notification import Notification
@@ -105,7 +109,7 @@ def _build_lead_query(
     return q
 
 
-@router.get("/", response_model=list[LeadRead])
+@router.get("/")
 def list_leads(
     status: Optional[LeadStatus] = None,
     priority: Optional[str] = None,
@@ -117,14 +121,19 @@ def list_leads(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     skip: int = Query(0, ge=0),
-    limit: int = Query(50, le=200),
+    limit: int = Query(100, le=500),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     q = _build_lead_query(db, current_user, status=status, priority=priority, source=source,
                           assigned_to_id=assigned_to_id, search=search, overdue=overdue,
                           tag=tag, date_from=date_from, date_to=date_to)
-    return q.order_by(Lead.next_followup_at.asc().nulls_last(), Lead.created_at.desc()).offset(skip).limit(limit).all()
+    total = q.count()
+    ordered = q.order_by(Lead.next_followup_at.asc().nulls_last(), Lead.created_at.desc())
+    items = ordered.offset(skip).limit(limit).all()
+    from app.schemas.lead import LeadRead as LR
+    data = [LR.model_validate(i).model_dump(mode="json") for i in items]
+    return JSONResponse(content=data, headers={"X-Total-Count": str(total)})
 
 
 @router.get("/export")
@@ -184,7 +193,9 @@ def export_leads(
 
 
 @router.post("/bulk")
+@limiter.limit("30/minute")
 def bulk_action(
+    request: Request,
     body: BulkActionRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -293,7 +304,9 @@ def _normalize_columns(df) -> dict:
 
 
 @router.post("/import", status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 def import_leads(
+    request: Request,
     file: UploadFile = File(...),
     assigned_to_id: Optional[int] = None,
     current_user: User = Depends(get_current_user),
@@ -492,7 +505,9 @@ def get_timeline(lead_id: int, current_user: User = Depends(get_current_user), d
 
 
 @router.post("/{lead_id}/email", status_code=status.HTTP_200_OK)
+@limiter.limit("20/minute")
 def send_email_to_lead(
+    request: Request,
     lead_id: int,
     body: EmailSendRequest,
     current_user: User = Depends(get_current_user),

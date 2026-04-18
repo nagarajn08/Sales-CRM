@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { Modal } from "../ui/modal";
 import { Select, Textarea, Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { templatesApi } from "../../api";
-import api from "../../api/axiosInstance";
+import { leadsApi, templatesApi } from "../../api";
 import type { Lead, EmailTemplate } from "../../types";
 
 interface Props {
@@ -50,7 +49,7 @@ export function EmailModal({ open, onClose, lead }: Props) {
     setSending(true);
     setError("");
     try {
-      await api.post(`/api/leads/${lead.id}/email`, {
+      await leadsApi.sendEmail(lead.id, {
         subject: subject.trim(),
         body: body.trim(),
         template_id: selectedId ? parseInt(selectedId) : null,

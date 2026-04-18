@@ -1,4 +1,5 @@
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -52,6 +53,13 @@ api.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+    }
+    // Show a toast for unexpected server/network errors (not auth errors already handled above)
+    const s = error.response?.status;
+    if (s && s >= 400 && s !== 401 && s !== 422) {
+      const detail = error.response?.data?.detail;
+      const msg = typeof detail === "string" ? detail : `Error ${s}`;
+      toast.error(msg, { id: `http-${s}-${orig?.url}` });
     }
     return Promise.reject(error);
   }

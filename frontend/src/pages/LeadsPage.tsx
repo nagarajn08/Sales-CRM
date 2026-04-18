@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { leadsApi, usersApi } from "../api";
 import type { Lead, LeadStatus, LeadPriority, LeadSource, User } from "../types";
@@ -68,6 +69,9 @@ export default function LeadsPage() {
   const isAdmin = user?.role === "admin" || user?.role === "manager";
 
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 100;
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
 
@@ -90,10 +94,13 @@ export default function LeadsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
-  const fetchLeads = useCallback(async () => {
+  const fetchLeads = useCallback(async (targetPage = page) => {
     setLoading(true);
     try {
-      const params: Record<string, unknown> = {};
+      const params: Record<string, unknown> = {
+        limit: PAGE_SIZE,
+        skip: (targetPage - 1) * PAGE_SIZE,
+      };
       if (statusFilter) params.status = statusFilter;
       if (priorityFilter) params.priority = priorityFilter;
       if (sourceFilter) params.source = sourceFilter;
@@ -102,18 +109,24 @@ export default function LeadsPage() {
       if (tagFilter.trim()) params.tag = tagFilter.trim();
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
-      const data = await leadsApi.list(params);
+      const { leads: data, total: t } = await leadsApi.list(params);
       setLeads(data);
+      setTotal(t);
       setSelected(new Set());
     } finally {
       setLoading(false);
     }
+  }, [statusFilter, priorityFilter, sourceFilter, search, overdueOnly, tagFilter, dateFrom, dateTo, page]);
+
+  // Reset to page 1 when filters change (but not when page itself changes)
+  useEffect(() => {
+    setPage(1);
   }, [statusFilter, priorityFilter, sourceFilter, search, overdueOnly, tagFilter, dateFrom, dateTo]);
 
   useEffect(() => {
-    const timer = setTimeout(fetchLeads, 300);
+    const timer = setTimeout(() => fetchLeads(page), 300);
     return () => clearTimeout(timer);
-  }, [fetchLeads]);
+  }, [fetchLeads, page]);
 
   useEffect(() => {
     if (isAdmin) usersApi.list().then(setBulkUsers).catch(() => {});
@@ -142,8 +155,9 @@ export default function LeadsPage() {
       if (action === "reassign" && bulkAssignTo) payload.assigned_to_id = parseInt(bulkAssignTo);
       await leadsApi.bulk(payload as Parameters<typeof leadsApi.bulk>[0]);
       setBulkStatus(""); setBulkAssignTo("");
+      toast.success(`Bulk ${action} applied to ${selected.size} lead${selected.size > 1 ? "s" : ""}`);
       await fetchLeads();
-    } catch { /* silently fail */ } finally { setBulkLoading(false); }
+    } catch { toast.error("Bulk action failed — please try again"); } finally { setBulkLoading(false); }
   };
 
   const handleExport = async () => {
@@ -161,12 +175,13 @@ export default function LeadsPage() {
       const a = document.createElement("a");
       a.href = url; a.download = `leads_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
       URL.revokeObjectURL(url);
-    } catch { /* silently fail */ }
+    } catch { toast.error("Export failed — please try again"); }
   };
 
   const clearFilters = () => {
     setSearch(""); setStatusFilter(""); setPriorityFilter(""); setSourceFilter("");
     setTagFilter(""); setOverdueOnly(false); setDateFrom(""); setDateTo("");
+    setPage(1);
   };
 
   const hasActiveFilters = !!(statusFilter || priorityFilter || sourceFilter || tagFilter || overdueOnly || dateFrom || dateTo);
@@ -180,7 +195,11 @@ export default function LeadsPage() {
         <div>
           <h1 className="font-display text-xl font-bold text-foreground tracking-tight">Leads</h1>
           <div className="flex items-center gap-2 mt-0.5">
-            <p className="text-xs text-muted-foreground">{leads.length} leads found</p>
+            <p className="text-xs text-muted-foreground">
+            {total > 0
+              ? `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} of ${total} leads`
+              : "0 leads found"}
+          </p>
             {hasActiveFilters && (
               <span className="text-[10px] font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
                 {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""} active
@@ -507,6 +526,29 @@ export default function LeadsPage() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* ── Pagination ── */}
+      {total > PAGE_SIZE && (
+        <div className="flex items-center justify-center gap-2 py-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-3 py-1.5 text-xs font-medium rounded-md border border-border bg-background hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            ← Prev
+          </button>
+          <span className="text-xs text-muted-foreground">
+            Page {page} of {Math.ceil(total / PAGE_SIZE)}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(Math.ceil(total / PAGE_SIZE), p + 1))}
+            disabled={page >= Math.ceil(total / PAGE_SIZE)}
+            className="px-3 py-1.5 text-xs font-medium rounded-md border border-border bg-background hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Next →
+          </button>
         </div>
       )}
 

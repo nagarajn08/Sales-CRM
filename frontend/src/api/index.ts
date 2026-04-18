@@ -44,7 +44,10 @@ export const usersApi = {
 
 // Leads
 export const leadsApi = {
-  list: (params?: object) => api.get<Lead[]>("/api/leads/", { params }).then(r => r.data),
+  list: (params?: object) => api.get<Lead[]>("/api/leads/", { params }).then(r => ({
+    leads: r.data,
+    total: parseInt(r.headers["x-total-count"] ?? "0", 10),
+  })),
   create: (data: object) => api.post<Lead>("/api/leads/", data).then(r => r.data),
   get: (id: number) => api.get<Lead>(`/api/leads/${id}`).then(r => r.data),
   update: (id: number, data: object) => api.put<Lead>(`/api/leads/${id}`, data).then(r => r.data),
@@ -63,6 +66,8 @@ export const leadsApi = {
   export: (params?: object) => api.get("/api/leads/export", { params, responseType: "blob" }).then(r => r.data),
   logCall: (id: number, data: { call_type: string; duration_minutes?: number; outcome?: string; notes?: string }) =>
     api.post(`/api/leads/${id}/call`, data).then(r => r.data),
+  sendEmail: (id: number, data: { subject: string; body: string; template_id?: number | null }) =>
+    api.post<{ ok: boolean; sent_to: string }>(`/api/leads/${id}/email`, data).then(r => r.data),
 };
 
 // Dashboard

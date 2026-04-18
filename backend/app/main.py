@@ -1,4 +1,3 @@
-import secrets
 import logging
 import sentry_sdk
 from fastapi import FastAPI, Request, Response
@@ -10,13 +9,20 @@ from slowapi.errors import RateLimitExceeded
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from apscheduler.schedulers.background import BackgroundScheduler
-from app.config import settings
+from app.config import settings, _FALLBACK_SECRET
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s — %(message)s",
 )
 logger = logging.getLogger("salescrm")
+
+# Warn loudly if SECRET_KEY was never set in .env — all JWTs will invalidate on restart
+if settings.SECRET_KEY == _FALLBACK_SECRET:
+    logger.warning(
+        "SECRET_KEY is not set in .env — a random key was generated. "
+        "All sessions will be lost on every restart. Set SECRET_KEY in your .env file."
+    )
 
 if settings.SENTRY_DSN:
     sentry_sdk.init(
@@ -45,6 +51,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Total-Count"],
 )
 
 
