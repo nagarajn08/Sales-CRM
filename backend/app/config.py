@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://salescrm:salescrm123@localhost:5432/salescrm"
     SECRET_KEY: str = _FALLBACK_SECRET
     FRONTEND_URL: str = "http://localhost:5173"
+    BACKEND_URL: str = "http://localhost:8000"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ADMIN_EMAIL: str = "admin@example.com"

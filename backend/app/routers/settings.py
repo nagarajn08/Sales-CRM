@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.database import get_db
-from app.dependencies import get_current_user, require_superadmin
+from app.dependencies import get_current_user, require_admin
+from app.config import settings as app_settings
 from app.models.app_settings import AppSettings
 from app.models.organization import Organization
 from app.models.user import User
@@ -38,7 +39,7 @@ def get_settings(current_user: User = Depends(get_current_user), db: Session = D
 @router.put("/")
 def update_settings(
     body: SettingsPayload,
-    admin: User = Depends(require_superadmin),
+    admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     for key, value in body.settings.items():
@@ -61,7 +62,7 @@ def get_webhook_info(current_user: User = Depends(get_current_user), db: Session
     org = db.get(Organization, current_user.organization_id)
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
-    base_url = "http://localhost:8000"  # will be replaced by actual server URL in prod
+    base_url = app_settings.BACKEND_URL.rstrip("/")
     return {
         "webhook_token": org.webhook_token,
         "webhook_url": f"{base_url}/api/webhooks/{org.webhook_token}/leads",
@@ -78,7 +79,7 @@ class OrgNamePayload(BaseModel):
 @router.patch("/org-name")
 def update_org_name(
     body: OrgNamePayload,
-    admin: User = Depends(require_superadmin),
+    admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     name = body.name.strip()
@@ -95,7 +96,7 @@ def update_org_name(
 
 
 @router.post("/smtp-test")
-def test_smtp(admin: User = Depends(require_superadmin), db: Session = Depends(get_db)):
+def test_smtp(admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     """Verify SMTP connection using stored settings without sending an email."""
     rows = db.query(AppSettings).filter(AppSettings.organization_id == admin.organization_id).all()
     s = {r.key: r.value for r in rows}
@@ -130,7 +131,7 @@ def test_smtp(admin: User = Depends(require_superadmin), db: Session = Depends(g
 
 
 @router.post("/webhook/regenerate")
-def regenerate_webhook(admin: User = Depends(require_superadmin), db: Session = Depends(get_db)):
+def regenerate_webhook(admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     if not admin.organization_id:
         raise HTTPException(status_code=400, detail="No organization associated")
     org = db.get(Organization, admin.organization_id)
@@ -139,7 +140,7 @@ def regenerate_webhook(admin: User = Depends(require_superadmin), db: Session = 
     org.webhook_token = secrets.token_urlsafe(24)
     db.commit()
     db.refresh(org)
-    base_url = "http://localhost:8000"
+    base_url = app_settings.BACKEND_URL.rstrip("/")
     return {
         "webhook_token": org.webhook_token,
         "webhook_url": f"{base_url}/api/webhooks/{org.webhook_token}/leads",

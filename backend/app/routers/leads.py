@@ -6,6 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
+from sqlalchemy import func
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from slowapi import Limiter
@@ -85,17 +86,18 @@ def _build_lead_query(
     if assigned_to_id:
         q = q.filter(Lead.assigned_to_id == assigned_to_id)
     if search:
+        s = f"%{search.lower()}%"
         q = q.filter(
-            Lead.name.ilike(f"%{search}%") |
-            Lead.mobile.ilike(f"%{search}%") |
-            Lead.email.ilike(f"%{search}%") |
-            Lead.company.ilike(f"%{search}%") |
-            Lead.web_id.ilike(f"%{search}%")
+            func.lower(Lead.name).like(s) |
+            func.lower(Lead.mobile).like(s) |
+            func.lower(Lead.email).like(s) |
+            func.lower(Lead.company).like(s) |
+            func.lower(Lead.web_id).like(s)
         )
     if overdue:
         q = q.filter(Lead.next_followup_at <= datetime.utcnow(), Lead.next_followup_at.isnot(None))
     if tag:
-        q = q.filter(Lead.tags.ilike(f"%{tag}%"))
+        q = q.filter(func.lower(Lead.tags).like(f"%{tag.lower()}%"))
     if date_from:
         try:
             q = q.filter(Lead.created_at >= datetime.fromisoformat(date_from))
