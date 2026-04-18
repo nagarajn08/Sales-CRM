@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { settingsApi } from "../api";
+import { leadsApi, settingsApi } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { capitalizeName } from "../lib/validators";
 import { Button } from "../components/ui/button";
@@ -87,6 +87,12 @@ export default function SettingsPage() {
   const [webhookCopied, setWebhookCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
 
+  // Auto-assign
+  const [savingAutoAssign, setSavingAutoAssign] = useState(false);
+  const [savedAutoAssign, setSavedAutoAssign] = useState(false);
+  const [runningAutoAssign, setRunningAutoAssign] = useState(false);
+  const [autoAssignResult, setAutoAssignResult] = useState<{ assigned: number; details: { user: string; assigned: number }[] } | null>(null);
+
   useEffect(() => {
     settingsApi.get().then(setSettings).finally(() => setLoading(false));
     settingsApi.getWebhook().then(setWebhook).catch(() => {});
@@ -148,6 +154,20 @@ export default function SettingsPage() {
       setWebhook(prev => prev ? { ...prev, ...data } : null);
     } finally {
       setRegenerating(false);
+    }
+  };
+
+  const runAutoAssign = async () => {
+    setRunningAutoAssign(true);
+    setAutoAssignResult(null);
+    try {
+      const result = await leadsApi.autoAssign();
+      setAutoAssignResult(result);
+      toast.success(`Auto-assigned ${result.assigned} lead${result.assigned !== 1 ? "s" : ""}`);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail ?? "Auto-assign failed");
+    } finally {
+      setRunningAutoAssign(false);
     }
   };
 
@@ -445,6 +465,71 @@ export default function SettingsPage() {
                 </Button>
               </div>
             )}
+          </div>
+        </SectionCard>
+      )}
+
+      {/* ── Auto-Assign Leads ── */}
+      {user?.role === "admin" && (
+        <SectionCard
+          iconBg="bg-emerald-500/15"
+          icon={
+            <svg viewBox="0 0 20 20" fill="none" className="h-4.5 w-4.5 text-emerald-500">
+              <circle cx="8" cy="6" r="3" stroke="currentColor" strokeWidth="1.6"/>
+              <path d="M2 17c0-3.314 2.686-6 6-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              <path d="M14 12v5M11.5 14.5L14 12l2.5 2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          }
+          title="Auto-Assign Leads"
+          description="Automatically distribute unassigned leads to users daily"
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground bg-secondary/50 rounded-xl p-3">
+              <div><span className="font-semibold text-foreground">Admin / Manager</span><br/>Up to 10,000 rows per bulk upload</div>
+              <div><span className="font-semibold text-foreground">User</span><br/>Up to 1,000 rows per bulk upload</div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground block mb-1.5">
+                Leads per user per run
+              </label>
+              <Input
+                type="number"
+                min={0}
+                max={500}
+                value={settings.auto_assign_daily_limit ?? "0"}
+                onChange={(e) => set("auto_assign_daily_limit", e.target.value)}
+                placeholder="0 = disabled"
+                className="w-40"
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">Set to 0 to disable auto-assign.</p>
+            </div>
+
+            <SaveRow
+              saving={savingAutoAssign}
+              saved={savedAutoAssign}
+              onSave={() => saveSection(["auto_assign_daily_limit"], setSavingAutoAssign, setSavedAutoAssign)}
+            />
+
+            <div className="pt-2 border-t border-border">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">Distributes unassigned leads equally among active users now.</p>
+                <Button size="sm" variant="outline" onClick={runAutoAssign} loading={runningAutoAssign}>
+                  Run Now
+                </Button>
+              </div>
+              {autoAssignResult && (
+                <div className="mt-3 rounded-xl bg-secondary p-3 text-xs space-y-1">
+                  <p className="font-semibold text-foreground">{autoAssignResult.assigned} lead{autoAssignResult.assigned !== 1 ? "s" : ""} assigned</p>
+                  {autoAssignResult.details.map((d) => (
+                    <p key={d.user} className="text-muted-foreground">{d.user}: {d.assigned} leads</p>
+                  ))}
+                  {autoAssignResult.assigned === 0 && (
+                    <p className="text-muted-foreground">No unassigned leads found.</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </SectionCard>
       )}

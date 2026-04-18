@@ -100,38 +100,42 @@ export default function LeadDetailPage() {
       {/* Back + actions */}
       <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" onClick={() => navigate("/leads")}>
-          ← Back
+          <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 mr-1"><path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Back
         </Button>
         <div className="ml-auto flex items-center gap-2 flex-wrap">
           {!isTerminal && (
             <>
               <Button size="sm" variant="outline" onClick={() => setShowComment(true)}>
-                💬 Comment
+                <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 mr-1.5"><path d="M14 10a2 2 0 01-2 2H5l-3 3V4a2 2 0 012-2h8a2 2 0 012 2v6z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+                Comment
               </Button>
               <Button size="sm" variant="outline" onClick={() => setShowCallLog(true)}>
-                📞 Log Call
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setShowStatus(true)}>
-                🔄 Update Status
+                <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 mr-1.5"><path d="M3 2h3l1.5 3.5-1.75 1.1a7.5 7.5 0 003.65 3.65L10.5 8.5 14 10v3a1 1 0 01-1 1A12 12 0 012 3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+                Log Call
               </Button>
             </>
           )}
           {lead.email && !isTerminal && (
             <Button size="sm" variant="outline" onClick={() => setShowEmail(true)}>
-              ✉️ Send Email
+              <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 mr-1.5"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M1 5l7 5 7-5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+              Send Email
             </Button>
           )}
           <Button size="sm" variant="outline" onClick={() => setShowEdit(true)}>
-            ✏️ Edit
+            <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 mr-1.5"><path d="M11 2l3 3-8 8H3v-3l8-8z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+            Edit
           </Button>
           {isAdmin && !isTerminal && (
             <Button size="sm" variant="outline" onClick={() => setShowReassign(true)}>
-              👤 Reassign
+              <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 mr-1.5"><circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+              Reassign
             </Button>
           )}
           {isAdmin && (
             <Button size="sm" variant="destructive" onClick={() => setDeleteConfirm(true)}>
-              🗑 Delete
+              <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 mr-1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Delete
             </Button>
           )}
         </div>
@@ -222,7 +226,7 @@ export default function LeadDetailPage() {
           <CardHeader>
             <CardTitle className="text-base">Next Follow-up</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
             {followupDate ? (
               <div className={cn("rounded-lg p-4 text-center", isOverdue ? "bg-destructive/10 border border-destructive/20" : "bg-secondary")}>
                 <p className={cn("font-bold text-lg", isOverdue ? "text-destructive" : "text-foreground")}>
@@ -247,10 +251,19 @@ export default function LeadDetailPage() {
             ) : (
               <div className="rounded-lg bg-secondary p-4 text-center">
                 <p className="text-sm text-muted-foreground">No follow-up scheduled</p>
-                <Button size="sm" variant="outline" className="mt-2" onClick={() => setShowStatus(true)}>
-                  Schedule Now
-                </Button>
               </div>
+            )}
+
+            {!isTerminal && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/30"
+                onClick={() => setShowStatus(true)}
+              >
+                <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 mr-1.5"><path d="M13 8A5 5 0 113 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M13 5v3h-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                Update Status
+              </Button>
             )}
           </CardContent>
         </Card>

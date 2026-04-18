@@ -10,6 +10,7 @@ import { Input, Select } from "../components/ui/input";
 import { LeadFormModal } from "../components/leads/LeadFormModal";
 import { ImportModal } from "../components/leads/ImportModal";
 import { KanbanView } from "../components/leads/KanbanView";
+import { StatusModal } from "../components/leads/StatusModal";
 import { useAuth } from "../auth/AuthContext";
 import { fmtDateTime, cn } from "../lib/utils";
 
@@ -61,6 +62,22 @@ const AVATAR_COLORS = [
   "bg-pink-500","bg-cyan-500","bg-violet-500","bg-rose-500",
 ];
 
+const PRIORITY_STRIPE: Record<string, string> = {
+  hot:  "bg-red-500",
+  warm: "bg-amber-400",
+  cold: "bg-sky-400",
+};
+
+const STATUS_DOT: Record<string, string> = {
+  new:                    "bg-blue-400",
+  call_back:              "bg-violet-400",
+  interested_call_back:   "bg-emerald-400",
+  busy:                   "bg-amber-400",
+  not_reachable:          "bg-slate-400",
+  not_interested:         "bg-red-400",
+  converted:              "bg-green-500",
+};
+
 type ViewMode = "table" | "kanban";
 
 export default function LeadsPage() {
@@ -78,6 +95,7 @@ export default function LeadsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "">("");
   const [priorityFilter, setPriorityFilter] = useState<LeadPriority | "">("");
+  const [assignedFilter, setAssignedFilter] = useState<string>("");
   const [sourceFilter, setSourceFilter] = useState<LeadSource | "">("");
   const [tagFilter, setTagFilter] = useState("");
   const [overdueOnly, setOverdueOnly] = useState(false);
@@ -93,6 +111,7 @@ export default function LeadsPage() {
 
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [statusLead, setStatusLead] = useState<Lead | null>(null);
 
   const fetchLeads = useCallback(async (targetPage = page) => {
     setLoading(true);
@@ -103,6 +122,7 @@ export default function LeadsPage() {
       };
       if (statusFilter) params.status = statusFilter;
       if (priorityFilter) params.priority = priorityFilter;
+      if (assignedFilter) params.assigned_to_id = assignedFilter;
       if (sourceFilter) params.source = sourceFilter;
       if (search.trim()) params.search = search.trim();
       if (overdueOnly) params.overdue = true;
@@ -116,12 +136,12 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, priorityFilter, sourceFilter, search, overdueOnly, tagFilter, dateFrom, dateTo, page]);
+  }, [statusFilter, priorityFilter, assignedFilter, sourceFilter, search, overdueOnly, tagFilter, dateFrom, dateTo, page]);
 
   // Reset to page 1 when filters change (but not when page itself changes)
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, priorityFilter, sourceFilter, search, overdueOnly, tagFilter, dateFrom, dateTo]);
+  }, [statusFilter, priorityFilter, assignedFilter, sourceFilter, search, overdueOnly, tagFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     const timer = setTimeout(() => fetchLeads(page), 300);
@@ -283,6 +303,17 @@ export default function LeadsPage() {
             options={PRIORITY_FILTER_OPTIONS}
             className="sm:w-36"
           />
+          {isAdmin && bulkUsers.length > 0 && (
+            <Select
+              value={assignedFilter}
+              onChange={(e) => setAssignedFilter(e.target.value)}
+              options={[
+                { value: "", label: "All Users" },
+                ...bulkUsers.map(u => ({ value: String(u.id), label: u.name })),
+              ]}
+              className="sm:w-40"
+            />
+          )}
           <button
             onClick={() => setShowMoreFilters(v => !v)}
             className={cn(
@@ -413,109 +444,162 @@ export default function LeadsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-secondary/60 border-b border-border">
-                  <th className="px-4 py-2.5 w-8">
+                <tr className="bg-secondary/50 border-b border-border">
+                  {/* priority stripe column */}
+                  <th className="w-1 p-0" />
+                  <th className="px-3 py-3 w-8">
                     <input type="checkbox" checked={allSelected}
                       ref={el => { if (el) el.indeterminate = someSelected; }}
                       onChange={toggleAll} className="rounded cursor-pointer" />
                   </th>
-                  <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Name</th>
-                  <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden xl:table-cell">Web ID</th>
-                  <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Contact</th>
-                  <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Status</th>
-                  <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Priority</th>
-                  <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Follow-up</th>
-                  <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Deal Value</th>
-                  <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden xl:table-cell">Tags</th>
-                  <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden xl:table-cell">Last Comment</th>
+                  <th className="text-left px-3 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Lead</th>
+                  <th className="text-left px-3 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">Contact</th>
+                  <th className="text-left px-3 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</th>
+                  <th className="text-left px-3 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Follow-up</th>
+                  <th className="text-left px-3 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Deal</th>
+                  <th className="text-left px-3 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider hidden xl:table-cell">Last Comment</th>
                   {isAdmin && (
-                    <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Assigned</th>
+                    <th className="text-left px-3 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Assigned</th>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-border/60">
                 {leads.map((lead, idx) => {
                   const followup = formatFollowup(lead.next_followup_at);
                   const isSelected = selected.has(lead.id);
                   const tags = lead.tags ? lead.tags.split(",").map(t => t.trim()).filter(Boolean) : [];
                   const assigneeName = lead.assigned_to?.name ?? "";
                   const assigneeInitials = assigneeName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+                  const leadInitials = lead.name.trim().split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+                  const avatarColor = AVATAR_COLORS[(lead.name.charCodeAt(0) + (lead.name.charCodeAt(1) || 0)) % AVATAR_COLORS.length];
                   return (
                     <tr key={lead.id} className={cn(
-                      "hover:bg-secondary/40 cursor-pointer transition-colors group",
-                      isSelected && "bg-primary/5"
+                      "transition-colors cursor-pointer group",
+                      isSelected ? "bg-primary/5" : "hover:bg-secondary/50"
                     )}>
-                      <td className="px-4 py-2.5" onClick={e => e.stopPropagation()}>
+
+                      {/* ── Priority stripe ── */}
+                      <td className="p-0 w-1" onClick={() => navigate(`/leads/${lead.id}`)}>
+                        <div className={cn("w-1 h-full min-h-[56px] rounded-r-full", PRIORITY_STRIPE[lead.priority] ?? "bg-transparent")} />
+                      </td>
+
+                      {/* ── Checkbox ── */}
+                      <td className="px-3 py-3.5 w-8" onClick={e => e.stopPropagation()}>
                         <input type="checkbox" checked={isSelected} onChange={() => toggleOne(lead.id)} className="rounded cursor-pointer" />
                       </td>
-                      <td className="px-4 py-2.5 max-w-[180px]" onClick={() => navigate(`/leads/${lead.id}`)}>
-                        <div className="flex items-center gap-1.5">
-                          <p className="font-medium text-foreground group-hover:text-primary transition-colors truncate capitalize text-xs">{lead.name}</p>
-                        </div>
-                        {lead.company && <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{lead.company}</p>}
-                      </td>
-                      <td className="px-4 py-2.5 hidden xl:table-cell" onClick={() => navigate(`/leads/${lead.id}`)}>
-                        <span className="font-mono text-[11px] text-muted-foreground">{lead.web_id ?? "—"}</span>
-                      </td>
-                      <td className="px-4 py-2.5 hidden sm:table-cell text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <div onClick={() => navigate(`/leads/${lead.id}`)}>
-                            <p className="font-mono text-[11px]">{lead.mobile ?? "—"}</p>
-                            {lead.email && <p className="text-[11px] mt-0.5 truncate max-w-[120px]">{lead.email}</p>}
+
+                      {/* ── Lead: avatar + name + company ── */}
+                      <td className="px-3 py-3.5" onClick={() => navigate(`/leads/${lead.id}`)}>
+                        <div className="flex items-center gap-2.5">
+                          <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center text-white text-[11px] font-bold shrink-0 shadow-sm", avatarColor)}>
+                            {leadInitials}
                           </div>
-                          {(lead.whatsapp || lead.mobile) && (
-                            <a href={`https://wa.me/${(lead.whatsapp || lead.mobile)!.replace(/\D/g, "")}`}
-                              target="_blank" rel="noopener noreferrer"
-                              onClick={e => e.stopPropagation()} title="Open WhatsApp"
-                              className="text-emerald-500 hover:text-emerald-600 transition-colors shrink-0 ml-1">
-                              <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                              </svg>
-                            </a>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground text-xs leading-tight truncate capitalize group-hover:text-primary transition-colors">{lead.name}</p>
+                            {lead.company
+                              ? <p className="text-[11px] text-muted-foreground truncate mt-0.5">{lead.company}</p>
+                              : lead.web_id
+                                ? <p className="font-mono text-[10px] text-muted-foreground/60 mt-0.5">{lead.web_id}</p>
+                                : null}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* ── Contact ── */}
+                      <td className="px-3 py-3.5 hidden sm:table-cell" onClick={() => navigate(`/leads/${lead.id}`)}>
+                        <div className="space-y-0.5">
+                          {lead.mobile && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-mono text-[11px] text-foreground/80">{lead.mobile}</span>
+                              {(lead.whatsapp || lead.mobile) && (
+                                <a href={`https://wa.me/${(lead.whatsapp || lead.mobile)!.replace(/\D/g, "")}`}
+                                  target="_blank" rel="noopener noreferrer"
+                                  onClick={e => e.stopPropagation()}
+                                  className="text-emerald-500 hover:text-emerald-600 transition-colors shrink-0">
+                                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                  </svg>
+                                </a>
+                              )}
+                            </div>
                           )}
+                          {lead.email && <p className="text-[11px] text-muted-foreground truncate max-w-[140px]">{lead.email}</p>}
+                          {!lead.mobile && !lead.email && <span className="text-muted-foreground/30 text-xs">—</span>}
                         </div>
                       </td>
-                      <td className="px-4 py-2.5" onClick={() => navigate(`/leads/${lead.id}`)}>
-                        <Badge className={STATUS_COLORS[lead.status]}>{STATUS_LABELS[lead.status]}</Badge>
-                      </td>
-                      <td className="px-4 py-2.5 hidden md:table-cell" onClick={() => navigate(`/leads/${lead.id}`)}>
-                        <Badge className={PRIORITY_COLORS[lead.priority]}>{lead.priority}</Badge>
-                      </td>
-                      <td className="px-4 py-2.5 hidden lg:table-cell" onClick={() => navigate(`/leads/${lead.id}`)}>
-                        {followup ? (
-                          <span className={cn("font-mono text-[11px]", followup.overdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
-                            {followup.overdue && <span className="mr-1">⚠</span>}{followup.label}
+
+                      {/* ── Status ── */}
+                      <td className="px-3 py-3.5" onClick={() => navigate(`/leads/${lead.id}`)}>
+                        <div className="flex items-center gap-1.5">
+                          <span className={cn("h-2 w-2 rounded-full shrink-0", STATUS_DOT[lead.status] ?? "bg-slate-400")} />
+                          <span className="text-[11px] font-medium text-foreground/80 leading-tight">
+                            {STATUS_LABELS[lead.status]}
                           </span>
-                        ) : <span className="text-muted-foreground/40 text-xs">—</span>}
+                        </div>
+                        {/* priority pill on mobile */}
+                        <div className="mt-1 md:hidden">
+                          <Badge className={cn("text-[9px] py-0 px-1.5", PRIORITY_COLORS[lead.priority])}>{lead.priority}</Badge>
+                        </div>
                       </td>
-                      <td className="px-4 py-2.5 hidden lg:table-cell" onClick={() => navigate(`/leads/${lead.id}`)}>
+
+                      {/* ── Follow-up + Update Status ── */}
+                      <td className="px-3 py-3.5 hidden lg:table-cell">
+                        <div className="space-y-1.5">
+                          {followup ? (
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full",
+                                followup.overdue
+                                  ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                                  : "bg-secondary text-muted-foreground"
+                              )}
+                              onClick={() => navigate(`/leads/${lead.id}`)}
+                            >
+                              {followup.overdue && <span className="text-[9px]">!</span>}
+                              {followup.label}
+                            </span>
+                          ) : (
+                            <span
+                              className="text-muted-foreground/30 text-xs"
+                              onClick={() => navigate(`/leads/${lead.id}`)}
+                            >—</span>
+                          )}
+                          <button
+                            onClick={e => { e.stopPropagation(); setStatusLead(lead); }}
+                            className="flex items-center gap-1 text-[10px] font-semibold text-primary/70 hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <svg viewBox="0 0 12 12" fill="none" className="h-2.5 w-2.5">
+                              <path d="M6 1v5l3 1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                              <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/>
+                            </svg>
+                            Update Status
+                          </button>
+                        </div>
+                      </td>
+
+                      {/* ── Deal Value ── */}
+                      <td className="px-3 py-3.5 hidden lg:table-cell" onClick={() => navigate(`/leads/${lead.id}`)}>
                         {lead.deal_value != null
-                          ? <span className="text-xs font-medium text-foreground">₹{lead.deal_value.toLocaleString("en-IN")}</span>
+                          ? <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">₹{lead.deal_value.toLocaleString("en-IN")}</span>
                           : <span className="text-muted-foreground/30 text-xs">—</span>}
                       </td>
-                      <td className="px-4 py-2.5 hidden xl:table-cell" onClick={() => navigate(`/leads/${lead.id}`)}>
-                        {tags.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {tags.slice(0, 2).map(tag => (
-                              <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground font-medium">{tag}</span>
-                            ))}
-                            {tags.length > 2 && <span className="text-[10px] text-muted-foreground">+{tags.length - 2}</span>}
-                          </div>
-                        ) : <span className="text-muted-foreground/30 text-xs">—</span>}
-                      </td>
-                      <td className="px-4 py-2.5 hidden xl:table-cell max-w-[200px]" onClick={() => navigate(`/leads/${lead.id}`)}>
+
+                      {/* ── Last Comment ── */}
+                      <td className="px-3 py-3.5 hidden xl:table-cell max-w-[200px]" onClick={() => navigate(`/leads/${lead.id}`)}>
                         {lead.last_comment
-                          ? <p className="text-[11px] text-muted-foreground truncate">💬 {lead.last_comment}</p>
+                          ? <p className="text-[11px] text-muted-foreground truncate leading-snug">💬 {lead.last_comment}</p>
                           : <span className="text-muted-foreground/30 text-xs">—</span>}
                       </td>
+
+                      {/* ── Assignee ── */}
                       {isAdmin && (
-                        <td className="px-4 py-2.5 hidden lg:table-cell" onClick={() => navigate(`/leads/${lead.id}`)}>
+                        <td className="px-3 py-3.5 hidden md:table-cell" onClick={() => navigate(`/leads/${lead.id}`)}>
                           {assigneeName ? (
                             <div className="flex items-center gap-1.5">
-                              <div className={cn("h-5 w-5 rounded-md flex items-center justify-center text-white text-[9px] font-bold shrink-0", AVATAR_COLORS[idx % AVATAR_COLORS.length])}>
+                              <div className={cn("h-6 w-6 rounded-lg flex items-center justify-center text-white text-[9px] font-bold shrink-0", AVATAR_COLORS[idx % AVATAR_COLORS.length])}>
                                 {assigneeInitials}
                               </div>
-                              <span className="text-xs text-muted-foreground capitalize truncate max-w-[80px]">{assigneeName}</span>
+                              <span className="text-[11px] text-muted-foreground capitalize truncate max-w-[80px]">{assigneeName}</span>
                             </div>
                           ) : <span className="text-[11px] text-muted-foreground/40 italic">Unassigned</span>}
                         </td>
@@ -554,6 +638,17 @@ export default function LeadsPage() {
 
       <LeadFormModal open={showAdd} onClose={() => setShowAdd(false)} onSaved={(lead) => setLeads((prev) => [lead, ...prev])} />
       <ImportModal open={showImport} onClose={() => setShowImport(false)} onImported={fetchLeads} />
+      {statusLead && (
+        <StatusModal
+          open={!!statusLead}
+          lead={statusLead}
+          onClose={() => setStatusLead(null)}
+          onUpdated={(updated) => {
+            setLeads(prev => prev.map(l => l.id === updated.id ? updated : l));
+            setStatusLead(null);
+          }}
+        />
+      )}
     </div>
   );
 }

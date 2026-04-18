@@ -68,6 +68,8 @@ export const leadsApi = {
     api.post(`/api/leads/${id}/call`, data).then(r => r.data),
   sendEmail: (id: number, data: { subject: string; body: string; template_id?: number | null }) =>
     api.post<{ ok: boolean; sent_to: string }>(`/api/leads/${id}/email`, data).then(r => r.data),
+  autoAssign: () =>
+    api.post<{ assigned: number; details: { user: string; assigned: number }[] }>("/api/leads/auto-assign").then(r => r.data),
 };
 
 // Dashboard

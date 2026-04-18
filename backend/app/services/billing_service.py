@@ -43,15 +43,34 @@ def check_user_limit(db: Session, org_id: int, is_superadmin: bool = False):
         )
 
 
+IMPORT_ROW_LIMITS = {
+    "admin":   10_000,
+    "manager": 10_000,
+    "user":     1_000,
+}
+
+
+def check_import_row_limit(row_count: int, user_role: str = "user", is_superadmin: bool = False):
+    """Raise 400 if a single import file exceeds the role-based row cap."""
+    if is_superadmin:
+        return
+    max_rows = IMPORT_ROW_LIMITS.get(user_role, 1_000)
+    if row_count > max_rows:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Import limit exceeded: your role allows up to {max_rows:,} rows per upload (file has {row_count:,}).",
+        )
+
+
 def check_lead_limit(db: Session, org_id: int, is_superadmin: bool = False):
-    """Raise 403 if org has hit its lead limit. Super admins are always unlimited."""
+    """Raise 403 if org has hit its plan-based lead limit."""
     if is_superadmin:
         return
     sub = get_or_create_subscription(db, org_id)
     limits = get_plan_limits(sub.plan)
     max_leads = limits["max_leads"]
     if max_leads == -1:
-        return  # unlimited
+        return
     current = db.query(Lead).filter(Lead.organization_id == org_id).count()
     if current >= max_leads:
         raise HTTPException(

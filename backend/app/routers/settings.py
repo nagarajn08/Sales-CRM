@@ -18,6 +18,7 @@ DEFAULT_SETTINGS = {
     "twilio_account_sid": "",
     "twilio_auth_token": "",
     "twilio_from_number": "",
+    "auto_assign_daily_limit": "0",
 }
 
 

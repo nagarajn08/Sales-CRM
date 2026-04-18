@@ -23,7 +23,7 @@ from app.models.notification import Notification
 from app.models.app_settings import AppSettings
 from app.models.user import User, UserRole
 from app.schemas.lead import ActivityRead, BulkActionRequest, CallLogRequest, LeadCreate, LeadRead, LeadReassign, LeadStatusUpdate, LeadUpdate
-from app.services.billing_service import check_lead_limit
+from app.services.billing_service import check_import_row_limit, check_lead_limit
 from app.services.scoring_service import recalculate_score
 
 
@@ -344,6 +344,8 @@ def import_leads(
     VALID_PRIORITIES = {"hot", "warm", "cold"}
     VALID_SOURCES = {"manual", "import", "website", "reference", "cold_call", "facebook", "instagram", "linkedin", "google_ads", "other"}
 
+    check_import_row_limit(len(df), user_role=current_user.role.value, is_superadmin=current_user.is_superadmin)
+
     created = 0
     skipped = 0
     BATCH = 100  # flush every N rows instead of every row
@@ -402,6 +404,74 @@ def import_leads(
 
     db.commit()
     return {"imported": created, "skipped": skipped}
+
+
+@router.post("/auto-assign", status_code=status.HTTP_200_OK)
+def auto_assign_leads(admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """
+    Distribute unassigned leads equally among active non-admin users.
+    Respects the org's auto_assign_daily_limit setting (0 = disabled).
+    Returns counts of assigned leads per user.
+    """
+    if not admin.organization_id:
+        raise HTTPException(status_code=400, detail="No organization")
+
+    # Read limit from org settings
+    setting_row = db.query(AppSettings).filter(
+        AppSettings.organization_id == admin.organization_id,
+        AppSettings.key == "auto_assign_daily_limit",
+    ).first()
+    daily_limit = int(setting_row.value) if setting_row and setting_row.value.strip().isdigit() else 0
+    if daily_limit <= 0:
+        raise HTTPException(status_code=400, detail="Auto-assign is disabled. Set a daily limit > 0 in Settings.")
+
+    # Active non-admin users in this org
+    users = db.query(User).filter(
+        User.organization_id == admin.organization_id,
+        User.is_active == True,
+        User.role == UserRole.USER,
+    ).all()
+    if not users:
+        raise HTTPException(status_code=400, detail="No active users to assign leads to.")
+
+    # Unassigned leads (not terminal)
+    unassigned = db.query(Lead).filter(
+        Lead.organization_id == admin.organization_id,
+        Lead.assigned_to_id == None,
+        Lead.status.notin_([LeadStatus.CONVERTED, LeadStatus.NOT_INTERESTED]),
+    ).order_by(Lead.created_at).all()
+
+    if not unassigned:
+        return {"assigned": 0, "details": [], "message": "No unassigned leads found."}
+
+    result: dict[int, int] = {u.id: 0 for u in users}
+    assigned_total = 0
+
+    for i, lead in enumerate(unassigned):
+        user = users[i % len(users)]
+        if result[user.id] >= daily_limit:
+            # All users have hit their daily cap
+            if all(v >= daily_limit for v in result.values()):
+                break
+            # Skip this user, find next with room
+            for offset in range(1, len(users)):
+                candidate = users[(i + offset) % len(users)]
+                if result[candidate.id] < daily_limit:
+                    user = candidate
+                    break
+            else:
+                break
+
+        lead.assigned_to_id = user.id
+        _log_activity(db, lead.id, admin.id, ActivityType.REASSIGNED)
+        result[user.id] += 1
+        assigned_total += 1
+
+    db.commit()
+
+    user_map = {u.id: u.name for u in users}
+    details = [{"user": user_map[uid], "assigned": count} for uid, count in result.items() if count > 0]
+    return {"assigned": assigned_total, "details": details}
 
 
 @router.get("/{lead_id}", response_model=LeadRead)
