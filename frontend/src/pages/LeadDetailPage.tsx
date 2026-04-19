@@ -16,15 +16,37 @@ import { useAuth } from "../auth/AuthContext";
 import { cn, fmtDateTime } from "../lib/utils";
 import { ScoreBadge } from "../components/ui/ScoreBadge";
 
-const ACTIVITY_ICONS: Record<string, string> = {
-  created: "✨",
-  status_changed: "🔄",
-  comment: "💬",
-  reassigned: "👤",
-  followup_set: "📅",
-  email_sent: "✉️",
-  imported: "📤",
-  call_log: "📞",
+const ACTIVITY_SVG: Record<string, React.ReactNode> = {
+  created: <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><path d="M8 2v4l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5"/></svg>,
+  status_changed: <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><path d="M13 8A5 5 0 113 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M13 5v3h-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  comment: <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><path d="M14 10a2 2 0 01-2 2H5l-3 3V4a2 2 0 012-2h8a2 2 0 012 2v6z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>,
+  reassigned: <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  followup_set: <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M5 1v3M11 1v3M2 7h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  email_sent: <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M1 5l7 5 7-5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>,
+  imported: <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 12h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  call_log: <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><path d="M3 2h3l1.5 3.5-1.75 1.1a7.5 7.5 0 003.65 3.65L10.5 8.5 14 10v3a1 1 0 01-1 1A12 12 0 012 3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>,
+};
+
+const ACTIVITY_LABEL: Record<string, string> = {
+  created: "Lead created",
+  status_changed: "Status updated",
+  comment: "Comment added",
+  reassigned: "Reassigned",
+  followup_set: "Follow-up scheduled",
+  email_sent: "Email sent",
+  imported: "Lead imported",
+  call_log: "Call logged",
+};
+
+const ACTIVITY_COLOR: Record<string, string> = {
+  created: "bg-emerald-500",
+  status_changed: "bg-primary",
+  comment: "bg-violet-500",
+  reassigned: "bg-amber-500",
+  followup_set: "bg-blue-500",
+  email_sent: "bg-cyan-500",
+  imported: "bg-slate-500",
+  call_log: "bg-rose-500",
 };
 
 export default function LeadDetailPage() {
@@ -278,44 +300,64 @@ export default function LeadDetailPage() {
           {timeline.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-4">No activity yet</p>
           ) : (
-            <div className="relative pl-6 space-y-4">
-              <div className="absolute left-2 top-2 bottom-2 w-px bg-border" />
-              {timeline.map((activity) => (
-                <div key={activity.id} className="relative">
-                  <div className="absolute -left-4 top-1 h-5 w-5 rounded-full bg-card border-2 border-border flex items-center justify-center text-[10px]">
-                    {ACTIVITY_ICONS[activity.activity_type] ?? "•"}
-                  </div>
-                  <div className="ml-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-medium text-foreground capitalize">
-                        {activity.activity_type.replace(/_/g, " ")}
-                      </span>
-                      {activity.old_status && activity.new_status && (
-                        <span className="text-xs text-muted-foreground">
-                          <Badge className={STATUS_COLORS[activity.old_status as keyof typeof STATUS_COLORS]} variant="outline">
-                            {STATUS_LABELS[activity.old_status as keyof typeof STATUS_LABELS] ?? activity.old_status}
-                          </Badge>
-                          {" → "}
-                          <Badge className={STATUS_COLORS[activity.new_status as keyof typeof STATUS_COLORS]}>
-                            {STATUS_LABELS[activity.new_status as keyof typeof STATUS_LABELS] ?? activity.new_status}
-                          </Badge>
-                        </span>
+            <div>
+              {timeline.map((activity, idx) => {
+                const next = timeline[idx + 1];
+                const gapMs = next
+                  ? new Date(next.created_at).getTime() - new Date(activity.created_at).getTime()
+                  : 0;
+                const bigGap = gapMs > 86_400_000;
+                const isLast = idx === timeline.length - 1;
+                const color = ACTIVITY_COLOR[activity.activity_type] ?? "bg-slate-500";
+                const icon = ACTIVITY_SVG[activity.activity_type];
+                return (
+                  <div key={activity.id} className="flex gap-3">
+                    {/* Circle + connector */}
+                    <div className="flex flex-col items-center flex-shrink-0">
+                      <div className={cn("h-8 w-8 rounded-full flex items-center justify-center text-white shadow-sm", color)}>
+                        {icon}
+                      </div>
+                      {!isLast && (
+                        <div
+                          className={cn("flex-1 mt-1", bigGap ? "w-0 border-l border-dashed border-border" : "w-px bg-border")}
+                          style={{ minHeight: "28px" }}
+                        />
                       )}
                     </div>
-                    {activity.comment && (
-                      <p className="text-sm text-foreground mt-0.5 bg-secondary rounded-lg px-3 py-2">{activity.comment}</p>
-                    )}
-                    {activity.followup_date && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Scheduled: {fmtDateTime(activity.followup_date)}
+
+                    {/* Content */}
+                    <div className={cn("min-w-0 flex-1 pt-1", isLast ? "pb-0" : "pb-5")}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-foreground">
+                          {ACTIVITY_LABEL[activity.activity_type] ?? activity.activity_type.replace(/_/g, " ")}
+                        </span>
+                        {activity.old_status && activity.new_status && (
+                          <span className="flex items-center gap-1">
+                            <Badge className={STATUS_COLORS[activity.old_status as keyof typeof STATUS_COLORS]} variant="outline">
+                              {STATUS_LABELS[activity.old_status as keyof typeof STATUS_LABELS] ?? activity.old_status}
+                            </Badge>
+                            <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3 text-muted-foreground flex-shrink-0">
+                              <path d="M3 8h10M9 5l4 3-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <Badge className={STATUS_COLORS[activity.new_status as keyof typeof STATUS_COLORS]}>
+                              {STATUS_LABELS[activity.new_status as keyof typeof STATUS_LABELS] ?? activity.new_status}
+                            </Badge>
+                          </span>
+                        )}
+                      </div>
+                      {activity.comment && (
+                        <p className="text-sm text-foreground bg-secondary rounded-lg px-3 py-2 mt-1.5">{activity.comment}</p>
+                      )}
+                      {activity.followup_date && (
+                        <p className="text-xs text-muted-foreground mt-1">Scheduled: {fmtDateTime(activity.followup_date)}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {activity.user?.name ?? "System"} · {fmtDateTime(activity.created_at)}
                       </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      by {activity.user?.name ?? "System"} · {fmtDateTime(activity.created_at)}
-                    </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
