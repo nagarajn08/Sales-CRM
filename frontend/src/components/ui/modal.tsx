@@ -65,7 +65,7 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
         </div>
 
         {/* Body */}
-        <div className="p-5 overflow-y-auto overscroll-contain">{children}</div>
+        <div className="p-4 sm:p-5 overflow-y-auto overscroll-contain">{children}</div>
       </div>
     </div>
   );

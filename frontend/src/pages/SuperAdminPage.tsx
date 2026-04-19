@@ -131,7 +131,7 @@ function CreateUserModal({ orgs, onClose, onCreated }: {
   return (
     <ModalShell title="New User" onClose={onClose}>
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Full Name">
             <input autoFocus value={name} onChange={e => setName(e.target.value)} placeholder="John Doe" className={inputCls} />
           </Field>
@@ -145,7 +145,7 @@ function CreateUserModal({ orgs, onClose, onCreated }: {
         <Field label="Password">
           <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min. 8 characters" className={inputCls} />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Role">
             <select value={role} onChange={e => setRole(e.target.value as any)} className={inputCls}>
               <option value="user">User</option>

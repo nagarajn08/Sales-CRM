@@ -188,7 +188,7 @@ export default function BillingPage() {
           </div>
         </div>
 
-        <div className="relative grid grid-cols-2 gap-3">
+        <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
             { label: "Users", current: billing.users.current, max: billing.users.max },
             { label: "Leads", current: billing.leads.current, max: billing.leads.max },

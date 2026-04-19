@@ -120,12 +120,12 @@ export default function LeadDetailPage() {
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Back + actions */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/leads")}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/leads")} className="self-start">
           <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 mr-1"><path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
           Back
         </Button>
-        <div className="ml-auto flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
           {!isTerminal && (
             <>
               <Button size="sm" variant="outline" onClick={() => setShowComment(true)}>
@@ -141,7 +141,7 @@ export default function LeadDetailPage() {
           {lead.email && !isTerminal && (
             <Button size="sm" variant="outline" onClick={() => setShowEmail(true)}>
               <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 mr-1.5"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M1 5l7 5 7-5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
-              Send Email
+              Email
             </Button>
           )}
           <Button size="sm" variant="outline" onClick={() => setShowEdit(true)}>
@@ -182,7 +182,7 @@ export default function LeadDetailPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
               {lead.web_id && <InfoRow label="Web ID" value={lead.web_id} />}
               <InfoRow label="Mobile" value={lead.mobile} />
               <div>

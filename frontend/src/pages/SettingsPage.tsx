@@ -284,7 +284,7 @@ export default function SettingsPage() {
               onChange={(e) => set("support_email", e.target.value)}
               placeholder="support@yourcompany.com"
             />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="SMTP Host"
                 value={settings.smtp_host ?? ""}
@@ -298,7 +298,7 @@ export default function SettingsPage() {
                 onChange={(e) => set("smtp_port", e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="SMTP Username"
                 value={settings.smtp_user ?? ""}

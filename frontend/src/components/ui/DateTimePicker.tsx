@@ -71,8 +71,11 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
   };
 
   const displayLabel = selected
-    ? `${selected.getDate().toString().padStart(2,"0")} ${MONTHS[selected.getMonth()].slice(0,3)} ${selected.getFullYear()}  ${selected.getHours().toString().padStart(2,"0")}:${selected.getMinutes().toString().padStart(2,"0")}`
+    ? `${selected.getDate().toString().padStart(2, "0")} ${MONTHS[selected.getMonth()].slice(0, 3)} ${selected.getFullYear()}  ${selected.getHours().toString().padStart(2, "0")}:${selected.getMinutes().toString().padStart(2, "0")}`
     : "";
+
+  const hourVal = selected ? selected.getHours() : 10;
+  const minVal = selected ? Math.floor(selected.getMinutes() / 5) * 5 : 0;
 
   return (
     <div className="w-full">
@@ -82,55 +85,70 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
         </label>
       )}
 
-      {/* Trigger button */}
+      {/* Trigger */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2.5 rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer text-left transition-colors hover:border-primary/50"
+        className="w-full flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer text-left transition-colors hover:border-primary/50"
       >
-        <span className="text-base leading-none">📅</span>
+        <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-muted-foreground shrink-0">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+          <path d="M5 1v3M11 1v3M2 7h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+        </svg>
         <span className={displayLabel ? "text-foreground font-medium" : "text-muted-foreground"}>
-          {displayLabel || "Click to select date & time"}
+          {displayLabel || "Select date & time"}
         </span>
-        <span className="ml-auto text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
+        <span className="ml-auto text-muted-foreground">
+          <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5">
+            {open
+              ? <path d="M3 10l5-5 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              : <path d="M3 6l5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            }
+          </svg>
+        </span>
       </button>
 
       {/* Inline calendar */}
       {open && (
-        <div className="mt-1.5 w-full rounded-lg border border-border bg-card shadow-md overflow-hidden">
-          {/* Month header */}
-          <div className="flex items-center justify-between px-2 py-1.5 bg-primary/5 border-b border-border">
+        <div className="mt-1.5 w-full rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+
+          {/* Month nav */}
+          <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-secondary/40">
             <button
               type="button"
               onClick={() => setView(new Date(year, month - 1, 1))}
-              className="w-6 h-6 flex items-center justify-center rounded hover:bg-secondary text-muted-foreground hover:text-foreground font-bold"
+              className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
             >
-              ‹
+              <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4">
+                <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
-            <span className="text-xs font-semibold text-foreground">
+            <span className="text-sm font-semibold text-foreground">
               {MONTHS[month].slice(0, 3)} {year}
             </span>
             <button
               type="button"
               onClick={() => setView(new Date(year, month + 1, 1))}
-              className="w-6 h-6 flex items-center justify-center rounded hover:bg-secondary text-muted-foreground hover:text-foreground font-bold"
+              className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
             >
-              ›
+              <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4">
+                <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
           </div>
 
-          <div className="p-2">
-            {/* Day name headers */}
-            <div className="grid grid-cols-7 mb-0.5">
+          <div className="px-2 pt-2 pb-1">
+            {/* Day headers */}
+            <div className="grid grid-cols-7 mb-1">
               {DAYS.map((d) => (
-                <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-0.5">
+                <div key={d} className="text-center text-[10px] font-bold text-muted-foreground py-0.5 uppercase tracking-wide">
                   {d}
                 </div>
               ))}
             </div>
 
             {/* Day cells */}
-            <div className="grid grid-cols-7 gap-px">
+            <div className="grid grid-cols-7">
               {cells.map((day, i) => {
                 if (!day) return <div key={i} />;
                 const disabled = isDisabled(day);
@@ -143,11 +161,11 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
                     disabled={disabled}
                     onClick={() => selectDay(day)}
                     className={[
-                      "text-[11px] rounded py-1 text-center font-medium transition-all",
+                      "text-xs rounded-lg py-1.5 mx-0.5 my-0.5 text-center font-medium transition-all",
                       sel
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-primary text-primary-foreground shadow-sm"
                         : today
-                        ? "bg-primary/15 text-primary ring-1 ring-primary/30"
+                        ? "bg-primary/12 text-primary ring-1 ring-primary/30"
                         : "hover:bg-secondary text-foreground",
                       disabled ? "opacity-25 cursor-not-allowed pointer-events-none" : "cursor-pointer",
                     ].join(" ")}
@@ -157,37 +175,42 @@ export function DateTimePicker({ value, onChange, label, required, minDate }: Pr
                 );
               })}
             </div>
+          </div>
 
-            {/* Time picker */}
-            <div className="mt-2 pt-2 border-t border-border flex items-center gap-2">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider shrink-0">Time</span>
-              <select
-                value={selected ? selected.getHours() : 10}
-                onChange={(e) => setHour(parseInt(e.target.value))}
-                className="flex-1 rounded border border-input bg-background px-1.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                {Array.from({ length: 24 }, (_, i) => (
-                  <option key={i} value={i}>{i.toString().padStart(2, "0")} {i < 12 ? "AM" : "PM"}</option>
-                ))}
-              </select>
-              <span className="text-muted-foreground font-bold text-xs">:</span>
-              <select
-                value={selected ? Math.floor(selected.getMinutes() / 5) * 5 : 0}
-                onChange={(e) => setMinute(parseInt(e.target.value))}
-                className="flex-1 rounded border border-input bg-background px-1.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
-                  <option key={m} value={m}>{m.toString().padStart(2, "0")}</option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="shrink-0 rounded bg-primary text-primary-foreground text-[11px] font-semibold px-2 py-1 hover:opacity-90 transition-opacity"
-              >
-                Done
-              </button>
-            </div>
+          {/* Time row */}
+          <div className="flex items-center gap-2 px-3 py-2.5 border-t border-border bg-secondary/30">
+            <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-muted-foreground shrink-0">
+              <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.4"/>
+              <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <select
+              value={hourVal}
+              onChange={(e) => setHour(parseInt(e.target.value))}
+              className="flex-1 min-w-0 rounded-lg border border-input bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {Array.from({ length: 24 }, (_, i) => (
+                <option key={i} value={i}>
+                  {i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 PM" : `${i - 12} PM`}
+                </option>
+              ))}
+            </select>
+            <span className="text-muted-foreground font-bold text-sm shrink-0">:</span>
+            <select
+              value={minVal}
+              onChange={(e) => setMinute(parseInt(e.target.value))}
+              className="flex-1 min-w-0 rounded-lg border border-input bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
+                <option key={m} value={m}>{m.toString().padStart(2, "0")}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="shrink-0 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-3 py-1.5 hover:opacity-90 transition-opacity"
+            >
+              Done
+            </button>
           </div>
         </div>
       )}

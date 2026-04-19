@@ -146,7 +146,7 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
           <Input label="Company" value={form.company} onChange={(e) => f("company", e.target.value)} />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Select label="Priority" value={form.priority} onChange={(e) => f("priority", e.target.value)} options={PRIORITY_OPTIONS} />
           <Select label="Source" value={form.source} onChange={(e) => f("source", e.target.value)} options={SOURCE_OPTIONS} />
         </div>
