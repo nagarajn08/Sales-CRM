@@ -238,3 +238,69 @@ def logout(response: Response, db: Session = Depends(get_db), payload: dict = De
 @router.get("/me", response_model=UserRead)
 def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+# ── Mobile Auth ───────────────────────────────────────────────────────────────
+from pydantic import BaseModel as _PydanticBaseModel
+
+class MobileLoginRequest(_PydanticBaseModel):
+    email: str
+    password: str
+
+class MobileTokenResponse(_PydanticBaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    user: dict
+
+class MobileRefreshRequest(_PydanticBaseModel):
+    refresh_token: str
+
+@router.post("/mobile/login", response_model=MobileTokenResponse)
+@limiter.limit("10/minute")
+def mobile_login(body: MobileLoginRequest, request: Request, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == body.email).first()
+    if not user or not verify_password(body.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account is disabled")
+    user.last_login = datetime.utcnow()
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    ip = forwarded_for.split(",")[0].strip() if forwarded_for else (request.client.host if request.client else None)
+    session = UserSession(user_id=user.id, organization_id=user.organization_id, ip_address=ip)
+    db.add(session)
+    db.commit()
+    pwd_ts = user.password_changed_at.isoformat() if user.password_changed_at else ""
+    data = {"sub": str(user.id), "email": user.email, "role": user.role, "pwd_ts": pwd_ts}
+    access = create_access_token(data)
+    refresh = create_refresh_token(data)
+    org = db.get(Organization, user.organization_id)
+    return MobileTokenResponse(
+        access_token=access,
+        refresh_token=refresh,
+        user={
+            "id": user.id, "name": user.name, "email": user.email,
+            "role": user.role, "is_superadmin": user.is_superadmin,
+            "org_name": org.name if org else None,
+            "org_type": org.type if org else None,
+        }
+    )
+
+@router.post("/mobile/refresh")
+@limiter.limit("30/minute")
+def mobile_refresh(body: MobileRefreshRequest, request: Request, db: Session = Depends(get_db)):
+    from app.services.auth_service import decode_token
+    from jose import JWTError
+    try:
+        payload = decode_token(body.refresh_token)
+        if payload.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        user_id = int(payload["sub"])
+        user = db.get(User, user_id)
+        if not user or not user.is_active:
+            raise HTTPException(status_code=401, detail="User not found or inactive")
+        data = {"sub": str(user.id), "email": user.email, "role": user.role,
+                "pwd_ts": user.password_changed_at.isoformat() if user.password_changed_at else ""}
+        return {"access_token": create_access_token(data), "token_type": "bearer"}
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")

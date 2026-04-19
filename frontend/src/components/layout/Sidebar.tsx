@@ -154,10 +154,9 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           {/* App icon */}
           <div className="relative flex items-center justify-center h-8 w-8 rounded-xl shrink-0"
             style={{ background: "linear-gradient(135deg, hsl(var(--sidebar-accent) / 0.9) 0%, hsl(var(--sidebar-accent) / 0.5) 100%)" }}>
+            {/* Sales funnel */}
             <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-white">
-              <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.4"/>
-              <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.4"/>
-              <path d="M8 2.5V1M8 15v-1.5M2.5 8H1M15 8h-1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              <path d="M1.5 3h13l-4.5 5.5V13l-4-2V8.5L1.5 3z" fill="currentColor" fillOpacity="0.95"/>
             </svg>
             <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border-2 border-sidebar" />
           </div>
