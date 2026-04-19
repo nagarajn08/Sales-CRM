@@ -3,14 +3,15 @@ Platform super-admin endpoints.
 Only accessible to users with is_superadmin=True (admin@salescrm.com).
 """
 from datetime import datetime, date
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from app.database import get_db
 from app.dependencies import require_platform_admin
 from app.models.lead import Lead, LeadStatus
 from app.models.organization import Organization, OrgType
 from app.models.user import User, UserRole
+from app.services.auth_service import hash_password
 
 router = APIRouter(prefix="/api/superadmin", tags=["superadmin"])
 
@@ -35,6 +36,41 @@ class OrgSummary(BaseModel):
 class OrgDetail(OrgSummary):
     webhook_token: str
     users: list[dict]
+
+
+class OrgCreate(BaseModel):
+    name: str
+    type: OrgType
+
+
+class SuperAdminUserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    mobile: str | None = None
+    role: UserRole = UserRole.USER
+    organization_id: int | None = None
+    is_owner: bool = False
+
+
+class UserPatch(BaseModel):
+    role: UserRole | None = None
+    organization_id: int | None = None
+    is_active: bool | None = None
+
+
+class UserSummary(BaseModel):
+    id: int
+    name: str
+    email: str
+    role: UserRole
+    is_active: bool
+    is_owner: bool
+    organization_id: int | None
+    org_name: str | None
+    last_login: datetime | None
+    created_at: datetime
+    model_config = {"from_attributes": True}
 
 
 class PlatformStats(BaseModel):
@@ -149,3 +185,101 @@ def toggle_org(
     org.is_active = not org.is_active
     db.commit()
     return {"id": org.id, "is_active": org.is_active}
+
+
+@router.post("/orgs", response_model=OrgSummary, status_code=status.HTTP_201_CREATED)
+def create_org(
+    body: OrgCreate,
+    _: User = Depends(require_platform_admin),
+    db: Session = Depends(get_db),
+):
+    org = Organization(name=body.name.strip(), type=body.type)
+    db.add(org)
+    db.commit()
+    db.refresh(org)
+    return _build_org_summary(org, db)
+
+
+@router.post("/users", response_model=UserSummary, status_code=status.HTTP_201_CREATED)
+def create_user(
+    body: SuperAdminUserCreate,
+    _: User = Depends(require_platform_admin),
+    db: Session = Depends(get_db),
+):
+    if db.query(User).filter(User.email == body.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    if body.organization_id:
+        org = db.get(Organization, body.organization_id)
+        if not org:
+            raise HTTPException(status_code=404, detail="Organization not found")
+    user = User(
+        name=body.name.strip(),
+        email=body.email.lower().strip(),
+        hashed_password=hash_password(body.password),
+        mobile=body.mobile,
+        role=body.role,
+        organization_id=body.organization_id,
+        is_owner=body.is_owner,
+        is_active=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    org = db.get(Organization, user.organization_id) if user.organization_id else None
+    return UserSummary(
+        id=user.id, name=user.name, email=user.email, role=user.role,
+        is_active=user.is_active, is_owner=user.is_owner,
+        organization_id=user.organization_id,
+        org_name=org.name if org else None,
+        last_login=user.last_login, created_at=user.created_at,
+    )
+
+
+@router.get("/users", response_model=list[UserSummary])
+def list_users(
+    _: User = Depends(require_platform_admin),
+    db: Session = Depends(get_db),
+):
+    users = db.query(User).filter(User.is_superadmin == False).order_by(User.created_at.desc()).all()
+    result = []
+    for u in users:
+        org = db.get(Organization, u.organization_id) if u.organization_id else None
+        result.append(UserSummary(
+            id=u.id, name=u.name, email=u.email, role=u.role,
+            is_active=u.is_active, is_owner=u.is_owner,
+            organization_id=u.organization_id,
+            org_name=org.name if org else None,
+            last_login=u.last_login, created_at=u.created_at,
+        ))
+    return result
+
+
+@router.patch("/users/{user_id}", response_model=UserSummary)
+def patch_user(
+    user_id: int,
+    body: UserPatch,
+    _: User = Depends(require_platform_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.get(User, user_id)
+    if not user or user.is_superadmin:
+        raise HTTPException(status_code=404, detail="User not found")
+    if body.role is not None:
+        user.role = body.role
+    if body.organization_id is not None:
+        org = db.get(Organization, body.organization_id)
+        if not org:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        user.organization_id = body.organization_id
+    if body.is_active is not None:
+        user.is_active = body.is_active
+    db.commit()
+    db.refresh(user)
+    org = db.get(Organization, user.organization_id) if user.organization_id else None
+    return UserSummary(
+        id=user.id, name=user.name, email=user.email, role=user.role,
+        is_active=user.is_active, is_owner=user.is_owner,
+        organization_id=user.organization_id,
+        org_name=org.name if org else None,
+        last_login=user.last_login, created_at=user.created_at,
+    )

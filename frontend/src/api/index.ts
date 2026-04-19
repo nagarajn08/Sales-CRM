@@ -95,11 +95,23 @@ export const notificationsApi = {
 };
 
 // Super Admin
+export interface SAUser {
+  id: number; name: string; email: string; role: string;
+  is_active: boolean; is_owner: boolean;
+  organization_id: number | null; org_name: string | null;
+  last_login: string | null; created_at: string;
+}
+
 export const superAdminApi = {
   stats: () => api.get<PlatformStats>("/api/superadmin/stats").then(r => r.data),
   listOrgs: () => api.get<OrgSummary[]>("/api/superadmin/orgs").then(r => r.data),
   getOrg: (id: number) => api.get<OrgDetail>(`/api/superadmin/orgs/${id}`).then(r => r.data),
   toggleOrg: (id: number) => api.patch<{ id: number; is_active: boolean }>(`/api/superadmin/orgs/${id}/toggle`).then(r => r.data),
+  createOrg: (data: { name: string; type: string }) => api.post<OrgSummary>("/api/superadmin/orgs", data).then(r => r.data),
+  listUsers: () => api.get<SAUser[]>("/api/superadmin/users").then(r => r.data),
+  createUser: (data: object) => api.post<SAUser>("/api/superadmin/users", data).then(r => r.data),
+  patchUser: (id: number, data: { role?: string; organization_id?: number; is_active?: boolean }) =>
+    api.patch<SAUser>(`/api/superadmin/users/${id}`, data).then(r => r.data),
 };
 
 // Billing
