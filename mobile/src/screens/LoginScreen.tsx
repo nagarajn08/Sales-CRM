@@ -37,7 +37,7 @@ export default function LoginScreen() {
           {/* Logo */}
           <View style={s.logoWrap}>
             <View style={s.logoBox}>
-              <Ionicons name="funnel" size={28} color="#fff" />
+              <Ionicons name="location-sharp" size={28} color="#fff" />
             </View>
             <Text style={s.appName}>TrackmyLead</Text>
             <Text style={s.tagline}>Smart Sales & Lead Management</Text>
