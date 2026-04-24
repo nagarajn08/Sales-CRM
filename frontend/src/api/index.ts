@@ -81,7 +81,7 @@ export interface FollowupLead {
 }
 export interface FollowupResponse {
   target_date: string; is_today: boolean;
-  stats: { total: number; overdue: number; due_today: number; upcoming: number };
+  stats: { total: number; overdue: number; due_today: number; upcoming: number; done: number };
   overdue: FollowupLead[]; scheduled: FollowupLead[];
 }
 export const followupsApi = {

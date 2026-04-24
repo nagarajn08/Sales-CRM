@@ -172,6 +172,14 @@ def get_followups(
     upcoming_count   = base_q().filter(Lead.next_followup_at > day_end(target)).count()
     total_count      = overdue_count + due_today_count + upcoming_count
 
+    lead_ids = _build_lead_query(db, current_user).with_entities(Lead.id).subquery()
+    done_count = db.query(LeadActivity).filter(
+        LeadActivity.lead_id.in_(lead_ids),
+        LeadActivity.activity_type == ActivityType.STATUS_CHANGED,
+        LeadActivity.created_at >= day_start(target),
+        LeadActivity.created_at <= day_end(target),
+    ).count()
+
     # ── Lists for target date ─────────────────────────────────────────────────
     if target == today:
         overdue_rows = (
@@ -221,6 +229,7 @@ def get_followups(
             "overdue":    overdue_count,
             "due_today":  due_today_count,
             "upcoming":   upcoming_count,
+            "done":       done_count,
         },
         "overdue":    [serialize(l) for l in overdue_rows],
         "scheduled":  [serialize(l) for l in scheduled_rows],

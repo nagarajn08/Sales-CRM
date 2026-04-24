@@ -382,13 +382,13 @@ export default function FollowupPage() {
           {isToday ? "Today's Overview" : `Snapshot for ${new Date(date + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}`}
         </p>
       {loading && !data ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {[...Array(5)].map((_, i) => (
             <div key={i} className="h-20 rounded-2xl bg-secondary animate-pulse" />
           ))}
         </div>
       ) : data ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <StatCard
             label="Total Active"
             value={data.stats.total}
@@ -412,6 +412,12 @@ export default function FollowupPage() {
             value={data.stats.upcoming}
             color="bg-emerald-500/10"
             icon={<svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-emerald-500"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+          />
+          <StatCard
+            label={isToday ? "Done Today" : `Done on ${new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
+            value={data.stats.done}
+            color="bg-violet-500/10"
+            icon={<svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-violet-500"><circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5"/><path d="M5.5 8l2 2 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
           />
         </div>
       ) : null}
