@@ -24,33 +24,51 @@ def _is_dev() -> bool:
     return settings.FRONTEND_URL.startswith("http://localhost")
 
 
+def _get_otp_flags(db: Session) -> tuple[bool, bool]:
+    """Return (email_otp_enabled, mobile_otp_enabled) from platform_config."""
+    from app.models.platform_config import PlatformConfig
+    rows = {r.key: r.value for r in db.query(PlatformConfig).filter(
+        PlatformConfig.key.in_(["otp_email_enabled", "otp_mobile_enabled"])
+    ).all()}
+    email_on  = rows.get("otp_email_enabled",  "true").lower() != "false"
+    mobile_on = rows.get("otp_mobile_enabled", "true").lower() != "false"
+    return email_on, mobile_on
+
+
+def get_otp_config(db: Session) -> dict:
+    """Public-facing OTP config (which channels are required)."""
+    email_on, mobile_on = _get_otp_flags(db)
+    return {"email_otp_enabled": email_on, "mobile_otp_enabled": mobile_on}
+
+
 def create_otp_record(db: Session, email: str, mobile: str) -> dict:
     """Create (or replace) OTP records for email+mobile. Returns OTPs only in dev mode."""
-    # Invalidate previous records for this email
+    email_on, mobile_on = _get_otp_flags(db)
+
     db.query(OTPRecord).filter(OTPRecord.email == email).delete()
     db.flush()
 
-    email_otp = _generate_otp()
-    mobile_otp = _generate_otp()
+    email_otp  = _generate_otp() if email_on  else "000000"
+    mobile_otp = _generate_otp() if mobile_on else "000000"
     expires = datetime.utcnow() + timedelta(minutes=OTP_EXPIRE_MINUTES)
 
     record = OTPRecord(
-        email=email,
-        mobile=mobile,
-        email_otp=email_otp,
-        mobile_otp=mobile_otp,
+        email=email, mobile=mobile,
+        email_otp=email_otp, mobile_otp=mobile_otp,
         expires_at=expires,
     )
     db.add(record)
     db.commit()
 
-    email_sent = _send_email_otp(email, email_otp)
-    mobile_sent = _send_mobile_otp(mobile, mobile_otp)
+    email_sent  = _send_email_otp(email, email_otp)   if email_on  else False
+    mobile_sent = _send_mobile_otp(mobile, mobile_otp) if mobile_on else False
 
     dev = _is_dev()
     return {
-        "email_sent": email_sent,
-        "dev_email_otp": email_otp if dev and not email_sent else None,
+        "email_sent":      email_sent,
+        "email_otp_enabled":  email_on,
+        "mobile_otp_enabled": mobile_on,
+        "dev_email_otp":  email_otp  if dev and not email_sent  else None,
         "dev_mobile_otp": mobile_otp if dev and not mobile_sent else None,
     }
 
@@ -131,6 +149,8 @@ MAX_OTP_ATTEMPTS = 5
 
 def verify_otps(db: Session, email: str, mobile: str, email_otp: str, mobile_otp: str) -> bool:
     """Verify both OTPs. Returns True and marks them verified, or raises on failure."""
+    email_on, mobile_on = _get_otp_flags(db)
+
     record = (
         db.query(OTPRecord)
         .filter(OTPRecord.email == email, OTPRecord.mobile == mobile)
@@ -147,7 +167,11 @@ def verify_otps(db: Session, email: str, mobile: str, email_otp: str, mobile_otp
         db.delete(record)
         db.commit()
         return False
-    if record.email_otp != email_otp.strip() or record.mobile_otp != mobile_otp.strip():
+
+    email_ok  = (not email_on)  or (record.email_otp  == email_otp.strip())
+    mobile_ok = (not mobile_on) or (record.mobile_otp == mobile_otp.strip())
+
+    if not email_ok or not mobile_ok:
         record.failed_attempts = (record.failed_attempts or 0) + 1
         db.commit()
         return False

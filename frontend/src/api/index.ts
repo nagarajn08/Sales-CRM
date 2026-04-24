@@ -8,7 +8,7 @@ export const authApi = {
   refresh: () => api.post("/api/auth/refresh").then(r => r.data),
   me: () => api.get<User>("/api/auth/me").then(r => r.data),
   otpRequest: (data: { email: string; mobile: string }) =>
-    api.post<{ detail: string; email_sent: boolean; dev_email_otp: string | null; dev_mobile_otp: string | null }>("/api/auth/otp/request", data).then(r => r.data),
+    api.post<{ detail: string; email_sent: boolean; email_otp_enabled: boolean; mobile_otp_enabled: boolean; dev_email_otp: string | null; dev_mobile_otp: string | null }>("/api/auth/otp/request", data).then(r => r.data),
   otpVerify: (data: { email: string; mobile: string; email_otp: string; mobile_otp: string }) =>
     api.post<{ verification_token: string }>("/api/auth/otp/verify", data).then(r => r.data),
   signupIndividual: (data: { name: string; email: string; password: string; mobile: string; verification_token: string }) =>
@@ -133,6 +133,14 @@ export const superAdminApi = {
     api.get<Record<string, { name: string; price: number; original_price: number; discount_pct: number }>>("/api/superadmin/plan-pricing").then(r => r.data),
   updatePlanPricing: (data: { plan: string; price: number; original_price: number; discount_pct: number }) =>
     api.put<{ ok: boolean }>("/api/superadmin/plan-pricing", data).then(r => r.data),
+  getOtpSettings: () =>
+    api.get<{ email_otp_enabled: boolean; mobile_otp_enabled: boolean }>("/api/superadmin/otp-settings").then(r => r.data),
+  updateOtpSettings: (data: { email_otp_enabled: boolean; mobile_otp_enabled: boolean }) =>
+    api.put<{ ok: boolean }>("/api/superadmin/otp-settings", data).then(r => r.data),
+};
+
+export const otpConfigApi = {
+  get: () => api.get<{ email_otp_enabled: boolean; mobile_otp_enabled: boolean }>("/api/auth/otp-config").then(r => r.data),
 };
 
 // Billing

@@ -8,6 +8,8 @@ import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
 import { isValidEmail, isValidMobile, isValidPassword, digitsOnly, capitalizeName } from "../lib/validators";
 
+type OTPConfig = { email_otp_enabled: boolean; mobile_otp_enabled: boolean };
+
 type AccountType = "individual" | "corporate";
 type Step = "form" | "otp";
 
@@ -101,6 +103,7 @@ export default function SignupPage() {
   const [devMobileOtp, setDevMobileOtp] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [otpConfig, setOtpConfig] = useState<OTPConfig>({ email_otp_enabled: true, mobile_otp_enabled: true });
 
   // ── Step 1: Submit form → request OTPs ──────────────────────────────────
   const submitForm = async (e: React.FormEvent) => {
@@ -116,6 +119,10 @@ export default function SignupPage() {
       setEmailSent(res.email_sent);
       setDevEmailOtp(res.dev_email_otp);
       setDevMobileOtp(res.dev_mobile_otp);
+      setOtpConfig({ email_otp_enabled: res.email_otp_enabled, mobile_otp_enabled: res.mobile_otp_enabled });
+      // Auto-fill disabled channels with placeholder so verify accepts them
+      if (!res.email_otp_enabled) setEmailOtp("000000");
+      if (!res.mobile_otp_enabled) setMobileOtp("000000");
       setStep("otp");
       startCooldown();
     } catch (err: unknown) {
@@ -129,8 +136,8 @@ export default function SignupPage() {
   const submitOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (emailOtp.replace(/\s/g, "").length < 6) { setError("Enter complete 6-digit email OTP"); return; }
-    if (mobileOtp.replace(/\s/g, "").length < 6) { setError("Enter complete 6-digit mobile OTP"); return; }
+    if (otpConfig.email_otp_enabled && emailOtp.replace(/\s/g, "").length < 6) { setError("Enter complete 6-digit email OTP"); return; }
+    if (otpConfig.mobile_otp_enabled && mobileOtp.replace(/\s/g, "").length < 6) { setError("Enter complete 6-digit mobile OTP"); return; }
     setLoading(true);
     try {
       const res = await authApi.otpVerify({ email, mobile, email_otp: emailOtp, mobile_otp: mobileOtp });
@@ -163,7 +170,9 @@ export default function SignupPage() {
       setEmailSent(res.email_sent);
       setDevEmailOtp(res.dev_email_otp);
       setDevMobileOtp(res.dev_mobile_otp);
-      setEmailOtp(""); setMobileOtp("");
+      setOtpConfig({ email_otp_enabled: res.email_otp_enabled, mobile_otp_enabled: res.mobile_otp_enabled });
+      setEmailOtp(res.email_otp_enabled ? "" : "000000");
+      setMobileOtp(res.mobile_otp_enabled ? "" : "000000");
       startCooldown();
     } catch (err: unknown) {
       setError(extractError(err));
@@ -274,16 +283,26 @@ export default function SignupPage() {
 
             {/* Info banner */}
             <div className="text-sm text-muted-foreground space-y-1.5">
-              <p>
-                <span className="font-medium text-foreground">Email:</span>{" "}
-                {emailSent
-                  ? <>OTP sent to <span className="font-medium text-foreground">{email}</span></>
-                  : <span className="text-amber-600 font-medium">SMTP not configured — see dev code below</span>}
-              </p>
-              <p>
-                <span className="font-medium text-foreground">Mobile:</span>{" "}
-                <span>Code shown below (SMS not configured)</span>
-              </p>
+              {otpConfig.email_otp_enabled && (
+                <p>
+                  <span className="font-medium text-foreground">Email:</span>{" "}
+                  {emailSent
+                    ? <>OTP sent to <span className="font-medium text-foreground">{email}</span></>
+                    : <span className="text-amber-600 font-medium">SMTP not configured — see dev code below</span>}
+                </p>
+              )}
+              {!otpConfig.email_otp_enabled && (
+                <p className="text-amber-600"><span className="font-medium">Email OTP disabled</span> — no email verification needed</p>
+              )}
+              {otpConfig.mobile_otp_enabled && (
+                <p>
+                  <span className="font-medium text-foreground">Mobile:</span>{" "}
+                  <span>OTP sent to {mobile}</span>
+                </p>
+              )}
+              {!otpConfig.mobile_otp_enabled && (
+                <p className="text-amber-600"><span className="font-medium">Mobile OTP disabled</span> — no mobile verification needed</p>
+              )}
             </div>
 
             {/* Dev mode OTP display */}
@@ -304,15 +323,19 @@ export default function SignupPage() {
             )}
 
             <form onSubmit={submitOtp} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground block text-center">Email OTP</label>
-                <OtpInput value={emailOtp} onChange={setEmailOtp} />
-              </div>
+              {otpConfig.email_otp_enabled && (
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground block text-center">Email OTP</label>
+                  <OtpInput value={emailOtp} onChange={setEmailOtp} />
+                </div>
+              )}
 
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground block text-center">Mobile OTP</label>
-                <OtpInput value={mobileOtp} onChange={setMobileOtp} />
-              </div>
+              {otpConfig.mobile_otp_enabled && (
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground block text-center">Mobile OTP</label>
+                  <OtpInput value={mobileOtp} onChange={setMobileOtp} />
+                </div>
+              )}
 
               {error && <ErrorBox msg={error} />}
 

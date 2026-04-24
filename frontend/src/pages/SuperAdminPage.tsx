@@ -420,6 +420,87 @@ function PlanPricingPanel() {
   );
 }
 
+// ── OTP Settings Panel ────────────────────────────────────────────────────────
+
+function ToggleSwitch({ on }: { on: boolean }) {
+  return (
+    <div className={cn("w-10 h-6 rounded-full transition-colors relative flex-shrink-0", on ? "bg-primary" : "bg-border")}>
+      <div className={cn("absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all", on ? "left-5" : "left-1")} />
+    </div>
+  );
+}
+
+function OTPSettingsPanel() {
+  const [emailOn, setEmailOn] = useState(true);
+  const [mobileOn, setMobileOn] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    superAdminApi.getOtpSettings()
+      .then(cfg => { setEmailOn(cfg.email_otp_enabled); setMobileOn(cfg.mobile_otp_enabled); setLoaded(true); })
+      .catch(() => toast.error("Failed to load OTP settings"));
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await superAdminApi.updateOtpSettings({ email_otp_enabled: emailOn, mobile_otp_enabled: mobileOn });
+      toast.success("OTP settings saved");
+    } catch {
+      toast.error("Failed to save OTP settings");
+    } finally { setSaving(false); }
+  };
+
+  if (!loaded) return null;
+
+  const channels = [
+    { key: "email", label: "Email OTP", desc: "Require email verification on signup", value: emailOn, toggle: () => setEmailOn(v => !v) },
+    { key: "mobile", label: "Mobile OTP", desc: "Require mobile verification via Fast2SMS", value: mobileOn, toggle: () => setMobileOn(v => !v) },
+  ];
+
+  return (
+    <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden animate-fade-up" style={{ "--delay": "100ms" } as React.CSSProperties}>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-secondary/20">
+        <div className="flex items-center gap-2">
+          <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-primary">
+            <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+            <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+          <h2 className="text-sm font-semibold text-foreground">OTP Verification</h2>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Super Admin Only</span>
+        </div>
+      </div>
+      <div className="p-5 space-y-4">
+        <p className="text-xs text-muted-foreground">Disable channels temporarily while configuring SMTP or SMS.</p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          {channels.map(ch => (
+            <button key={ch.key} onClick={ch.toggle}
+              className={cn(
+                "flex-1 flex items-center justify-between gap-3 rounded-xl border p-4 text-left transition-all",
+                ch.value ? "border-primary/30 bg-primary/5" : "border-border bg-secondary/30"
+              )}>
+              <div>
+                <p className="text-sm font-medium text-foreground">{ch.label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{ch.desc}</p>
+                <span className={cn("mt-1.5 inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                  ch.value ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                           : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400")}>
+                  {ch.value ? "Enabled" : "Disabled"}
+                </span>
+              </div>
+              <ToggleSwitch on={ch.value} />
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-end">
+          <Button size="sm" loading={saving} onClick={save}>Save Settings</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function SuperAdminPage() {
@@ -513,6 +594,9 @@ export default function SuperAdminPage() {
 
       {/* Plan pricing — super admin only */}
       <PlanPricingPanel />
+
+      {/* OTP settings — super admin only */}
+      <OTPSettingsPanel />
 
       {/* Orgs table */}
       <div className="animate-fade-up bg-card border border-border rounded-xl shadow-sm overflow-hidden"

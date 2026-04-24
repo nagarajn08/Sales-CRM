@@ -23,6 +23,7 @@ from app.services.otp_service import (
     create_otp_record, verify_otps,
     create_verification_token, decode_verification_token,
     create_password_reset_otp, verify_password_reset_otp,
+    get_otp_config,
 )
 from app.config import settings
 from app.services.template_seeder import seed_predefined_templates
@@ -69,6 +70,12 @@ def login(body: LoginRequest, response: Response, request: Request, db: Session 
     return _tokens(user, response)
 
 
+# ── OTP: Public config ────────────────────────────────────────────────────
+@router.get("/otp-config")
+def otp_config_endpoint(db: Session = Depends(get_db)):
+    return get_otp_config(db)
+
+
 # ── OTP: Request ──────────────────────────────────────────────────────────
 @router.post("/otp/request", response_model=OTPRequestResponse)
 @limiter.limit("5/minute")
@@ -81,6 +88,8 @@ def otp_request(body: OTPRequestBody, request: Request, db: Session = Depends(ge
     return OTPRequestResponse(
         detail="OTP sent. Check your email and mobile.",
         email_sent=result["email_sent"],
+        email_otp_enabled=result["email_otp_enabled"],
+        mobile_otp_enabled=result["mobile_otp_enabled"],
         dev_email_otp=result.get("dev_email_otp"),
         dev_mobile_otp=result.get("dev_mobile_otp"),
     )

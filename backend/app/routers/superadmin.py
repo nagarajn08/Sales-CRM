@@ -325,6 +325,34 @@ def get_plan_pricing(
     return result
 
 
+# ── OTP Settings ─────────────────────────────────────────────────────────────
+
+class OTPSettings(BaseModel):
+    email_otp_enabled: bool
+    mobile_otp_enabled: bool
+
+
+@router.get("/otp-settings")
+def get_otp_settings(
+    _: User = Depends(require_platform_admin),
+    db: Session = Depends(get_db),
+):
+    from app.services.otp_service import get_otp_config
+    return get_otp_config(db)
+
+
+@router.put("/otp-settings")
+def update_otp_settings(
+    body: OTPSettings,
+    _: User = Depends(require_platform_admin),
+    db: Session = Depends(get_db),
+):
+    _set_cfg(db, "otp_email_enabled",  "true" if body.email_otp_enabled  else "false")
+    _set_cfg(db, "otp_mobile_enabled", "true" if body.mobile_otp_enabled else "false")
+    db.commit()
+    return {"ok": True, "email_otp_enabled": body.email_otp_enabled, "mobile_otp_enabled": body.mobile_otp_enabled}
+
+
 @router.put("/plan-pricing")
 def update_plan_pricing(
     body: PlanPricingUpdate,
