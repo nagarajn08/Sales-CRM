@@ -172,7 +172,15 @@ def get_followups(
     upcoming_count   = base_q().filter(Lead.next_followup_at > day_end(target)).count()
     total_count      = overdue_count + due_today_count + upcoming_count
 
-    lead_ids = _build_lead_query(db, current_user).with_entities(Lead.id).subquery()
+    # include_inactive=True so converted/not_interested leads (is_active=False) are included
+    lead_ids = _build_lead_query(db, current_user, include_inactive=True).with_entities(Lead.id).subquery()
+    # LeadActivity.created_at is stored as UTC (datetime.utcnow()).
+    # next_followup_at is IST-naive. Shift activity window by IST offset so
+    # "done on target date" means the IST calendar day, not the UTC day.
+    from datetime import timedelta
+    IST = timedelta(hours=5, minutes=30)
+    act_start = day_start(target) - IST
+    act_end   = day_end(target)   - IST
     # "Done" = meaningful action: tried (not_reachable/busy), closed (converted/not_interested),
     # or rescheduled WITH a comment (call_back/interested_call_back + comment = had conversation).
     # Pure reschedule without comment does not count.
@@ -181,8 +189,8 @@ def get_followups(
     done_count = db.query(LeadActivity).filter(
         LeadActivity.lead_id.in_(lead_ids),
         LeadActivity.activity_type == ActivityType.STATUS_CHANGED,
-        LeadActivity.created_at >= day_start(target),
-        LeadActivity.created_at <= day_end(target),
+        LeadActivity.created_at >= act_start,
+        LeadActivity.created_at <= act_end,
         or_(
             LeadActivity.new_status.in_(ALWAYS_DONE),
             and_(
