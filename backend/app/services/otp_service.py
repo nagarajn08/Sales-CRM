@@ -1,5 +1,8 @@
 import random
 import smtplib
+import urllib.request
+import urllib.parse
+import json as _json
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -42,22 +45,51 @@ def create_otp_record(db: Session, email: str, mobile: str) -> dict:
     db.commit()
 
     email_sent = _send_email_otp(email, email_otp)
+    mobile_sent = _send_mobile_otp(mobile, mobile_otp)
 
     dev = _is_dev()
     return {
         "email_sent": email_sent,
         "dev_email_otp": email_otp if dev and not email_sent else None,
-        "dev_mobile_otp": mobile_otp if dev else None,
+        "dev_mobile_otp": mobile_otp if dev and not mobile_sent else None,
     }
+
+
+def _send_mobile_otp(mobile: str, otp: str) -> bool:
+    """Send OTP via Fast2SMS. Returns True on success."""
+    if not settings.FAST2SMS_API_KEY:
+        return False
+    # Strip country code if present — Fast2SMS expects 10-digit Indian number
+    number = mobile.lstrip("+").lstrip("91") if mobile.startswith("+91") or mobile.startswith("91") else mobile
+    number = number.strip()
+    try:
+        payload = urllib.parse.urlencode({
+            "variables_values": otp,
+            "route": "otp",
+            "numbers": number,
+        }).encode()
+        req = urllib.request.Request(
+            "https://www.fast2sms.com/dev/bulkV2",
+            data=payload,
+            headers={
+                "authorization": settings.FAST2SMS_API_KEY,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = _json.loads(resp.read())
+            return result.get("return", False) is True
+    except Exception:
+        return False
 
 
 def _send_email_otp(email: str, otp: str) -> bool:
     """Try to send OTP via SMTP. Returns True on success."""
-    smtp_host = getattr(settings, "SMTP_HOST", None)
-    smtp_port = getattr(settings, "SMTP_PORT", 587)
-    smtp_user = getattr(settings, "SMTP_USER", None)
-    smtp_pass = getattr(settings, "SMTP_PASS", None)
-    smtp_from = getattr(settings, "SMTP_FROM", smtp_user)
+    smtp_host = settings.SMTP_HOST
+    smtp_port = settings.SMTP_PORT
+    smtp_user = settings.SMTP_USER
+    smtp_pass = settings.SMTP_PASS
+    smtp_from = settings.SMTP_FROM or smtp_user
 
     if not smtp_host or not smtp_user:
         return False
@@ -174,11 +206,11 @@ def verify_password_reset_otp(db: Session, email: str, otp: str) -> bool:
 
 def _send_password_reset_email(email: str, otp: str) -> bool:
     """Send a password reset OTP email. Returns True on success."""
-    smtp_host = getattr(settings, "SMTP_HOST", None)
-    smtp_port = getattr(settings, "SMTP_PORT", 587)
-    smtp_user = getattr(settings, "SMTP_USER", None)
-    smtp_pass = getattr(settings, "SMTP_PASS", None)
-    smtp_from = getattr(settings, "SMTP_FROM", smtp_user)
+    smtp_host = settings.SMTP_HOST
+    smtp_port = settings.SMTP_PORT
+    smtp_user = settings.SMTP_USER
+    smtp_pass = settings.SMTP_PASS
+    smtp_from = settings.SMTP_FROM or smtp_user
 
     if not smtp_host or not smtp_user:
         return False
