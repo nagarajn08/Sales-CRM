@@ -6,7 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from slowapi import Limiter
@@ -173,11 +173,24 @@ def get_followups(
     total_count      = overdue_count + due_today_count + upcoming_count
 
     lead_ids = _build_lead_query(db, current_user).with_entities(Lead.id).subquery()
+    # "Done" = meaningful action: tried (not_reachable/busy), closed (converted/not_interested),
+    # or rescheduled WITH a comment (call_back/interested_call_back + comment = had conversation).
+    # Pure reschedule without comment does not count.
+    ALWAYS_DONE = ("not_reachable", "busy", "not_interested", "converted")
+    RESCHEDULED = ("call_back", "interested_call_back")
     done_count = db.query(LeadActivity).filter(
         LeadActivity.lead_id.in_(lead_ids),
         LeadActivity.activity_type == ActivityType.STATUS_CHANGED,
         LeadActivity.created_at >= day_start(target),
         LeadActivity.created_at <= day_end(target),
+        or_(
+            LeadActivity.new_status.in_(ALWAYS_DONE),
+            and_(
+                LeadActivity.new_status.in_(RESCHEDULED),
+                LeadActivity.comment.isnot(None),
+                LeadActivity.comment != "",
+            ),
+        ),
     ).count()
 
     # ── Lists for target date ─────────────────────────────────────────────────
