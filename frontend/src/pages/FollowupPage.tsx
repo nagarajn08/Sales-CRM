@@ -6,7 +6,10 @@ import toast from "react-hot-toast";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function toLocalDateStr(date = new Date()) {
-  return date.toISOString().slice(0, 10);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function formatTime(iso: string) {
@@ -62,7 +65,7 @@ function FollowupRow({ lead, isOverdue, onUpdated }: {
   const [rescheduling, setRescheduling] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10); // YYYY-MM-DD
+    return toLocalDateStr(d);
   });
   const [rescheduleTime, setRescheduleTime] = useState("10:00");
   const meta = STATUS_META[lead.status] ?? STATUS_META.new;
