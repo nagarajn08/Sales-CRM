@@ -24,9 +24,10 @@ STATUS_LABELS = {
 
 @router.get("/stats", response_model=DashboardStats)
 def get_stats(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    today_start = datetime.combine(date.today(), datetime.min.time())
+    IST = timedelta(hours=5, minutes=30)
+    today_start = datetime.combine(date.today(), datetime.min.time()) - IST  # IST midnight → UTC
     today_end   = today_start + timedelta(days=1)
-    week_start  = today_start - timedelta(days=today_start.weekday())
+    week_start  = today_start - timedelta(days=date.today().weekday())
 
     org_id       = current_user.organization_id
     is_superadmin = current_user.is_superadmin
@@ -84,15 +85,18 @@ def get_stats(current_user: User = Depends(get_current_user), db: Session = Depe
     act_agg = db.query(
         func.count(LeadActivity.id).label("total"),
         func.count(case((
-            LeadActivity.activity_type == ActivityType.STATUS_CHANGED, LeadActivity.id
-        ))).label("status_changed"),
+            LeadActivity.activity_type.in_([
+                ActivityType.STATUS_CHANGED,
+                ActivityType.CALL_LOG,
+            ]), LeadActivity.id
+        ))).label("followups_done"),
     ).filter(
         LeadActivity.lead_id.in_(lead_ids_subq),
         LeadActivity.created_at >= today_start,
     ).one()
 
-    activities_today    = act_agg.total
-    followups_done_today = act_agg.status_changed
+    activities_today     = act_agg.total
+    followups_done_today = act_agg.followups_done
 
     # ── 3. Source breakdown — 2 GROUP BY queries instead of 20 ───────────
     src_today_rows = (
