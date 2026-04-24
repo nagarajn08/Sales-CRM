@@ -149,9 +149,12 @@ export default function LandingPage() {
           {/* Logo */}
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-              <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-white">
-                <path d="M8 2C4.68 2 2 4.68 2 8s2.68 6 6 6 6-2.68 6-6-2.68-6-6-6z" stroke="currentColor" strokeWidth="1.4"/>
-                <path d="M5 8h6M8 5l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg viewBox="0 0 24 30" fill="none" className="h-5 w-4">
+                <path d="M12 1 A9 9 0 0 1 21 10 C21 17 13 25 12 27 C11 25 3 17 3 10 A9 9 0 0 1 12 1 Z" fill="white" fillOpacity="0.92"/>
+                <path d="M8.5 13 L12 10 L15.5 7" stroke="#6366f1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="8.5" cy="13" r="1.8" fill="#6366f1"/>
+                <circle cx="12"  cy="10" r="1.8" fill="#6366f1"/>
+                <circle cx="15.5" cy="7"  r="1.8" fill="#6366f1"/>
               </svg>
             </div>
             <span className="font-display font-bold text-lg tracking-tight text-white">TrackmyLead</span>
@@ -283,10 +286,12 @@ export default function LandingPage() {
                 {/* Brand */}
                 <div className="flex items-center gap-2 px-3 py-3 border-b border-white/[0.06]">
                   <div className="h-6 w-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-                    <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3 text-white">
-                      <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.4"/>
-                      <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.4"/>
-                      <path d="M8 2.5V1M8 15v-1.5M2.5 8H1M15 8h-1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                    <svg viewBox="0 0 24 30" fill="none" className="h-4 w-3">
+                      <path d="M12 1 A9 9 0 0 1 21 10 C21 17 13 25 12 27 C11 25 3 17 3 10 A9 9 0 0 1 12 1 Z" fill="white" fillOpacity="0.92"/>
+                      <path d="M8.5 13 L12 10 L15.5 7" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <circle cx="8.5" cy="13" r="2" fill="#6366f1"/>
+                      <circle cx="12"  cy="10" r="2" fill="#6366f1"/>
+                      <circle cx="15.5" cy="7"  r="2" fill="#6366f1"/>
                     </svg>
                   </div>
                   <div>
