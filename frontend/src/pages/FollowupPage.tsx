@@ -377,6 +377,10 @@ export default function FollowupPage() {
       </div>
 
       {/* Stats */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2.5">
+          {isToday ? "Today's Overview" : `Snapshot for ${new Date(date + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}`}
+        </p>
       {loading && !data ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[...Array(4)].map((_, i) => (
@@ -411,6 +415,7 @@ export default function FollowupPage() {
           />
         </div>
       ) : null}
+      </div>
 
       {/* Lists */}
       {data && (
