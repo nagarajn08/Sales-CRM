@@ -129,6 +129,10 @@ export const superAdminApi = {
   createUser: (data: object) => api.post<SAUser>("/api/superadmin/users", data).then(r => r.data),
   patchUser: (id: number, data: { role?: string; organization_id?: number; is_active?: boolean }) =>
     api.patch<SAUser>(`/api/superadmin/users/${id}`, data).then(r => r.data),
+  getPlanPricing: () =>
+    api.get<Record<string, { name: string; price: number; original_price: number; discount_pct: number }>>("/api/superadmin/plan-pricing").then(r => r.data),
+  updatePlanPricing: (data: { plan: string; price: number; original_price: number; discount_pct: number }) =>
+    api.put<{ ok: boolean }>("/api/superadmin/plan-pricing", data).then(r => r.data),
 };
 
 // Billing

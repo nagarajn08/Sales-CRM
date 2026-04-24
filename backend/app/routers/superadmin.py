@@ -11,6 +11,8 @@ from app.dependencies import require_platform_admin
 from app.models.lead import Lead, LeadStatus
 from app.models.organization import Organization, OrgType
 from app.models.user import User, UserRole
+from app.models.platform_config import PlatformConfig
+from app.config import PLANS
 from app.services.auth_service import hash_password
 
 router = APIRouter(prefix="/api/superadmin", tags=["superadmin"])
@@ -283,3 +285,62 @@ def patch_user(
         org_name=org.name if org else None,
         last_login=user.last_login, created_at=user.created_at,
     )
+
+
+# ── Plan Pricing ──────────────────────────────────────────────────────────────
+
+class PlanPricingUpdate(BaseModel):
+    plan: str
+    price: int
+    original_price: int
+    discount_pct: int
+
+
+def _get_cfg(db: Session) -> dict:
+    return {r.key: r.value for r in db.query(PlatformConfig).all()}
+
+
+def _set_cfg(db: Session, key: str, value: str):
+    row = db.get(PlatformConfig, key)
+    if row:
+        row.value = value
+    else:
+        db.add(PlatformConfig(key=key, value=value))
+
+
+@router.get("/plan-pricing")
+def get_plan_pricing(
+    _: User = Depends(require_platform_admin),
+    db: Session = Depends(get_db),
+):
+    cfg = _get_cfg(db)
+    result = {}
+    for plan_key, defaults in PLANS.items():
+        result[plan_key] = {
+            "price":          int(cfg.get(f"{plan_key}_price",          defaults["price"])),
+            "original_price": int(cfg.get(f"{plan_key}_original_price", defaults["original_price"])),
+            "discount_pct":   int(cfg.get(f"{plan_key}_discount_pct",   defaults["discount_pct"])),
+            "name":           defaults["name"],
+        }
+    return result
+
+
+@router.put("/plan-pricing")
+def update_plan_pricing(
+    body: PlanPricingUpdate,
+    _: User = Depends(require_platform_admin),
+    db: Session = Depends(get_db),
+):
+    if body.plan not in PLANS:
+        raise HTTPException(status_code=400, detail="Invalid plan key")
+    if body.price < 0 or body.original_price < 0:
+        raise HTTPException(status_code=400, detail="Price cannot be negative")
+    if not (0 <= body.discount_pct <= 100):
+        raise HTTPException(status_code=400, detail="Discount must be 0-100")
+
+    _set_cfg(db, f"{body.plan}_price",          str(body.price))
+    _set_cfg(db, f"{body.plan}_original_price",  str(body.original_price))
+    _set_cfg(db, f"{body.plan}_discount_pct",    str(body.discount_pct))
+    db.commit()
+    return {"ok": True, "plan": body.plan, "price": body.price,
+            "original_price": body.original_price, "discount_pct": body.discount_pct}

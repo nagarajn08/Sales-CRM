@@ -8,3 +8,4 @@ from app.models.app_settings import AppSettings
 from app.models.otp import OTPRecord
 from app.models.subscription import Subscription
 from app.models.user_session import UserSession
+from app.models.platform_config import PlatformConfig

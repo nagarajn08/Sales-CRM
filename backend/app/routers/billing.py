@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import hmac
 import json
@@ -7,7 +8,22 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user, require_admin
 from app.models.user import User
+from app.models.platform_config import PlatformConfig
 from app.config import PLANS, settings
+
+
+def get_effective_plans(db: Session) -> dict:
+    """Return PLANS with any price overrides stored in platform_config."""
+    cfg = {r.key: r.value for r in db.query(PlatformConfig).all()}
+    plans = copy.deepcopy(PLANS)
+    for plan_key, plan in plans.items():
+        if f"{plan_key}_price" in cfg:
+            plan["price"] = int(cfg[f"{plan_key}_price"])
+        if f"{plan_key}_original_price" in cfg:
+            plan["original_price"] = int(cfg[f"{plan_key}_original_price"])
+        if f"{plan_key}_discount_pct" in cfg:
+            plan["discount_pct"] = int(cfg[f"{plan_key}_discount_pct"])
+    return plans
 from app.services.billing_service import (
     get_usage, create_razorpay_subscription,
     activate_subscription, cancel_subscription,
@@ -46,7 +62,7 @@ def get_billing(current_user: User = Depends(get_current_user), db: Session = De
             "leads": {"current": lead_count, "max": -1},
             "features": ["Unlimited everything", "All tenants management", "Platform analytics"],
             "current_period_end": None,
-            "plans": PLANS,
+            "plans": get_effective_plans(db),
             "razorpay_key_id": settings.RAZORPAY_KEY_ID or None,
             "demo_mode": not razorpay_configured(),
             "is_platform_admin": True,
@@ -55,7 +71,7 @@ def get_billing(current_user: User = Depends(get_current_user), db: Session = De
     usage = get_usage(db, current_user.organization_id)
     return {
         **usage,
-        "plans": PLANS,
+        "plans": get_effective_plans(db),
         "razorpay_key_id": settings.RAZORPAY_KEY_ID or None,
         "demo_mode": not razorpay_configured(),
     }

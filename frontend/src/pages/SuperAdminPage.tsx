@@ -3,6 +3,7 @@ import { superAdminApi, type SAUser } from "../api";
 import type { OrgSummary, PlatformStats } from "../types";
 import { cn, fmtDate } from "../lib/utils";
 import { Button } from "../components/ui/button";
+import toast from "react-hot-toast";
 
 // ── Small UI helpers ──────────────────────────────────────────────────────────
 
@@ -297,6 +298,128 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const inputCls = "w-full text-sm bg-secondary rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring border border-transparent focus:border-ring/30";
 
+// ── Plan Pricing Panel ────────────────────────────────────────────────────────
+
+type PricingMap = Record<string, { name: string; price: number; original_price: number; discount_pct: number }>;
+
+function PlanPricingPanel() {
+  const [pricing, setPricing] = useState<PricingMap | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [form, setForm] = useState({ price: 0, original_price: 0, discount_pct: 0 });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    superAdminApi.getPlanPricing().then(setPricing).catch(() => toast.error("Failed to load pricing"));
+  }, []);
+
+  const openEdit = (planKey: string) => {
+    if (!pricing) return;
+    const p = pricing[planKey];
+    setForm({ price: p.price, original_price: p.original_price, discount_pct: p.discount_pct });
+    setEditing(planKey);
+  };
+
+  const save = async () => {
+    if (!editing) return;
+    setSaving(true);
+    try {
+      await superAdminApi.updatePlanPricing({ plan: editing, ...form });
+      setPricing(prev => prev ? { ...prev, [editing]: { ...prev[editing], ...form } } : prev);
+      toast.success("Pricing updated");
+      setEditing(null);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail ?? "Failed to update");
+    } finally { setSaving(false); }
+  };
+
+  if (!pricing) return null;
+
+  return (
+    <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden animate-fade-up" style={{ "--delay": "80ms" } as React.CSSProperties}>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-secondary/20">
+        <div className="flex items-center gap-2">
+          <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-primary">
+            <path d="M8 1v14M3.5 4.5h7a2 2 0 010 4h-7a2.5 2.5 0 000 5H12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+          <h2 className="text-sm font-semibold text-foreground">Plan Pricing</h2>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Super Admin Only</span>
+        </div>
+      </div>
+
+      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {Object.entries(pricing).map(([key, plan]) => (
+          <div key={key} className={cn(
+            "rounded-xl border p-4 transition-all",
+            key === "free" ? "border-border bg-secondary/30" : "border-primary/20 bg-primary/5"
+          )}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <span className="text-sm font-semibold text-foreground capitalize">{plan.name}</span>
+                {key !== "free" && (
+                  <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">Paid</span>
+                )}
+              </div>
+              {key !== "free" && (
+                <button onClick={() => openEdit(key)}
+                  className="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors">
+                  <svg viewBox="0 0 12 12" fill="none" className="h-3 w-3">
+                    <path d="M8.5 1.5L10.5 3.5L4 10H2V8L8.5 1.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+                  </svg>
+                  Edit
+                </button>
+              )}
+            </div>
+
+            {editing === key ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide block mb-1">Price (₹/mo)</label>
+                    <input type="number" min={0} value={form.price}
+                      onChange={e => setForm(f => ({ ...f, price: parseInt(e.target.value) || 0 }))}
+                      className={inputCls + " text-sm"} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide block mb-1">Original (₹)</label>
+                    <input type="number" min={0} value={form.original_price}
+                      onChange={e => setForm(f => ({ ...f, original_price: parseInt(e.target.value) || 0 }))}
+                      className={inputCls + " text-sm"} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide block mb-1">Discount %</label>
+                  <input type="number" min={0} max={100} value={form.discount_pct}
+                    onChange={e => setForm(f => ({ ...f, discount_pct: Math.min(100, parseInt(e.target.value) || 0) }))}
+                    className={inputCls + " text-sm"} />
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" className="flex-1" loading={saving} onClick={save}>Save</Button>
+                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(null)}>Cancel</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-foreground tabular-nums">
+                    {plan.price === 0 ? "Free" : `₹${plan.price.toLocaleString("en-IN")}`}
+                  </span>
+                  {plan.price > 0 && <span className="text-xs text-muted-foreground">/month</span>}
+                </div>
+                {plan.original_price > plan.price && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="line-through text-muted-foreground">₹{plan.original_price.toLocaleString("en-IN")}</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">{plan.discount_pct}% off</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function SuperAdminPage() {
@@ -387,6 +510,9 @@ export default function SuperAdminPage() {
           <StatTile label="Converted Today" value={stats.converted_today} color="text-emerald-600" />
         </div>
       )}
+
+      {/* Plan pricing — super admin only */}
+      <PlanPricingPanel />
 
       {/* Orgs table */}
       <div className="animate-fade-up bg-card border border-border rounded-xl shadow-sm overflow-hidden"
