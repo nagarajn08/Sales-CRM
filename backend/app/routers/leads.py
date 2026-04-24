@@ -163,13 +163,13 @@ def get_followups(
     def base_q():
         return _build_lead_query(db, current_user).filter(Lead.next_followup_at.isnot(None))
 
-    # ── Stats (always relative to today) ─────────────────────────────────────
-    overdue_count    = base_q().filter(Lead.next_followup_at < day_start(today)).count()
+    # ── Stats (relative to selected target date) ──────────────────────────────
+    overdue_count    = base_q().filter(Lead.next_followup_at < day_start(target)).count()
     due_today_count  = base_q().filter(
-        Lead.next_followup_at >= day_start(today),
-        Lead.next_followup_at <= day_end(today),
+        Lead.next_followup_at >= day_start(target),
+        Lead.next_followup_at <= day_end(target),
     ).count()
-    upcoming_count   = base_q().filter(Lead.next_followup_at > day_end(today)).count()
+    upcoming_count   = base_q().filter(Lead.next_followup_at > day_end(target)).count()
     total_count      = overdue_count + due_today_count + upcoming_count
 
     # ── Lists for target date ─────────────────────────────────────────────────

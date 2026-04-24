@@ -392,19 +392,19 @@ export default function FollowupPage() {
             icon={<svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-primary"><circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 5v3l1.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>}
           />
           <StatCard
-            label="Overdue"
+            label={isToday ? "Overdue" : `Before ${new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
             value={data.stats.overdue}
             color="bg-red-500/10"
             icon={<svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-red-500"><path d="M8 1.5L1 14h14L8 1.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M8 6.5v3M8 11.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>}
           />
           <StatCard
-            label="Due Today"
+            label={isToday ? "Due Today" : `On ${new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
             value={data.stats.due_today}
             color="bg-amber-500/10"
             icon={<svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-amber-500"><rect x="2" y="2.5" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><path d="M2 6h12M5.5 1v2.5M10.5 1v2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>}
           />
           <StatCard
-            label="Upcoming"
+            label={isToday ? "Upcoming" : `After ${new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
             value={data.stats.upcoming}
             color="bg-emerald-500/10"
             icon={<svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-emerald-500"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
