@@ -178,16 +178,19 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-[420px] animate-fade-up">
+    <div className="min-h-screen bg-background overflow-y-auto">
+      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-[420px] animate-fade-up py-6">
 
         {/* Brand */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-10 w-10 rounded-xl bg-primary mb-4">
-            <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5 text-white">
-              <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.8"/>
-              <circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.8"/>
-              <path d="M10 3V1.5M10 18.5V17M3 10H1.5M18.5 10H17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center h-10 w-10 rounded-xl bg-primary mb-4 shadow-lg shadow-primary/30">
+            <svg viewBox="0 0 24 30" fill="none" className="h-6 w-5">
+              <path d="M12 1 A9 9 0 0 1 21 10 C21 17 13 25 12 27 C11 25 3 17 3 10 A9 9 0 0 1 12 1 Z" fill="white" fillOpacity="0.92"/>
+              <path d="M8.5 13 L12 10 L15.5 7" stroke="hsl(var(--primary))" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="8.5" cy="13" r="1.8" fill="hsl(var(--primary))"/>
+              <circle cx="12"  cy="10" r="1.8" fill="hsl(var(--primary))"/>
+              <circle cx="15.5" cy="7"  r="1.8" fill="hsl(var(--primary))"/>
             </svg>
           </div>
           {step === "form" ? (
@@ -204,7 +207,7 @@ export default function SignupPage() {
         </div>
 
         {/* Progress dots */}
-        <div className="flex items-center justify-center gap-2 mb-6">
+        <div className="flex items-center justify-center gap-2 mb-5">
           {["form", "otp"].map((s, i) => (
             <div key={s} className={cn(
               "h-1.5 rounded-full transition-all duration-300",
@@ -217,7 +220,7 @@ export default function SignupPage() {
         {step === "form" && (
           <>
             {/* Account type toggle */}
-            <div className="flex gap-1 p-1 bg-secondary rounded-lg mb-6">
+            <div className="flex gap-1 p-1 bg-secondary rounded-lg mb-4">
               {(["individual", "corporate"] as AccountType[]).map(t => (
                 <button
                   key={t}
@@ -348,6 +351,7 @@ export default function SignupPage() {
           Already have an account?{" "}
           <Link to="/login" className="text-primary font-medium hover:underline">Sign in</Link>
         </p>
+      </div>
       </div>
     </div>
   );
