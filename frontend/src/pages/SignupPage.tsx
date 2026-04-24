@@ -178,9 +178,8 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background overflow-y-auto">
-      <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-[420px] animate-fade-up py-6">
+    <div className="min-h-screen bg-background flex flex-col items-center px-4 py-10">
+      <div className="w-full max-w-[420px] animate-fade-up m-auto">
 
         {/* Brand */}
         <div className="text-center mb-6">
@@ -351,7 +350,6 @@ export default function SignupPage() {
           Already have an account?{" "}
           <Link to="/login" className="text-primary font-medium hover:underline">Sign in</Link>
         </p>
-      </div>
       </div>
     </div>
   );

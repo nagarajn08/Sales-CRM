@@ -35,9 +35,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background overflow-y-auto">
-      <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-[360px] animate-fade-up py-6">
+    <div className="min-h-screen bg-background flex flex-col items-center px-4 py-10">
+      <div className="w-full max-w-[360px] animate-fade-up m-auto">
 
         {/* Brand */}
         <div className="text-center mb-7">
@@ -106,7 +105,6 @@ export default function LoginPage() {
             Sign up free
           </Link>
         </p>
-      </div>
       </div>
     </div>
   );
