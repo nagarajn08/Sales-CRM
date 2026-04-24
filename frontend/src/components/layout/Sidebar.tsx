@@ -178,8 +178,15 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
           {/* App icon */}
           <div className="relative flex items-center justify-center h-8 w-8 rounded-xl shrink-0"
             style={{ background: "linear-gradient(135deg, hsl(var(--sidebar-accent) / 0.9) 0%, hsl(var(--sidebar-accent) / 0.5) 100%)" }}>
-            <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-white">
-              <path d="M1.5 3h13l-4.5 5.5V13l-4-2V8.5L1.5 3z" fill="currentColor" fillOpacity="0.95"/>
+            {/* Pin + sparkline mark */}
+            <svg viewBox="0 0 24 30" fill="none" className="h-5 w-4">
+              <path d="M12 1 A9 9 0 0 1 21 10 C21 17 13 25 12 27 C11 25 3 17 3 10 A9 9 0 0 1 12 1 Z"
+                    fill="white" fillOpacity="0.92"/>
+              <path d="M8.5 13 L12 10 L15.5 7"
+                    stroke="hsl(var(--sidebar-accent))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="8.5" cy="13" r="1.8" fill="hsl(var(--sidebar-accent))"/>
+              <circle cx="12"  cy="10" r="1.8" fill="hsl(var(--sidebar-accent))"/>
+              <circle cx="15.5" cy="7"  r="1.8" fill="hsl(var(--sidebar-accent))"/>
             </svg>
             <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border-2 border-sidebar" />
           </div>
