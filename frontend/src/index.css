@@ -73,8 +73,8 @@
 [data-theme="teal"].dark   { --primary: 174 66% 50%; }
 [data-theme="indigo"]      { --primary: 238 84% 58%; --sidebar-accent: 238 76% 68%; }
 [data-theme="indigo"].dark { --primary: 238 76% 66%; }
-[data-theme="yellow"]      { --primary: 42 96% 44%;  --sidebar-accent: 42 96% 58%; }
-[data-theme="yellow"].dark { --primary: 42 92% 54%; }
+[data-theme="yellow"]      { --primary: 42 96% 44%;  --sidebar-accent: 42 96% 58%; --primary-foreground: 240 14% 10%; }
+[data-theme="yellow"].dark { --primary: 42 92% 54%; --primary-foreground: 240 14% 10%; }
 [data-theme="cyan"]        { --primary: 192 88% 38%; --sidebar-accent: 192 82% 54%; }
 [data-theme="cyan"].dark   { --primary: 192 80% 50%; }
 [data-theme="sky"]         { --primary: 200 92% 44%; --sidebar-accent: 200 88% 58%; }
@@ -208,4 +208,14 @@
 .focus-ring:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+}
+
+/* Honour prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -53,7 +53,7 @@ export function StatusModal({ open, onClose, lead, onUpdated }: Props) {
     try {
       const payload: Record<string, unknown> = { status };
       if (needsFollowup && followupAt) {
-        payload.next_followup_at = new Date(followupAt).toISOString();
+        payload.next_followup_at = followupAt + ":00";  // naive local datetime — no UTC shift
       }
       if (comment.trim()) payload.comment = comment.trim();
       const updated = await leadsApi.updateStatus(lead.id, payload);

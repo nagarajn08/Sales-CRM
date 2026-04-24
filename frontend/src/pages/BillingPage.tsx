@@ -69,7 +69,7 @@ export default function BillingPage() {
       const rzp = new Razorpay({
         key: res.razorpay_key_id,
         subscription_id: res.subscription_id,
-        name: "SalesCRM",
+        name: "TrackmyLead",
         description: "Pro Plan — Monthly",
         theme: { color: "#6366f1" },
         handler: async (response: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string }) => {

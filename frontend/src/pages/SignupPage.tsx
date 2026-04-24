@@ -285,7 +285,7 @@ export default function SignupPage() {
             </div>
 
             {/* Dev mode OTP display */}
-            {(devEmailOtp || devMobileOtp) && (
+            {import.meta.env.DEV && (devEmailOtp || devMobileOtp) && (
               <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-xs space-y-1">
                 <p className="font-semibold text-amber-800 dark:text-amber-400">Dev mode — OTP codes</p>
                 {devEmailOtp && (

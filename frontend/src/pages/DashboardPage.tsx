@@ -199,7 +199,7 @@ export default function DashboardPage() {
         </div>
         <button
           onClick={() => { setLoading(true); dashboardApi.stats().then(setStats).finally(() => setLoading(false)); }}
-          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border hover:bg-secondary transition-colors"
+          className="text-xs text-foreground flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-secondary transition-colors font-medium"
         >
           <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5"><path d="M13 3A6 6 0 1014 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M13 3v3.5H9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           Refresh

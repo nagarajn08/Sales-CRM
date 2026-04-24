@@ -37,7 +37,7 @@ limiter = Limiter(key_func=get_remote_address)
 def _set_cookie(response: Response, token: str):
     is_production = not settings.FRONTEND_URL.startswith("http://localhost")
     response.set_cookie(
-        COOKIE, token, httponly=True, secure=is_production, samesite="lax",
+        COOKIE, token, httponly=True, secure=is_production, samesite="strict",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400, path="/api/auth",
     )
 

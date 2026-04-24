@@ -138,6 +138,95 @@ def list_leads(
     return JSONResponse(content=data, headers={"X-Total-Count": str(total)})
 
 
+@router.get("/followups")
+def get_followups(
+    date: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns follow-up stats + lists for a given date (default today, UTC).
+    date format: YYYY-MM-DD
+    """
+    from datetime import date as date_cls, time as time_cls
+
+    try:
+        target = datetime.strptime(date, "%Y-%m-%d").date() if date else datetime.utcnow().date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date, use YYYY-MM-DD")
+
+    now        = datetime.utcnow()
+    today      = now.date()
+    day_start  = lambda d: datetime.combine(d, time_cls.min)
+    day_end    = lambda d: datetime.combine(d, time_cls.max)
+
+    def base_q():
+        return _build_lead_query(db, current_user).filter(Lead.next_followup_at.isnot(None))
+
+    # ── Stats (always relative to today) ─────────────────────────────────────
+    overdue_count    = base_q().filter(Lead.next_followup_at < day_start(today)).count()
+    due_today_count  = base_q().filter(
+        Lead.next_followup_at >= day_start(today),
+        Lead.next_followup_at <= day_end(today),
+    ).count()
+    upcoming_count   = base_q().filter(Lead.next_followup_at > day_end(today)).count()
+    total_count      = overdue_count + due_today_count + upcoming_count
+
+    # ── Lists for target date ─────────────────────────────────────────────────
+    if target == today:
+        overdue_rows = (
+            base_q()
+            .filter(Lead.next_followup_at < day_start(today))
+            .order_by(Lead.next_followup_at.asc())
+            .limit(200).all()
+        )
+        scheduled_rows = (
+            base_q()
+            .filter(Lead.next_followup_at >= day_start(today), Lead.next_followup_at <= day_end(today))
+            .order_by(Lead.next_followup_at.asc())
+            .limit(200).all()
+        )
+    else:
+        overdue_rows = []
+        scheduled_rows = (
+            base_q()
+            .filter(Lead.next_followup_at >= day_start(target), Lead.next_followup_at <= day_end(target))
+            .order_by(Lead.next_followup_at.asc())
+            .limit(200).all()
+        )
+
+    def serialize(lead: Lead):
+        return {
+            "id":               lead.id,
+            "web_id":           lead.web_id,
+            "name":             lead.name,
+            "mobile":           lead.mobile,
+            "email":            lead.email,
+            "company":          lead.company,
+            "status":           lead.status.value,
+            "priority":         lead.priority.value,
+            "next_followup_at": lead.next_followup_at.isoformat() if lead.next_followup_at else None,
+            "last_comment":     lead.last_comment,
+            "deal_value":       lead.deal_value,
+            "score":            lead.score,
+            "assigned_to":      {"id": lead.assigned_to.id, "name": lead.assigned_to.name}
+                                if lead.assigned_to else None,
+        }
+
+    return {
+        "target_date": target.isoformat(),
+        "is_today":    target == today,
+        "stats": {
+            "total":      total_count,
+            "overdue":    overdue_count,
+            "due_today":  due_today_count,
+            "upcoming":   upcoming_count,
+        },
+        "overdue":    [serialize(l) for l in overdue_rows],
+        "scheduled":  [serialize(l) for l in scheduled_rows],
+    }
+
+
 @router.get("/export")
 def export_leads(
     status: Optional[LeadStatus] = None,

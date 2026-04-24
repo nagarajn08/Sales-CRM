@@ -303,26 +303,15 @@ export default function TemplatesPage() {
       </Modal>
 
       {/* ── Delete confirm ── */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
-          <div className="relative bg-card border border-border rounded-2xl shadow-xl p-6 max-w-sm w-full">
-            <div className="h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center mb-4">
-              <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5 text-destructive">
-                <path d="M4 5h12M7 5V3.5h6V5M8 9v5M12 9v5M5 5l.7 11h8.6L15 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <h3 className="font-semibold text-foreground text-sm mb-1">Delete template?</h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              <strong className="text-foreground">{deleteTarget.name}</strong> will be permanently deleted and cannot be recovered.
-            </p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1" onClick={() => setDeleteTarget(null)}>Cancel</Button>
-              <Button variant="destructive" size="sm" className="flex-1" loading={deleting} onClick={doDelete}>Delete</Button>
-            </div>
-          </div>
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete template?" maxWidth="max-w-sm">
+        <p className="text-sm text-muted-foreground mb-5">
+          <strong className="text-foreground">{deleteTarget?.name}</strong> will be permanently deleted and cannot be recovered.
+        </p>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+          <Button variant="destructive" size="sm" className="flex-1" loading={deleting} onClick={doDelete}>Delete</Button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

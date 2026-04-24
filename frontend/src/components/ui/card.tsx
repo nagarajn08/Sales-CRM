@@ -40,3 +40,11 @@ export function CardContent({ className, children, ...props }: React.HTMLAttribu
     </div>
   );
 }
+
+export function CardFooter({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn("flex items-center px-5 pb-4 pt-0 gap-2", className)} {...props}>
+      {children}
+    </div>
+  );
+}

@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
-        name: 'SalesCRM',
-        short_name: 'SalesCRM',
+        name: 'TrackmyLead',
+        short_name: 'TrackmyLead',
         description: 'Smart sales lead management and pipeline tracking',
         theme_color: '#6366f1',
         background_color: '#ffffff',

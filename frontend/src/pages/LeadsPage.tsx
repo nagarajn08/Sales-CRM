@@ -11,6 +11,7 @@ import { LeadFormModal } from "../components/leads/LeadFormModal";
 import { ImportModal } from "../components/leads/ImportModal";
 import { KanbanView } from "../components/leads/KanbanView";
 import { StatusModal } from "../components/leads/StatusModal";
+import { Modal } from "../components/ui/modal";
 import { useAuth } from "../auth/AuthContext";
 import { fmtDateTime, cn } from "../lib/utils";
 
@@ -112,6 +113,7 @@ export default function LeadsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [statusLead, setStatusLead] = useState<Lead | null>(null);
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
 
   const fetchLeads = useCallback(async (targetPage = page) => {
     setLoading(true);
@@ -403,7 +405,7 @@ export default function LeadsPage() {
           )}
           {isAdmin && (
             <Button size="sm" variant="destructive" loading={bulkLoading}
-              onClick={() => { if (confirm(`Delete ${selected.size} lead(s)? This cannot be undone.`)) runBulkAction("delete"); }}>
+              onClick={() => setShowBulkDelete(true)}>
               Delete {selected.size}
             </Button>
           )}
@@ -638,6 +640,16 @@ export default function LeadsPage() {
 
       <LeadFormModal open={showAdd} onClose={() => setShowAdd(false)} onSaved={(lead) => setLeads((prev) => [lead, ...prev])} />
       <ImportModal open={showImport} onClose={() => setShowImport(false)} onImported={fetchLeads} />
+
+      <Modal open={showBulkDelete} onClose={() => setShowBulkDelete(false)} title={`Delete ${selected.size} lead(s)?`} maxWidth="max-w-sm">
+        <p className="text-sm text-muted-foreground mb-5">
+          This will permanently delete <strong className="text-foreground">{selected.size}</strong> lead(s) and all their activity. This cannot be undone.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" onClick={() => setShowBulkDelete(false)}>Cancel</Button>
+          <Button variant="destructive" loading={bulkLoading} onClick={() => { setShowBulkDelete(false); runBulkAction("delete"); }}>Delete</Button>
+        </div>
+      </Modal>
       {statusLead && (
         <StatusModal
           open={!!statusLead}

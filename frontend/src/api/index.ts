@@ -72,6 +72,23 @@ export const leadsApi = {
     api.post<{ assigned: number; details: { user: string; assigned: number }[] }>("/api/leads/auto-assign").then(r => r.data),
 };
 
+// Follow-ups
+export interface FollowupLead {
+  id: number; web_id: string; name: string; mobile: string | null; email: string | null;
+  company: string | null; status: string; priority: string;
+  next_followup_at: string; last_comment: string | null; deal_value: number | null;
+  score: number; assigned_to: { id: number; name: string } | null;
+}
+export interface FollowupResponse {
+  target_date: string; is_today: boolean;
+  stats: { total: number; overdue: number; due_today: number; upcoming: number };
+  overdue: FollowupLead[]; scheduled: FollowupLead[];
+}
+export const followupsApi = {
+  get: (date?: string) =>
+    api.get<FollowupResponse>("/api/leads/followups", { params: date ? { date } : {} }).then(r => r.data),
+};
+
 // Dashboard
 export const dashboardApi = {
   stats: () => api.get<DashboardStats>("/api/dashboard/stats").then(r => r.data),

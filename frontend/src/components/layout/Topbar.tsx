@@ -99,7 +99,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme } = useTheme(user?.id);
-  const isDark = theme.dark;
+  const isDark = theme.mode === "dark" || (theme.mode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   const pathKey = "/" + location.pathname.split("/")[1];
   const page = PAGE_META[pathKey];
@@ -161,7 +161,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
         {/* Dark / Light toggle */}
         <button
-          onClick={() => setTheme({ dark: !isDark })}
+          onClick={() => setTheme({ mode: isDark ? "light" : "dark" })}
           title={isDark ? "Switch to light mode" : "Switch to dark mode"}
           className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
         >

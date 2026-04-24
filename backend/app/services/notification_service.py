@@ -118,7 +118,7 @@ def trigger_due_notifications(db: Session) -> None:
 
             if twilio_cfg.get("account_sid"):
                 whatsapp_msg = (
-                    f"SalesCRM Reminder\n"
+                    f"TrackmyLead Reminder\n"
                     f"Follow-up {'in ' + str(minutes_left) + ' min' if minutes_left > 0 else 'NOW (overdue)'}\n"
                     f"Lead: {lead.name}\n"
                     f"Mobile: {lead.mobile or '-'}\n"

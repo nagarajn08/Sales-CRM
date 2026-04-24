@@ -47,7 +47,7 @@ export default function LoginPage() {
               <path d="M10 3V1.5M10 18.5V17M3 10H1.5M18.5 10H17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-foreground">SalesCRM</h1>
+          <h1 className="text-xl font-bold text-foreground">TrackmyLead</h1>
           <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
         </div>
 

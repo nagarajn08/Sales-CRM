@@ -13,7 +13,7 @@ from app.models.user import User
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 DEFAULT_SETTINGS = {
-    "company_name": "Sales CRM",
+    "company_name": "TrackmyLead",
     "followup_reminder_hours": "1",
     "twilio_account_sid": "",
     "twilio_auth_token": "",
@@ -67,7 +67,7 @@ def get_webhook_info(current_user: User = Depends(get_current_user), db: Session
     return {
         "webhook_token": org.webhook_token,
         "webhook_url": f"{base_url}/api/webhooks/{org.webhook_token}/leads",
-        "verify_token": "salescrm_webhook_verify",
+        "verify_token": "trackmylead_webhook_verify",
         "org_name": org.name,
         "org_type": org.type,
     }

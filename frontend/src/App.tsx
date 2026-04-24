@@ -15,6 +15,7 @@ import TemplatesPage from "./pages/TemplatesPage";
 import SettingsPage from "./pages/SettingsPage";
 import BillingPage from "./pages/BillingPage";
 import ReportsPage from "./pages/ReportsPage";
+import FollowupPage from "./pages/FollowupPage";
 import LandingPage from "./pages/LandingPage";
 
 function App() {
@@ -58,6 +59,7 @@ function App() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="leads" element={<LeadsPage />} />
         <Route path="leads/:id" element={<LeadDetailPage />} />
+        <Route path="followups" element={<FollowupPage />} />
         <Route
           path="users"
           element={

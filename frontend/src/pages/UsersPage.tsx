@@ -175,7 +175,7 @@ export default function UsersPage() {
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
             <p className="text-sm font-semibold text-foreground">Login / Logout Logs</p>
-            <button onClick={fetchSessions} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+            <button onClick={fetchSessions} className="text-xs text-foreground flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-secondary transition-colors font-medium">
               <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5"><path d="M2 8a6 6 0 1 0 .75-2.9M2 2v4h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
               Refresh
             </button>
@@ -335,21 +335,15 @@ export default function UsersPage() {
       </Modal>
 
       {/* Delete confirm */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setDeleteTarget(null)} />
-          <div className="relative bg-card border border-border rounded-xl shadow-xl p-6 max-w-sm w-full">
-            <h3 className="font-semibold text-foreground mb-2">Delete User?</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Delete <strong>{deleteTarget.name}</strong>? Their leads will remain but become unassigned.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
-              <Button variant="destructive" loading={deleting} onClick={deleteUser}>Delete</Button>
-            </div>
-          </div>
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete User?" maxWidth="max-w-sm">
+        <p className="text-sm text-muted-foreground mb-5">
+          Delete <strong className="text-foreground">{deleteTarget?.name}</strong>? Their leads will remain but become unassigned.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+          <Button variant="destructive" loading={deleting} onClick={deleteUser}>Delete</Button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

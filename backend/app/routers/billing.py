@@ -99,8 +99,10 @@ def activate(
     if body.plan not in PLANS:
         raise HTTPException(status_code=400, detail="Invalid plan")
 
-    # Verify Razorpay signature if not demo mode
-    if razorpay_configured() and body.razorpay_signature:
+    # Verify Razorpay signature — required when Razorpay is configured
+    if razorpay_configured():
+        if not body.razorpay_signature or not body.razorpay_payment_id:
+            raise HTTPException(status_code=400, detail="Payment signature required")
         expected = hmac.new(
             settings.RAZORPAY_KEY_SECRET.encode(),
             f"{body.razorpay_payment_id}|{body.razorpay_subscription_id}".encode(),
@@ -125,7 +127,10 @@ def cancel(current_user: User = Depends(require_admin), db: Session = Depends(ge
 async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
     body = await request.body()
 
-    # Verify webhook signature
+    # Signature verification: mandatory in production, skip only on localhost
+    is_production = not settings.FRONTEND_URL.startswith("http://localhost")
+    if is_production and not settings.RAZORPAY_WEBHOOK_SECRET:
+        raise HTTPException(status_code=503, detail="Webhook secret not configured")
     if settings.RAZORPAY_WEBHOOK_SECRET:
         sig = request.headers.get("X-Razorpay-Signature", "")
         expected = hmac.new(

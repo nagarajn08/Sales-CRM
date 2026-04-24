@@ -1,27 +1,81 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { leadsApi, settingsApi } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { capitalizeName } from "../lib/validators";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { useTheme, type ThemeColor } from "../hooks/useTheme";
+import { useTheme, themeHex, FONT_OPTIONS, type ThemeMode } from "../hooks/useTheme";
 import { cn } from "../lib/utils";
 
-const THEMES: { value: ThemeColor; label: string; color: string }[] = [
-  { value: "blue",   label: "Blue",   color: "bg-blue-500" },
-  { value: "indigo", label: "Indigo", color: "bg-indigo-500" },
-  { value: "purple", label: "Purple", color: "bg-purple-500" },
-  { value: "pink",   label: "Pink",   color: "bg-pink-500" },
-  { value: "red",    label: "Red",    color: "bg-red-500" },
-  { value: "orange", label: "Orange", color: "bg-orange-500" },
-  { value: "yellow", label: "Yellow", color: "bg-yellow-500" },
-  { value: "green",  label: "Green",  color: "bg-green-500" },
-  { value: "teal",   label: "Teal",   color: "bg-teal-500" },
-  { value: "cyan",   label: "Cyan",   color: "bg-cyan-500" },
-  { value: "sky",    label: "Sky Blue", color: "bg-sky-500" },
-  { value: "grey",   label: "Grey",   color: "bg-slate-500" },
-];
+// Mini app preview used inside mode-selection cards
+function MiniPreview({ dark, accent }: { dark: boolean; accent: string }) {
+  const bg      = dark ? "#1a1b2e" : "#f5f4f0";
+  const sidebar  = dark ? "#0f1021" : "#ffffff";
+  const line1   = dark ? "#2e3048" : "#e8e4de";
+  const line2   = dark ? "#252740" : "#ede9e3";
+  const textClr = dark ? "#4a4f72" : "#c9c3bb";
+  return (
+    <svg viewBox="0 0 88 52" className="w-full h-full" style={{ display: "block" }}>
+      {/* sidebar */}
+      <rect x="0"  y="0" width="22" height="52" fill={sidebar} rx="0"/>
+      {/* content */}
+      <rect x="22" y="0" width="66" height="52" fill={bg}/>
+      {/* sidebar dots */}
+      <circle cx="8"  cy="12" r="2.5" fill={textClr}/>
+      <circle cx="8"  cy="22" r="2.5" fill={textClr}/>
+      <circle cx="8"  cy="32" r="2.5" fill={accent} opacity="0.9"/>
+      <rect x="13" y="10.5" width="6" height="3" rx="1" fill={textClr}/>
+      <rect x="13" y="20.5" width="6" height="3" rx="1" fill={textClr}/>
+      <rect x="13" y="30.5" width="6" height="3" rx="1" fill={accent} opacity="0.9"/>
+      {/* content lines */}
+      <rect x="27" y="12" width="32" height="3.5" rx="1.5" fill={line1}/>
+      <rect x="27" y="20" width="22" height="3"   rx="1.5" fill={line2}/>
+      <rect x="27" y="28" width="27" height="3"   rx="1.5" fill={line2}/>
+      <rect x="27" y="36" width="18" height="3"   rx="1.5" fill={line2}/>
+      {/* accent button */}
+      <rect x="60" y="40" width="20" height="8" rx="3" fill={accent} opacity="0.9"/>
+    </svg>
+  );
+}
+
+function ModeCard({ mode, current, accent, onSelect }: {
+  mode: ThemeMode; current: ThemeMode; accent: string; onSelect: () => void;
+}) {
+  const selected = mode === current;
+  const label = mode === "system" ? "Device Default" : mode === "light" ? "Light" : "Dark";
+
+  return (
+    <button
+      onClick={onSelect}
+      className={cn(
+        "flex-1 flex flex-col items-center gap-2 p-2 rounded-xl border-2 transition-all",
+        selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 bg-secondary/30"
+      )}
+    >
+      <div className="w-full rounded-lg overflow-hidden" style={{ height: 56 }}>
+        {mode === "system" ? (
+          <div className="relative w-full h-full">
+            <div className="absolute inset-0" style={{ clipPath: "polygon(0 0, 50% 0, 50% 100%, 0 100%)" }}>
+              <MiniPreview dark={false} accent={accent} />
+            </div>
+            <div className="absolute inset-0" style={{ clipPath: "polygon(50% 0, 100% 0, 100% 100%, 50% 100%)" }}>
+              <MiniPreview dark={true} accent={accent} />
+            </div>
+            {/* diagonal divider */}
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: "linear-gradient(90deg, transparent 48%, #888 49%, #888 51%, transparent 52%)", opacity: 0.2 }} />
+          </div>
+        ) : (
+          <MiniPreview dark={mode === "dark"} accent={accent} />
+        )}
+      </div>
+      <span className={cn("text-[11px] font-medium", selected ? "text-primary" : "text-muted-foreground")}>
+        {label}
+      </span>
+    </button>
+  );
+}
 
 function SectionCard({
   icon,
@@ -68,6 +122,19 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme(user?.id);
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+
+  // Color picker state
+  const colorInputRef = useRef<HTMLInputElement>(null);
+  const currentHex = themeHex(theme);
+  const [hexInput, setHexInput] = useState(currentHex);
+  useEffect(() => { setHexInput(themeHex(theme)); }, [theme.color, theme.customHex]);
+
+  const applyHex = (hex: string) => {
+    const normalized = hex.startsWith("#") ? hex : `#${hex}`;
+    if (/^#[0-9a-f]{6}$/i.test(normalized)) {
+      setTheme({ color: "custom", customHex: normalized });
+    }
+  };
 
   // Per-section save state
   const [savingEmail, setSavingEmail] = useState(false);
@@ -184,57 +251,102 @@ export default function SettingsPage() {
         icon={
           <svg viewBox="0 0 20 20" fill="none" className="h-4.5 w-4.5 text-violet-500">
             <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.6"/>
-            <path d="M10 6v4l2.5 2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+            <path d="M6 10c0-2.21 1.79-4 4-4s4 1.79 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+            <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
           </svg>
         }
         title="Appearance"
-        description="Theme color and display mode"
+        description="Accent color and display mode"
       >
-        <div className="space-y-5">
+        <div className="space-y-6">
+
+          {/* App Color */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Accent Color</p>
-            <div className="flex gap-2 flex-wrap">
-              {THEMES.map((t) => (
-                <button
-                  key={t.value}
-                  onClick={() => setTheme({ color: t.value })}
-                  title={t.label}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-lg border transition-all text-xs font-medium",
-                    theme.color === t.value
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                  )}
-                >
-                  <span className={cn("h-3 w-3 rounded-full shrink-0", t.color)} />
-                  {t.label}
-                </button>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">App Color</p>
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-border bg-secondary/30">
+              {/* Color swatch — click to open picker */}
+              <button
+                onClick={() => colorInputRef.current?.click()}
+                className="h-10 w-10 rounded-full shrink-0 ring-2 ring-border hover:ring-primary/50 transition-all"
+                style={{ backgroundColor: currentHex }}
+                title="Pick color"
+              />
+              {/* Hidden native color input */}
+              <input
+                ref={colorInputRef}
+                type="color"
+                value={currentHex}
+                onChange={(e) => { setHexInput(e.target.value); applyHex(e.target.value); }}
+                className="sr-only"
+              />
+              {/* Hex input */}
+              <div className="flex items-center gap-1.5 flex-1 bg-background border border-border rounded-xl px-3 py-2">
+                <span className="text-muted-foreground text-sm font-mono">#</span>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={hexInput.replace(/^#/, "")}
+                  onChange={(e) => setHexInput("#" + e.target.value.replace(/[^0-9a-f]/gi, ""))}
+                  onBlur={(e) => applyHex("#" + e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && applyHex(hexInput)}
+                  placeholder="6366f1"
+                  className="flex-1 bg-transparent text-foreground text-sm font-mono tracking-widest outline-none uppercase"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Customize the app's accent color. Click the swatch or type a hex value.
+            </p>
+          </div>
+
+          {/* Background Color */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Background Color</p>
+            <div className="flex gap-3">
+              {(["system", "light", "dark"] as ThemeMode[]).map((m) => (
+                <ModeCard
+                  key={m}
+                  mode={m}
+                  current={theme.mode}
+                  accent={currentHex}
+                  onSelect={() => setTheme({ mode: m })}
+                />
               ))}
             </div>
           </div>
 
+          {/* Font */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Mode</p>
-            <div className="flex gap-2">
-              {[
-                { dark: false, label: "Light", icon: "☀️" },
-                { dark: true,  label: "Dark",  icon: "🌙" },
-              ].map((m) => (
-                <button
-                  key={String(m.dark)}
-                  onClick={() => setTheme({ dark: m.dark })}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all text-sm font-medium",
-                    theme.dark === m.dark
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/40"
-                  )}
-                >
-                  {m.icon} {m.label}
-                </button>
-              ))}
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Font</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {FONT_OPTIONS.map((f) => {
+                const selected = (theme.font ?? "dm-sans") === f.value;
+                return (
+                  <button
+                    key={f.value}
+                    onClick={() => setTheme({ font: f.value })}
+                    className={cn(
+                      "flex flex-col items-start px-4 py-3 rounded-xl border-2 transition-all text-left",
+                      selected
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-secondary/30 hover:border-primary/40"
+                    )}
+                  >
+                    <span
+                      className={cn("text-base font-semibold leading-none mb-1", selected ? "text-primary" : "text-foreground")}
+                      style={{ fontFamily: f.family }}
+                    >
+                      Aa
+                    </span>
+                    <span className={cn("text-[11px] font-medium", selected ? "text-primary" : "text-muted-foreground")}>
+                      {f.label}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
+
         </div>
       </SectionCard>
 
@@ -316,7 +428,7 @@ export default function SettingsPage() {
               label="From (sender name)"
               value={settings.smtp_from ?? ""}
               onChange={(e) => set("smtp_from", e.target.value)}
-              placeholder="SalesCRM <noreply@yourcompany.com>"
+              placeholder="TrackmyLead <noreply@trackmylead.in>"
             />
             <div className="flex items-center justify-between pt-3 border-t border-border mt-2">
               <Button
@@ -445,7 +557,7 @@ export default function SettingsPage() {
 
             <div className="rounded-xl border border-border divide-y divide-border text-sm overflow-hidden">
               {[
-                { platform: "Meta (Facebook/Instagram)", desc: "Use Webhook URL above. Verify token: salescrm_webhook_verify" },
+                { platform: "Meta (Facebook/Instagram)", desc: "Use Webhook URL above. Verify token: trackmylead_webhook_verify" },
                 { platform: "LinkedIn Lead Gen",         desc: "POST to Webhook URL with firstName, lastName, emailAddress fields" },
                 { platform: "Google Ads",                desc: "Use webhook integration, POST to Webhook URL" },
                 { platform: "Any Platform",              desc: "POST JSON with name, email, mobile, source, campaign_name fields" },

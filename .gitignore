@@ -10,6 +10,7 @@ backend/*.sqlite
 *.pyo
 
 # Environment
+.env
 backend/.env
 .env.production
 

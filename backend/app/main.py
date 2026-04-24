@@ -15,7 +15,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s — %(message)s",
 )
-logger = logging.getLogger("salescrm")
+logger = logging.getLogger("trackmylead")
 
 # Warn loudly if SECRET_KEY was never set in .env — all JWTs will invalidate on restart
 if settings.SECRET_KEY == _FALLBACK_SECRET:
@@ -41,7 +41,7 @@ from app.routers import superadmin
 from app.routers import billing
 
 limiter = Limiter(key_func=get_remote_address)
-app = FastAPI(title="Sales CRM API", version="2.0.0")
+app = FastAPI(title="TrackmyLead API", version="2.0.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -117,7 +117,7 @@ def run_migrations():
         inspector = inspect(engine)
         tables = inspector.get_table_names()
 
-        _allowed_tables = {"leads", "users", "app_settings", "email_templates", "user_sessions"}
+        _allowed_tables = {"leads", "users", "app_settings", "email_templates", "user_sessions", "otp_records"}
         _allowed_types = {"VARCHAR", "INTEGER", "BOOLEAN DEFAULT FALSE", "BOOLEAN DEFAULT TRUE",
                           "TEXT", "DOUBLE PRECISION", "INTEGER DEFAULT 0", "TIMESTAMP"}
 
@@ -155,6 +155,9 @@ def run_migrations():
         add_col("email_templates", "organization_id", "INTEGER")
         add_col("email_templates", "is_predefined", "BOOLEAN DEFAULT FALSE")
 
+        # otp_records
+        add_col("otp_records", "failed_attempts", "INTEGER DEFAULT 0")
+
 
 def seed_admin():
     from app.models.organization import Organization, OrgType
@@ -166,7 +169,7 @@ def seed_admin():
         default_org = db.query(Organization).first()
         if not default_org:
             default_org = Organization(
-                name="SalesCRM Admin",
+                name="TrackmyLead Admin",
                 type=OrgType.CORPORATE,
                 webhook_token=secrets.token_urlsafe(24),
             )
@@ -234,4 +237,4 @@ def on_startup():
 
 @app.get("/")
 def root():
-    return {"status": "ok", "app": "Sales CRM API", "version": "2.0.0"}
+    return {"status": "ok", "app": "TrackmyLead API", "version": "2.0.0"}

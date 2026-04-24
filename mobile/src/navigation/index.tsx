@@ -8,6 +8,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { colors } from '../theme';
 
 import LoginScreen from '../screens/LoginScreen';
+import QueueScreen from '../screens/QueueScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import LeadsScreen from '../screens/LeadsScreen';
 import LeadDetailScreen from '../screens/LeadDetailScreen';
@@ -16,6 +17,13 @@ import ProfileScreen from '../screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+const TAB_ICONS: Record<string, [string, string]> = {
+  Queue:     ['radio-button-on',  'radio-button-off'],
+  Dashboard: ['grid',             'grid-outline'],
+  Leads:     ['people',           'people-outline'],
+  Profile:   ['person-circle',    'person-circle-outline'],
+};
 
 function MainTabs() {
   return (
@@ -33,19 +41,15 @@ function MainTabs() {
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         tabBarIcon: ({ color, size, focused }) => {
-          const icons: Record<string, [string, string]> = {
-            Dashboard: ['grid', 'grid-outline'],
-            Leads: ['people', 'people-outline'],
-            Profile: ['person-circle', 'person-circle-outline'],
-          };
-          const [active, inactive] = icons[route.name] ?? ['ellipse', 'ellipse-outline'];
+          const [active, inactive] = TAB_ICONS[route.name] ?? ['ellipse', 'ellipse-outline'];
           return <Ionicons name={(focused ? active : inactive) as any} size={size} color={color} />;
         },
       })}
     >
+      <Tab.Screen name="Queue"     component={QueueScreen} />
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Leads" component={LeadsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Leads"     component={LeadsScreen} />
+      <Tab.Screen name="Profile"   component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -66,9 +70,9 @@ export default function Navigation() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           <>
-            <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen name="LeadDetail" component={LeadDetailScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="AddLead" component={AddLeadScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Main"       component={MainTabs} />
+            <Stack.Screen name="LeadDetail" component={LeadDetailScreen} />
+            <Stack.Screen name="AddLead"    component={AddLeadScreen} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />

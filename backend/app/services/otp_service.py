@@ -17,8 +17,12 @@ def _generate_otp() -> str:
     return f"{random.randint(100000, 999999)}"
 
 
+def _is_dev() -> bool:
+    return settings.FRONTEND_URL.startswith("http://localhost")
+
+
 def create_otp_record(db: Session, email: str, mobile: str) -> dict:
-    """Create (or replace) OTP records for email+mobile. Returns OTPs for dev mode."""
+    """Create (or replace) OTP records for email+mobile. Returns OTPs only in dev mode."""
     # Invalidate previous records for this email
     db.query(OTPRecord).filter(OTPRecord.email == email).delete()
     db.flush()
@@ -37,14 +41,13 @@ def create_otp_record(db: Session, email: str, mobile: str) -> dict:
     db.add(record)
     db.commit()
 
-    # Try to send email OTP via SMTP
     email_sent = _send_email_otp(email, email_otp)
 
+    dev = _is_dev()
     return {
         "email_sent": email_sent,
-        # In dev mode (no SMTP configured) expose OTPs so developer can test
-        "dev_email_otp": None if email_sent else email_otp,
-        "dev_mobile_otp": mobile_otp,  # Always show mobile OTP (no SMS integration)
+        "dev_email_otp": email_otp if dev and not email_sent else None,
+        "dev_mobile_otp": mobile_otp if dev else None,
     }
 
 
@@ -61,7 +64,7 @@ def _send_email_otp(email: str, otp: str) -> bool:
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Your SalesCRM verification code"
+        msg["Subject"] = "Your TrackmyLead verification code"
         msg["From"] = smtp_from
         msg["To"] = email
 
@@ -69,7 +72,7 @@ def _send_email_otp(email: str, otp: str) -> bool:
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
           <h2 style="color:#1e293b;font-size:20px;margin:0 0 8px">Verify your email</h2>
           <p style="color:#64748b;font-size:14px;margin:0 0 24px">
-            Enter this code to complete your SalesCRM registration.
+            Enter this code to complete your TrackmyLead registration.
           </p>
           <div style="background:#f1f5f9;border-radius:12px;padding:24px;text-align:center;
                       font-size:36px;font-weight:700;letter-spacing:8px;color:#4f46e5">
@@ -91,6 +94,9 @@ def _send_email_otp(email: str, otp: str) -> bool:
         return False
 
 
+MAX_OTP_ATTEMPTS = 5
+
+
 def verify_otps(db: Session, email: str, mobile: str, email_otp: str, mobile_otp: str) -> bool:
     """Verify both OTPs. Returns True and marks them verified, or raises on failure."""
     record = (
@@ -104,9 +110,14 @@ def verify_otps(db: Session, email: str, mobile: str, email_otp: str, mobile_otp
         return False
     if datetime.utcnow() > record.expires_at:
         return False
-    if record.email_otp != email_otp.strip():
+    if record.failed_attempts >= MAX_OTP_ATTEMPTS:
+        # Burn the record — attacker must restart the flow
+        db.delete(record)
+        db.commit()
         return False
-    if record.mobile_otp != mobile_otp.strip():
+    if record.email_otp != email_otp.strip() or record.mobile_otp != mobile_otp.strip():
+        record.failed_attempts = (record.failed_attempts or 0) + 1
+        db.commit()
         return False
 
     record.email_verified = True
@@ -134,9 +145,10 @@ def create_password_reset_otp(db: Session, email: str) -> dict:
     db.commit()
 
     email_sent = _send_password_reset_email(email, otp)
+    dev = _is_dev()
     return {
         "email_sent": email_sent,
-        "dev_otp": None if email_sent else otp,
+        "dev_otp": otp if dev and not email_sent else None,
     }
 
 
@@ -173,7 +185,7 @@ def _send_password_reset_email(email: str, otp: str) -> bool:
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Reset your SalesCRM password"
+        msg["Subject"] = "Reset your TrackmyLead password"
         msg["From"] = smtp_from
         msg["To"] = email
 
@@ -181,7 +193,7 @@ def _send_password_reset_email(email: str, otp: str) -> bool:
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
           <h2 style="color:#1e293b;font-size:20px;margin:0 0 8px">Reset your password</h2>
           <p style="color:#64748b;font-size:14px;margin:0 0 24px">
-            Use this code to reset your SalesCRM password. It expires in {OTP_EXPIRE_MINUTES} minutes.
+            Use this code to reset your TrackmyLead password. It expires in {OTP_EXPIRE_MINUTES} minutes.
           </p>
           <div style="background:#f1f5f9;border-radius:12px;padding:24px;text-align:center;
                       font-size:36px;font-weight:700;letter-spacing:8px;color:#4f46e5">

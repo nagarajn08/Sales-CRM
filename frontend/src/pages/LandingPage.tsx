@@ -91,13 +91,6 @@ const FEATURES = [
     color: "from-indigo-500/10 to-indigo-500/5 border-indigo-500/20",
     iconColor: "text-indigo-500",
   },
-  {
-    icon: Icon.score,
-    title: "Lead Scoring",
-    desc: "Every lead gets an auto-calculated 0–100 score based on status, activities, deal value and recency. Focus on what's hot.",
-    color: "from-orange-500/10 to-orange-500/5 border-orange-500/20",
-    iconColor: "text-orange-500",
-  },
 ];
 
 const STEPS = [
@@ -161,7 +154,7 @@ export default function LandingPage() {
                 <path d="M5 8h6M8 5l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <span className="font-display font-bold text-lg tracking-tight text-white">SalesCRM</span>
+            <span className="font-display font-bold text-lg tracking-tight text-white">TrackmyLead</span>
           </div>
 
           {/* Desktop nav */}
@@ -226,17 +219,17 @@ export default function LandingPage() {
 
           {/* Headline */}
           <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight mb-6">
-            Close more deals
+            Never miss a
             <br />
             <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-pink-400 bg-clip-text text-transparent">
-              with less effort
+              follow-up again.
             </span>
           </h1>
 
           {/* Sub */}
           <p className="text-lg sm:text-xl text-white/50 max-w-2xl mx-auto mb-10 leading-relaxed">
-            SalesCRM is the all-in-one lead management platform built for Indian sales teams.
-            Track leads, send emails, log calls, score prospects and never miss a follow-up.
+            TrackmyLead is the all-in-one lead management platform built for Indian sales teams.
+            Track leads, send emails, log calls, score prospects — and close every deal.
           </p>
 
           {/* CTAs */}
@@ -278,7 +271,7 @@ export default function LandingPage() {
                 <div className="h-2.5 w-2.5 rounded-full bg-green-500/50" />
               </div>
               <div className="flex-1 mx-4 rounded-md h-5 flex items-center px-3 border border-white/[0.07]" style={{ background: "#ffffff08" }}>
-                <span className="text-[9px] text-white/25 font-mono">app.salescrm.in/dashboard</span>
+                <span className="text-[9px] text-white/25 font-mono">app.trackmylead.in/dashboard</span>
               </div>
             </div>
 
@@ -298,7 +291,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-white/80 leading-none">Acme Corp</p>
-                    <p className="text-[8px] text-white/30 mt-0.5">SalesCRM</p>
+                    <p className="text-[8px] text-white/30 mt-0.5">TrackmyLead</p>
                   </div>
                 </div>
                 {/* Nav */}
@@ -461,7 +454,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Why SalesCRM ── */}
+      {/* ── Why TrackmyLead ── */}
       <section className="py-24 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
 
@@ -476,7 +469,7 @@ export default function LandingPage() {
             </h2>
             <p className="text-white/40 text-lg max-w-2xl mx-auto leading-relaxed">
               Spreadsheets get messy. WhatsApp chats get buried. Leads go cold because nobody remembered to call back.
-              SalesCRM fixes that — completely.
+              TrackmyLead fixes that — completely.
             </p>
           </div>
 
@@ -515,7 +508,7 @@ export default function LandingPage() {
                 <div className="h-7 w-7 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
                   <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 text-emerald-400"><path d="M2.5 8.5l3.5 3.5 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
-                <p className="font-display font-bold text-emerald-300 text-sm uppercase tracking-wide">With SalesCRM</p>
+                <p className="font-display font-bold text-emerald-300 text-sm uppercase tracking-wide">With TrackmyLead</p>
               </div>
               <ul className="space-y-3">
                 {[
@@ -548,7 +541,7 @@ export default function LandingPage() {
                 iconColor: "text-violet-400",
                 tag: "Save time",
                 title: "Stop wasting hours on admin",
-                body: "Log a call in 10 seconds. Import 500 leads in one click. Send a follow-up email without leaving the app. SalesCRM cuts the busywork so your team spends time selling, not managing spreadsheets.",
+                body: "Log a call in 10 seconds. Import 500 leads in one click. Send a follow-up email without leaving the app. TrackmyLead cuts the busywork so your team spends time selling, not managing spreadsheets.",
               },
               {
                 icon: (
@@ -666,7 +659,7 @@ export default function LandingPage() {
               <ul className="space-y-2.5 flex-1 mb-7">
                 {["1 user", "25 leads", "Basic lead management", "Dashboard overview", "Email templates (view)"].map(f => (
                   <li key={f} className="flex items-center gap-2.5 text-sm text-white/50">
-                    <span className="text-white/25">{Icon.check}</span>{f}
+                    <span className="text-white/50">{Icon.check}</span>{f}
                   </li>
                 ))}
               </ul>
@@ -756,27 +749,27 @@ export default function LandingPage() {
                   <path d="M8 2.5V1M8 15v-1.5M2.5 8H1M15 8h-1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
                 </svg>
               </div>
-              <span className="font-display font-bold text-base text-white tracking-tight">SalesCRM</span>
+              <span className="font-display font-bold text-base text-white tracking-tight">TrackmyLead</span>
             </div>
             <p className="text-sm text-white/35 leading-relaxed">
               The all-in-one sales CRM built for Indian teams. Manage leads, track follow-ups, and close more deals — faster.
             </p>
             {/* Contact */}
             <a
-              href="mailto:support@salescrm.in"
+              href="mailto:support@trackmylead.in"
               className="flex items-center gap-2 text-xs text-white/30 hover:text-indigo-400 transition-colors group w-fit"
             >
               <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 shrink-0">
                 <rect x="1.5" y="3" width="13" height="10" rx="1.8" stroke="currentColor" strokeWidth="1.3"/>
                 <path d="M1.5 6l6.5 4 6.5-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              support@salescrm.in
+              support@trackmylead.in
             </a>
           </div>
 
           {/* Product */}
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-white/25 mb-4">Product</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-white/50 mb-4">Product</p>
             <ul className="space-y-2.5">
               {[
                 { label: "Features", href: "#features" },
@@ -794,7 +787,7 @@ export default function LandingPage() {
 
           {/* Account */}
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-white/25 mb-4">Account</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-white/50 mb-4">Account</p>
             <ul className="space-y-2.5">
               {[
                 { label: "Log in", action: () => navigate("/login") },
@@ -809,7 +802,7 @@ export default function LandingPage() {
 
           {/* CTA mini */}
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-white/25 mb-4">Get started</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-white/50 mb-4">Get started</p>
             <p className="text-sm text-white/35 leading-relaxed mb-4">
               Free forever plan. No credit card. Up and running in 2 minutes.
             </p>
@@ -821,7 +814,7 @@ export default function LandingPage() {
             </button>
             <div className="flex items-center justify-center gap-1.5 mt-3">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[11px] text-white/25">Live · Trusted by sales teams across India</span>
+              <span className="text-[11px] text-white/50">Live · Trusted by sales teams across India</span>
             </div>
           </div>
         </div>
@@ -829,12 +822,12 @@ export default function LandingPage() {
         {/* Bottom bar */}
         <div className="border-t border-white/5 px-4 sm:px-6 py-5">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-white/20">
-              © {new Date().getFullYear()} SalesCRM · Built for Indian sales teams
+            <p className="text-xs text-white/40">
+              © {new Date().getFullYear()} TrackmyLead · Built for Indian sales teams
             </p>
             <div className="flex items-center gap-5">
               {["Privacy Policy", "Terms of Use"].map(t => (
-                <span key={t} className="text-xs text-white/20 hover:text-white/40 transition-colors cursor-pointer">{t}</span>
+                <span key={t} className="text-xs text-white/40 hover:text-white/60 transition-colors cursor-pointer">{t}</span>
               ))}
             </div>
           </div>

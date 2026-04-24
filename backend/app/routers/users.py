@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.dependencies import get_current_user, require_admin, require_superadmin
+from app.dependencies import get_current_user, require_admin
 from app.models.user import User
 from app.models.user_session import UserSession
 from app.schemas.user import UserCreate, UserRead, UserUpdate
@@ -65,7 +65,7 @@ def list_users(admin: User = Depends(require_admin), db: Session = Depends(get_d
 
 
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-def create_user(body: UserCreate, admin: User = Depends(require_superadmin), db: Session = Depends(get_db)):
+def create_user(body: UserCreate, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     check_user_limit(db, admin.organization_id, is_superadmin=admin.is_superadmin)
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=409, detail="Email already registered")
@@ -92,7 +92,7 @@ def get_user(user_id: int, admin: User = Depends(require_admin), db: Session = D
 
 
 @router.put("/{user_id}", response_model=UserRead)
-def update_user(user_id: int, body: UserUpdate, admin: User = Depends(require_superadmin), db: Session = Depends(get_db)):
+def update_user(user_id: int, body: UserUpdate, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     user = db.get(User, user_id)
     if not user or user.organization_id != admin.organization_id:
         raise HTTPException(status_code=404, detail="User not found")
@@ -117,7 +117,7 @@ def update_user(user_id: int, body: UserUpdate, admin: User = Depends(require_su
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(user_id: int, admin: User = Depends(require_superadmin), db: Session = Depends(get_db)):
+def delete_user(user_id: int, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     user = db.get(User, user_id)
     if not user or user.organization_id != admin.organization_id:
         raise HTTPException(status_code=404, detail="User not found")

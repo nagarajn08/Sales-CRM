@@ -1,6 +1,6 @@
 """
 Platform super-admin endpoints.
-Only accessible to users with is_superadmin=True (admin@salescrm.com).
+Only accessible to users with is_superadmin=True (admin@trackmylead.in).
 """
 from datetime import datetime, date
 from fastapi import APIRouter, Depends, HTTPException, status

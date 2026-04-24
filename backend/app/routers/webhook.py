@@ -10,7 +10,9 @@ Supported formats:
 
 Verification (Meta): GET /api/webhooks/{token}?hub.mode=subscribe&hub.challenge=...
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.lead import Lead, LeadSource
@@ -19,8 +21,9 @@ from app.models.organization import Organization
 from app.models.user import User, UserRole
 
 router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
+limiter = Limiter(key_func=get_remote_address)
 
-VERIFY_TOKEN = "salescrm_webhook_verify"  # constant — tell users to use this in Meta
+VERIFY_TOKEN = "trackmylead_webhook_verify"  # constant — tell users to use this in Meta
 
 
 def _get_org(token: str, db: Session) -> Organization:
@@ -144,9 +147,11 @@ def verify_webhook(
 
 # ── Receive lead (POST) ────────────────────────────────────────────────────
 @router.post("/{webhook_token}/leads", status_code=201)
+@limiter.limit("60/minute")
 def receive_lead(
     webhook_token: str,
     payload: dict,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     org = _get_org(webhook_token, db)

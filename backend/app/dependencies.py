@@ -41,7 +41,7 @@ def require_superadmin(current_user: User = Depends(get_current_user)) -> User:
 
 
 def require_platform_admin(current_user: User = Depends(get_current_user)) -> User:
-    """Platform-level super admin only (admin@salescrm.com)."""
+    """Platform-level super admin only (admin@trackmylead.in)."""
     if not current_user.is_superadmin:
         raise HTTPException(status_code=403, detail="Platform admin access required")
     return current_user

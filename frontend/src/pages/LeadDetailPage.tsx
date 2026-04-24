@@ -15,6 +15,7 @@ import { CallLogModal } from "../components/leads/CallLogModal";
 import { useAuth } from "../auth/AuthContext";
 import { cn, fmtDateTime } from "../lib/utils";
 import { ScoreBadge } from "../components/ui/ScoreBadge";
+import { Modal } from "../components/ui/modal";
 
 const ACTIVITY_SVG: Record<string, React.ReactNode> = {
   created: <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4"><path d="M8 2v4l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5"/></svg>,
@@ -364,21 +365,15 @@ export default function LeadDetailPage() {
       </Card>
 
       {/* Delete confirm */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setDeleteConfirm(false)} />
-          <div className="relative bg-card border border-border rounded-xl shadow-xl p-6 max-w-sm w-full">
-            <h3 className="font-semibold text-foreground mb-2">Delete Lead?</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              This will permanently delete <strong>{lead.name}</strong> and all their activity. This cannot be undone.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setDeleteConfirm(false)}>Cancel</Button>
-              <Button variant="destructive" loading={deleting} onClick={handleDelete}>Delete</Button>
-            </div>
-          </div>
+      <Modal open={deleteConfirm} onClose={() => setDeleteConfirm(false)} title="Delete Lead?" maxWidth="max-w-sm">
+        <p className="text-sm text-muted-foreground mb-5">
+          This will permanently delete <strong className="text-foreground">{lead?.name}</strong> and all their activity. This cannot be undone.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" onClick={() => setDeleteConfirm(false)}>Cancel</Button>
+          <Button variant="destructive" loading={deleting} onClick={handleDelete}>Delete</Button>
         </div>
-      )}
+      </Modal>
 
       {/* Modals */}
       <StatusModal open={showStatus} onClose={() => setShowStatus(false)} lead={lead}

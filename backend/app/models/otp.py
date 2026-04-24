@@ -15,3 +15,4 @@ class OTPRecord(Base):
     mobile_verified = Column(Boolean, default=False)
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    failed_attempts = Column(Integer, default=0)

@@ -7,4 +7,4 @@ Disallow: /users/
 Disallow: /settings/
 Disallow: /billing/
 
-Sitemap: https://salescrm.in/sitemap.xml
+Sitemap: https://trackmylead.in/sitemap.xml
