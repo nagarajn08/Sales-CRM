@@ -100,7 +100,7 @@ const STEPS = [
 ];
 
 const PRO_FEATURES = [
-  "Unlimited users & leads",
+  "Up to 100 users · Unlimited leads",
   "Full lead management & pipeline",
   "Email sending via SMTP",
   "WhatsApp click-to-chat",
