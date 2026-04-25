@@ -20,6 +20,7 @@ class Organization(Base):
     webhook_token = Column(String, unique=True, index=True, nullable=False,
                            default=lambda: secrets.token_urlsafe(24))
     is_active = Column(Boolean, default=True)
+    max_users = Column(Integer, nullable=True)  # None = use plan limit
     created_at = Column(DateTime, default=datetime.utcnow)
 
     users = relationship("User", back_populates="organization")

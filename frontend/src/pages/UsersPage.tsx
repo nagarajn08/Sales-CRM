@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { usersApi, type UserSession } from "../api";
+import { usersApi, billingApi, type UserSession } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import type { User, UserRole } from "../types";
 import { isValidEmail, isValidMobile, isValidPassword, digitsOnly, capitalizeName } from "../lib/validators";
@@ -53,6 +53,7 @@ export default function UsersPage() {
   const [sessionsLoaded, setSessionsLoaded] = useState(false);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [usage, setUsage] = useState<{ current: number; max: number } | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [form, setForm] = useState<UserFormState>(emptyForm());
@@ -66,12 +67,16 @@ export default function UsersPage() {
     usersApi.list().then(setUsers).finally(() => setLoading(false));
   };
 
+  const fetchUsage = () => {
+    if (!isSuperAdmin) billingApi.get().then(d => setUsage(d.users)).catch(() => {});
+  };
+
   const fetchSessions = () => {
     setSessionsLoading(true);
     usersApi.sessions().then(s => { setSessions(s); setSessionsLoaded(true); }).finally(() => setSessionsLoading(false));
   };
 
-  useEffect(fetchUsers, []);
+  useEffect(() => { fetchUsers(); fetchUsage(); }, []);
 
   useEffect(() => {
     if (tab === "sessions" && !sessionsLoaded) fetchSessions();
@@ -170,6 +175,44 @@ export default function UsersPage() {
           {!isSuperAdmin && tab === "users" && <Button onClick={openAdd}>+ Add User</Button>}
         </div>
       </div>
+
+      {/* Usage banner — only when a limit is set */}
+      {usage && usage.max !== -1 && !isSuperAdmin && (
+        <div className={cn(
+          "flex items-center gap-4 px-4 py-3 rounded-xl border text-sm",
+          usage.current >= usage.max
+            ? "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30"
+            : usage.current >= usage.max * 0.8
+            ? "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30"
+            : "border-border bg-secondary/30"
+        )}>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className={cn(
+                "text-xs font-semibold",
+                usage.current >= usage.max ? "text-red-700 dark:text-red-400"
+                  : usage.current >= usage.max * 0.8 ? "text-amber-700 dark:text-amber-400"
+                  : "text-foreground"
+              )}>
+                {usage.current} of {usage.max} users used
+                {usage.current >= usage.max
+                  ? " — limit reached"
+                  : ` · ${usage.max - usage.current} slot${usage.max - usage.current !== 1 ? "s" : ""} remaining`}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+              <div
+                className={cn("h-full rounded-full transition-all duration-700",
+                  usage.current >= usage.max ? "bg-red-500"
+                    : usage.current >= usage.max * 0.8 ? "bg-amber-500"
+                    : "bg-primary"
+                )}
+                style={{ width: `${Math.min((usage.current / usage.max) * 100, 100)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {tab === "sessions" && (
         <div className="rounded-2xl border border-border bg-card overflow-hidden">

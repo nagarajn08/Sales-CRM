@@ -38,6 +38,7 @@ export interface OrgSummary {
   lead_count: number;
   active_lead_count: number;
   converted_count: number;
+  max_users: number | null;
 }
 
 export interface OrgDetail extends OrgSummary {

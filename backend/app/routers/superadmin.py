@@ -32,6 +32,7 @@ class OrgSummary(BaseModel):
     lead_count: int
     active_lead_count: int
     converted_count: int
+    max_users: int | None
     model_config = {"from_attributes": True}
 
 
@@ -110,6 +111,7 @@ def _build_org_summary(org: Organization, db: Session) -> OrgSummary:
         lead_count=lead_count,
         active_lead_count=active_lead_count,
         converted_count=converted_count,
+        max_users=org.max_users,
     )
 
 
@@ -188,6 +190,28 @@ def toggle_org(
     org.is_active = not org.is_active
     db.commit()
     return {"id": org.id, "is_active": org.is_active}
+
+
+class UserLimitUpdate(BaseModel):
+    max_users: int | None  # None clears override (reverts to plan limit)
+
+
+@router.patch("/orgs/{org_id}/user-limit", response_model=OrgSummary)
+def set_user_limit(
+    org_id: int,
+    body: UserLimitUpdate,
+    _: User = Depends(require_platform_admin),
+    db: Session = Depends(get_db),
+):
+    org = db.get(Organization, org_id)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    if body.max_users is not None and body.max_users < 0:
+        raise HTTPException(status_code=400, detail="max_users cannot be negative")
+    org.max_users = body.max_users
+    db.commit()
+    db.refresh(org)
+    return _build_org_summary(org, db)
 
 
 @router.post("/orgs", response_model=OrgSummary, status_code=status.HTTP_201_CREATED)

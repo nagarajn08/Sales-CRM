@@ -141,6 +141,8 @@ export const superAdminApi = {
     api.get<{ email_otp_enabled: boolean; mobile_otp_enabled: boolean }>("/api/superadmin/otp-settings").then(r => r.data),
   updateOtpSettings: (data: { email_otp_enabled: boolean; mobile_otp_enabled: boolean }) =>
     api.put<{ ok: boolean }>("/api/superadmin/otp-settings", data).then(r => r.data),
+  setUserLimit: (orgId: number, max_users: number | null) =>
+    api.patch<OrgSummary>(`/api/superadmin/orgs/${orgId}/user-limit`, { max_users }).then(r => r.data),
 };
 
 export const otpConfigApi = {

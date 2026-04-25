@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { superAdminApi, type SAUser } from "../api";
 import type { OrgSummary, PlatformStats } from "../types";
 import { cn, fmtDate } from "../lib/utils";
@@ -265,6 +265,73 @@ function ManageUsersModal({ org, orgs, onClose, onChanged }: {
         <Button variant="outline" size="sm" onClick={onClose}>Close</Button>
       </div>
     </ModalShell>
+  );
+}
+
+// ── User Limit Cell ───────────────────────────────────────────────────────────
+
+function UserLimitCell({ org, onUpdated }: { org: OrgSummary; onUpdated: (o: OrgSummary) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState("");
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const open = () => {
+    setVal(org.max_users != null ? String(org.max_users) : "");
+    setEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const max = val.trim() === "" ? null : parseInt(val);
+      if (val.trim() !== "" && (isNaN(max!) || max! < 0)) {
+        toast.error("Enter a valid number or leave blank to use plan limit"); return;
+      }
+      const updated = await superAdminApi.setUserLimit(org.id, max);
+      onUpdated(updated);
+      setEditing(false);
+      toast.success(max == null ? "Limit cleared (plan default)" : `User limit set to ${max}`);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail ?? "Failed to update");
+    } finally { setSaving(false); }
+  };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <input
+          ref={inputRef}
+          type="number" min={0} placeholder="e.g. 5"
+          value={val} onChange={e => setVal(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
+          className="w-16 text-xs border border-ring rounded-md px-2 py-1 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring tabular-nums"
+        />
+        <button onClick={save} disabled={saving}
+          className="text-[10px] font-semibold text-white bg-primary rounded px-1.5 py-1 hover:bg-primary/90 disabled:opacity-50">
+          {saving ? "…" : "OK"}
+        </button>
+        <button onClick={() => setEditing(false)}
+          className="text-[10px] text-muted-foreground hover:text-foreground px-1">✕</button>
+      </div>
+    );
+  }
+
+  const atLimit = org.max_users != null && org.user_count >= org.max_users;
+  return (
+    <button onClick={open} className="flex items-center gap-1.5 group" title="Click to set user limit">
+      <span className={cn(
+        "text-xs font-semibold tabular-nums",
+        atLimit ? "text-red-600 dark:text-red-400" : "text-foreground"
+      )}>
+        {org.user_count}{org.max_users != null ? `/${org.max_users}` : ""}
+      </span>
+      {atLimit && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">Full</span>}
+      <svg viewBox="0 0 12 12" fill="none" className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+        <path d="M7.5 1.5L10.5 4.5L4 11H1V8L7.5 1.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+      </svg>
+    </button>
   );
 }
 
@@ -632,7 +699,7 @@ export default function SuperAdminPage() {
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground">Organization</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Type</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Owner</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Users</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Users / Limit</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Leads</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Active</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground hidden xl:table-cell">Converted</th>
@@ -664,7 +731,11 @@ export default function SuperAdminPage() {
                       <p className="text-foreground">{org.owner_name ?? "—"}</p>
                       <p className="text-xs text-muted-foreground">{org.owner_email ?? ""}</p>
                     </td>
-                    <td className="px-4 py-3 text-center tabular-nums hidden sm:table-cell text-foreground">{org.user_count}</td>
+                    <td className="px-4 py-3 hidden sm:table-cell">
+                      <div className="flex justify-center">
+                        <UserLimitCell org={org} onUpdated={updated => setOrgs(prev => prev.map(o => o.id === updated.id ? updated : o))} />
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-center tabular-nums hidden lg:table-cell text-foreground">{org.lead_count}</td>
                     <td className="px-4 py-3 text-center tabular-nums hidden lg:table-cell text-foreground">{org.active_lead_count}</td>
                     <td className="px-4 py-3 text-center tabular-nums hidden xl:table-cell text-emerald-600 font-medium">{org.converted_count}</td>

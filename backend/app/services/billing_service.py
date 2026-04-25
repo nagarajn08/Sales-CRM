@@ -26,9 +26,14 @@ def check_user_limit(db: Session, org_id: int, is_superadmin: bool = False):
     """Raise 403 if org has hit its user limit. Super admins are always unlimited."""
     if is_superadmin:
         return
-    sub = get_or_create_subscription(db, org_id)
-    limits = get_plan_limits(sub.plan)
-    max_users = limits["max_users"]
+    from app.models.organization import Organization
+    org = db.get(Organization, org_id)
+    # Org-level override set by super admin takes priority over plan limit
+    if org and org.max_users is not None:
+        max_users = org.max_users
+    else:
+        sub = get_or_create_subscription(db, org_id)
+        max_users = get_plan_limits(sub.plan)["max_users"]
     if max_users == -1:
         return  # unlimited
     current = db.query(User).filter(
@@ -38,7 +43,7 @@ def check_user_limit(db: Session, org_id: int, is_superadmin: bool = False):
     if current >= max_users:
         raise HTTPException(
             status_code=403,
-            detail=f"User limit reached ({current}/{max_users}). Upgrade your plan to add more users.",
+            detail=f"User limit reached ({current}/{max_users}). Contact your platform admin to increase the limit.",
             headers={"X-Upgrade-Required": "true"},
         )
 
@@ -81,8 +86,12 @@ def check_lead_limit(db: Session, org_id: int, is_superadmin: bool = False):
 
 
 def get_usage(db: Session, org_id: int) -> dict:
+    from app.models.organization import Organization
     sub = get_or_create_subscription(db, org_id)
     limits = get_plan_limits(sub.plan)
+    org = db.get(Organization, org_id)
+    # Use org-level override if set, else fall back to plan limit
+    max_users = org.max_users if (org and org.max_users is not None) else limits["max_users"]
     user_count = db.query(User).filter(User.organization_id == org_id, User.is_active == True).count()
     lead_count = db.query(Lead).filter(Lead.organization_id == org_id).count()
     return {
@@ -90,7 +99,7 @@ def get_usage(db: Session, org_id: int) -> dict:
         "status": sub.status,
         "current_period_end": sub.current_period_end,
         "razorpay_subscription_id": sub.razorpay_subscription_id,
-        "users": {"current": user_count, "max": limits["max_users"]},
+        "users": {"current": user_count, "max": max_users},
         "leads": {"current": lead_count, "max": limits["max_leads"]},
         "price": limits["price"],
         "features": limits["features"],
