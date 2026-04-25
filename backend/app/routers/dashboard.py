@@ -119,9 +119,9 @@ def get_stats(current_user: User = Depends(get_current_user), db: Session = Depe
         key=lambda x: x.count, reverse=True
     )
 
-    # ── 4. Status breakdown — 1 GROUP BY query instead of 7 ──────────────
+    # ── 4. Status breakdown — all leads (active + closed) ────────────────
     status_rows = (
-        base.filter(Lead.is_active == True)
+        base
         .with_entities(Lead.status, func.count(Lead.id))
         .group_by(Lead.status)
         .all()
@@ -136,8 +136,8 @@ def get_stats(current_user: User = Depends(get_current_user), db: Session = Depe
     # ── 5. Conversion rate ────────────────────────────────────────────────
     conversion_rate = round((converted_today / new_today * 100) if new_today else 0, 1)
 
-    # ── 6. Deal value — 2 SUM queries ────────────────────────────────────
-    val_base = db.query(Lead) if is_superadmin else db.query(Lead).filter(Lead.organization_id == org_id)
+    # ── 6. Deal value — scoped same as base (user sees own; admin sees org) ─
+    val_base = base  # already has org + user-role filters applied
     pipeline_value = val_base.filter(
         Lead.is_active == True, Lead.deal_value.isnot(None),
     ).with_entities(func.coalesce(func.sum(Lead.deal_value), 0)).scalar() or 0.0
@@ -247,37 +247,56 @@ def get_trends(
     # start_dt in UTC = IST midnight of (today - N days) minus IST offset
     start_dt  = datetime.combine(today - timedelta(days=days - 1), datetime.min.time()) - IST
 
-    base = db.query(Lead).filter(Lead.organization_id == org_id)
+    if current_user.is_superadmin:
+        base = db.query(Lead)
+    else:
+        base = db.query(Lead).filter(Lead.organization_id == org_id)
     if current_user.role == UserRole.USER:
         base = base.filter(Lead.assigned_to_id == current_user.id)
 
-    # Shift UTC timestamp to IST before casting to date so grouping is by IST calendar day
-    ist_created  = Lead.created_at  + IST
-    ist_updated  = Lead.updated_at  + IST
+    # Use PostgreSQL's native timezone() for reliable IST date grouping
+    d_created = cast(func.timezone('Asia/Kolkata', Lead.created_at), Date)
+    d_updated = cast(func.timezone('Asia/Kolkata', Lead.updated_at), Date)
+    d_act     = cast(func.timezone('Asia/Kolkata', LeadActivity.created_at), Date)
 
     # New leads grouped by IST date
     new_rows = (
         base.filter(Lead.created_at >= start_dt)
-        .with_entities(cast(ist_created, Date).label("d"), func.count(Lead.id))
-        .group_by(cast(ist_created, Date))
+        .with_entities(d_created.label("d"), func.count(Lead.id))
+        .group_by(d_created)
         .all()
     )
     # Converted leads grouped by IST updated_at date
     conv_rows = (
         base.filter(Lead.status == LeadStatus.CONVERTED, Lead.updated_at >= start_dt)
-        .with_entities(cast(ist_updated, Date).label("d"), func.count(Lead.id))
-        .group_by(cast(ist_updated, Date))
+        .with_entities(d_updated.label("d"), func.count(Lead.id))
+        .group_by(d_updated)
+        .all()
+    )
+
+    # Follow-ups done (STATUS_CHANGED + CALL_LOG) grouped by IST date
+    lead_ids_subq = base.with_entities(Lead.id).subquery()
+    act_rows = (
+        db.query(d_act.label("d"), func.count(LeadActivity.id))
+        .filter(
+            LeadActivity.lead_id.in_(lead_ids_subq),
+            LeadActivity.activity_type.in_([ActivityType.STATUS_CHANGED, ActivityType.CALL_LOG]),
+            LeadActivity.created_at >= start_dt,
+        )
+        .group_by(d_act)
         .all()
     )
 
     new_map  = {r[0]: r[1] for r in new_rows}
     conv_map = {r[0]: r[1] for r in conv_rows}
+    act_map  = {r[0]: r[1] for r in act_rows}
 
     return [
         {
-            "date": (today - timedelta(days=i)).strftime("%d %b"),
-            "new": new_map.get(today - timedelta(days=i), 0),
+            "date":      (today - timedelta(days=i)).strftime("%d %b"),
+            "new":       new_map.get(today - timedelta(days=i), 0),
             "converted": conv_map.get(today - timedelta(days=i), 0),
+            "followups": act_map.get(today - timedelta(days=i), 0),
         }
         for i in range(days - 1, -1, -1)
     ]

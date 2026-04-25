@@ -7,6 +7,7 @@ import { cn } from "../lib/utils";
 import {
   AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  LineChart, Line,
 } from "recharts";
 
 // ── constants ─────────────────────────────────────────────────────────────────
@@ -175,7 +176,7 @@ const tooltipStyle = {
 
 export default function ReportsPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [trends, setTrends] = useState<{ date: string; new: number; converted: number }[]>([]);
+  const [trends, setTrends] = useState<{ date: string; new: number; converted: number; followups: number }[]>([]);
   const [topLeads, setTopLeads] = useState<Lead[]>([]);
   const [period, setPeriod] = useState(30);
   const [loading, setLoading] = useState(true);
@@ -212,11 +213,12 @@ export default function ReportsPage() {
   // ── derived ──
   const converted     = stats.status_breakdown.find(s => s.status === "converted")?.count ?? 0;
   const notInterested = stats.status_breakdown.find(s => s.status === "not_interested")?.count ?? 0;
-  const active        = stats.total_leads - converted - notInterested;
+  const active        = stats.active_leads;
   const convRate      = stats.total_leads > 0 ? (converted / stats.total_leads * 100).toFixed(1) : "0.0";
   const overdueTotal  = stats.user_stats.reduce((a, u) => a + u.overdue_followups, 0);
   const totalTrendNew = trends.reduce((a, d) => a + d.new, 0);
   const totalTrendConv= trends.reduce((a, d) => a + d.converted, 0);
+  const totalTrendAct = trends.reduce((a, d) => a + d.followups, 0);
 
   const sourceData = stats.leads_by_source_all.map(s => ({
     name:  s.source.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
@@ -353,13 +355,16 @@ export default function ReportsPage() {
 
       {/* ── Trend chart ── */}
       <div>
-        <SectionTitle>Lead Trend</SectionTitle>
+        <SectionTitle>Activity Trend</SectionTitle>
         <ChartCard
-          title={`New vs Converted — Last ${period} days`}
+          title={`Daily activity — Last ${period} days`}
           action={
-            <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-3 text-xs flex-wrap">
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 <span className="h-2 w-2 rounded-full bg-indigo-500" />{totalTrendNew} new
+              </span>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-violet-500" />{totalTrendAct} follow-ups
               </span>
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />{totalTrendConv} converted
@@ -368,17 +373,7 @@ export default function ReportsPage() {
           }
         >
           <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={trends} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-              <defs>
-                <linearGradient id="gNew" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.25}/>
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="gConv" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#10b981" stopOpacity={0.25}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
+            <LineChart data={trends} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -393,9 +388,10 @@ export default function ReportsPage() {
               />
               <Tooltip {...tooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
-              <Area type="monotone" dataKey="new"       name="New Leads" stroke="#6366f1" fill="url(#gNew)"  strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#6366f1" }} />
-              <Area type="monotone" dataKey="converted" name="Converted"  stroke="#10b981" fill="url(#gConv)" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#10b981" }} />
-            </AreaChart>
+              <Line type="monotone" dataKey="followups" name="Follow-ups Done" stroke="#8b5cf6" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#8b5cf6" }} />
+              <Line type="monotone" dataKey="new"       name="New Leads"       stroke="#6366f1" strokeWidth={2}   dot={false} activeDot={{ r: 4, fill: "#6366f1" }} strokeDasharray="5 3" />
+              <Line type="monotone" dataKey="converted" name="Converted"       stroke="#10b981" strokeWidth={2}   dot={false} activeDot={{ r: 4, fill: "#10b981" }} strokeDasharray="5 3" />
+            </LineChart>
           </ResponsiveContainer>
         </ChartCard>
       </div>
@@ -405,7 +401,7 @@ export default function ReportsPage() {
         <SectionTitle>Breakdown</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ChartCard
-            title="Pipeline by Status"
+            title="Leads by Status"
             action={<span className="text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-full">{stats.total_leads} leads</span>}
           >
             <BarList
