@@ -70,6 +70,10 @@ export const leadsApi = {
     api.post<{ ok: boolean; sent_to: string }>(`/api/leads/${id}/email`, data).then(r => r.data),
   autoAssign: () =>
     api.post<{ assigned: number; details: { user: string; assigned: number }[] }>("/api/leads/auto-assign").then(r => r.data),
+  checkDuplicate: (params: { mobile?: string; email?: string; exclude_id?: number }) =>
+    api.get<{ id: number; name: string; mobile: string | null; email: string | null; status: string; is_active: boolean }[]>(
+      "/api/leads/check-duplicate", { params }
+    ).then(r => r.data),
 };
 
 // Follow-ups

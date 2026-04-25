@@ -113,6 +113,39 @@ def _build_lead_query(
     return q
 
 
+@router.get("/check-duplicate")
+def check_duplicate(
+    mobile: Optional[str] = None,
+    email: Optional[str] = None,
+    exclude_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not mobile and not email:
+        return []
+    q = db.query(Lead).filter(Lead.organization_id == current_user.organization_id)
+    conditions = []
+    if mobile:
+        conditions.append(Lead.mobile == mobile.strip())
+    if email:
+        conditions.append(Lead.email == email.strip().lower())
+    q = q.filter(or_(*conditions))
+    if exclude_id:
+        q = q.filter(Lead.id != exclude_id)
+    leads = q.limit(5).all()
+    return [
+        {
+            "id": l.id,
+            "name": l.name,
+            "mobile": l.mobile,
+            "email": l.email,
+            "status": l.status.value,
+            "is_active": l.is_active,
+        }
+        for l in leads
+    ]
+
+
 @router.get("/")
 def list_leads(
     status: Optional[LeadStatus] = None,

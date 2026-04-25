@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal } from "../ui/modal";
 import { Input, Select, Textarea } from "../ui/input";
 import { Button } from "../ui/button";
@@ -6,6 +6,11 @@ import { leadsApi, usersApi } from "../../api";
 import type { Lead, User } from "../../types";
 import { useAuth } from "../../auth/AuthContext";
 import { isValidEmail, isValidMobile, digitsOnly, capitalizeName } from "../../lib/validators";
+
+const STATUS_LABELS: Record<string, string> = {
+  new: "New", call_back: "Call Back", interested_call_back: "Interested",
+  busy: "Busy", not_reachable: "Not Reachable", not_interested: "Not Interested", converted: "Converted",
+};
 
 interface Props {
   open: boolean;
@@ -49,6 +54,8 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [duplicates, setDuplicates] = useState<{ id: number; name: string; mobile: string | null; email: string | null; status: string; is_active: boolean }[]>([]);
+  const dupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isAdmin) usersApi.list().then(setUsers).catch(() => {});
@@ -76,7 +83,26 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
       });
     }
     setErrors({});
+    setDuplicates([]);
   }, [lead, open]);
+
+  // Debounced duplicate check whenever mobile or email changes
+  useEffect(() => {
+    const mobile = form.mobile.trim();
+    const email  = form.email.trim();
+    const hasValidMobile = mobile.length === 10;
+    const hasValidEmail  = email.length > 0 && isValidEmail(email);
+    if (!hasValidMobile && !hasValidEmail) { setDuplicates([]); return; }
+    if (dupTimerRef.current) clearTimeout(dupTimerRef.current);
+    dupTimerRef.current = setTimeout(() => {
+      const params: { mobile?: string; email?: string; exclude_id?: number } = {};
+      if (hasValidMobile) params.mobile = mobile;
+      if (hasValidEmail)  params.email  = email;
+      if (lead?.id)       params.exclude_id = lead.id;
+      leadsApi.checkDuplicate(params).then(setDuplicates).catch(() => {});
+    }, 600);
+    return () => { if (dupTimerRef.current) clearTimeout(dupTimerRef.current); };
+  }, [form.mobile, form.email, lead?.id]);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -178,6 +204,33 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: Props) {
         </div>
 
         <Textarea label="Notes" value={form.notes} onChange={(e) => f("notes", e.target.value)} placeholder="Any additional notes..." rows={2} />
+
+        {duplicates.length > 0 && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/40 px-3 py-2.5 space-y-1.5">
+            <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <span>⚠️</span> Possible duplicate{duplicates.length > 1 ? "s" : ""} found in your org
+            </p>
+            {duplicates.map(d => (
+              <div key={d.id} className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <span className="text-xs font-medium text-amber-800 dark:text-amber-300 capitalize">{d.name}</span>
+                  <span className="text-xs text-amber-600 dark:text-amber-500 ml-1.5">
+                    · {STATUS_LABELS[d.status] ?? d.status}{!d.is_active ? " (closed)" : ""}
+                  </span>
+                  {d.mobile && <span className="text-xs text-amber-600 dark:text-amber-500 ml-1.5">· {d.mobile}</span>}
+                </div>
+                <a
+                  href={`/leads/${d.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 text-[10px] font-semibold text-amber-700 dark:text-amber-400 underline underline-offset-2 hover:no-underline"
+                >
+                  View →
+                </a>
+              </div>
+            ))}
+          </div>
+        )}
 
         {errors._ && <p className="text-xs text-destructive">{errors._}</p>}
 
