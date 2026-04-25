@@ -23,14 +23,7 @@ class Settings(BaseSettings):
     RAZORPAY_KEY_SECRET: str = ""
     RAZORPAY_WEBHOOK_SECRET: str = ""
 
-    # Twilio — WhatsApp/SMS follow-up reminders (leave empty to disable)
-    # For WhatsApp: set TWILIO_FROM_NUMBER = "whatsapp:+14155238886"
-    # For SMS: set TWILIO_FROM_NUMBER = "+1XXXXXXXXXX"
-    TWILIO_ACCOUNT_SID: str = ""
-    TWILIO_AUTH_TOKEN: str = ""
-    TWILIO_FROM_NUMBER: str = ""
-
-    # Fast2SMS — WhatsApp OTP for signup verification (leave empty to disable)
+    # Fast2SMS — WhatsApp OTP + follow-up reminders (leave empty to disable)
     FAST2SMS_API_KEY: str = ""
 
     # SMTP — system transactional emails (OTP, welcome, password reset)

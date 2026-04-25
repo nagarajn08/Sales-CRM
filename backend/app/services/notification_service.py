@@ -1,3 +1,5 @@
+import urllib.request
+import urllib.parse
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from app.models.notification import Notification
@@ -22,54 +24,48 @@ def create_followup_notification(db: Session, lead: Lead) -> None:
     db.commit()
 
 
-def _get_twilio_cfg(db: Session, org_id: int) -> dict:
-    rows = db.query(AppSettings).filter(AppSettings.organization_id == org_id).all()
-    cfg = {r.key: r.value for r in rows}
-    return {
-        "account_sid": cfg.get("twilio_account_sid", "").strip(),
-        "auth_token": cfg.get("twilio_auth_token", "").strip(),
-        "from_number": cfg.get("twilio_from_number", "").strip(),
-    }
+def _get_fast2sms_key(db: Session, org_id: int) -> str:
+    row = db.query(AppSettings).filter(
+        AppSettings.organization_id == org_id,
+        AppSettings.key == "fast2sms_api_key",
+    ).first()
+    return (row.value or "").strip() if row else ""
 
 
-def _send_whatsapp_sms(twilio_cfg: dict, mobile: str, message: str) -> None:
-    """Send WhatsApp/SMS via Twilio. Silently skips if not configured."""
-    sid = twilio_cfg.get("account_sid", "")
-    token = twilio_cfg.get("auth_token", "")
-    from_number = twilio_cfg.get("from_number", "")
-
-    if not sid or not token or not from_number:
+def _send_whatsapp(api_key: str, mobile: str, message: str) -> None:
+    """Send WhatsApp message via Fast2SMS route=q. Silently skips if not configured."""
+    if not api_key:
         return
-
+    number = mobile.strip()
+    if number.startswith("+91"):
+        number = number[3:]
+    elif number.startswith("91") and len(number) == 12:
+        number = number[2:]
     try:
-        from twilio.rest import Client  # type: ignore
-        client = Client(sid, token)
-
-        to_number = mobile.strip()
-        if not to_number.startswith("+"):
-            to_number = "+91" + to_number.lstrip("0")  # default India country code
-
-        if from_number.startswith("whatsapp:"):
-            client.messages.create(
-                body=message,
-                from_=from_number,
-                to=f"whatsapp:{to_number}",
-            )
-        else:
-            client.messages.create(
-                body=message,
-                from_=from_number,
-                to=to_number,
-            )
+        payload = urllib.parse.urlencode({
+            "message": message,
+            "language": "english",
+            "route": "q",
+            "numbers": number,
+        }).encode()
+        req = urllib.request.Request(
+            "https://www.fast2sms.com/dev/bulkV2",
+            data=payload,
+            headers={
+                "authorization": api_key,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+        )
+        urllib.request.urlopen(req, timeout=10)
     except Exception as e:
-        print(f"[Reminder] WhatsApp/SMS failed for {mobile}: {e}")
+        print(f"[Reminder] WhatsApp failed for {mobile}: {e}")
 
 
 def trigger_due_notifications(db: Session) -> None:
     """
     Called by APScheduler every minute.
     Fires for leads whose follow-up is within the next REMIND_BEFORE_MINUTES minutes.
-    Also sends WhatsApp/SMS to the assigned agent if Twilio is configured.
+    Also sends WhatsApp to the assigned agent via Fast2SMS if configured.
     """
     now = datetime.utcnow()
     remind_threshold = now + timedelta(minutes=REMIND_BEFORE_MINUTES)
@@ -81,8 +77,8 @@ def trigger_due_notifications(db: Session) -> None:
         Lead.assigned_to_id.isnot(None),
     ).all()
 
-    # Cache Twilio config per org to avoid repeated DB queries
-    twilio_cache: dict[int, dict] = {}
+    # Cache Fast2SMS key per org to avoid repeated DB queries
+    f2s_cache: dict[int, str] = {}
 
     for lead in due_leads:
         # Avoid duplicate: skip if a notification already exists for this follow-up
@@ -109,14 +105,14 @@ def trigger_due_notifications(db: Session) -> None:
         db.add(notif)
         db.flush()
 
-        # WhatsApp / SMS to the assigned agent
+        # WhatsApp to the assigned agent via Fast2SMS
         if lead.assigned_to and lead.assigned_to.mobile and lead.organization_id:
             org_id = lead.organization_id
-            if org_id not in twilio_cache:
-                twilio_cache[org_id] = _get_twilio_cfg(db, org_id)
-            twilio_cfg = twilio_cache[org_id]
+            if org_id not in f2s_cache:
+                f2s_cache[org_id] = _get_fast2sms_key(db, org_id)
+            api_key = f2s_cache[org_id]
 
-            if twilio_cfg.get("account_sid"):
+            if api_key:
                 whatsapp_msg = (
                     f"TrackmyLead Reminder\n"
                     f"Follow-up {'in ' + str(minutes_left) + ' min' if minutes_left > 0 else 'NOW (overdue)'}\n"
@@ -124,6 +120,6 @@ def trigger_due_notifications(db: Session) -> None:
                     f"Mobile: {lead.mobile or '-'}\n"
                     f"Status: {lead.status.value.replace('_', ' ').title()}"
                 )
-                _send_whatsapp_sms(twilio_cfg, lead.assigned_to.mobile, whatsapp_msg)
+                _send_whatsapp(api_key, lead.assigned_to.mobile, whatsapp_msg)
 
     db.commit()

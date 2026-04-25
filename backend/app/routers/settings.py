@@ -15,9 +15,7 @@ router = APIRouter(prefix="/api/settings", tags=["settings"])
 DEFAULT_SETTINGS = {
     "company_name": "TrackmyLead",
     "followup_reminder_hours": "1",
-    "twilio_account_sid": "",
-    "twilio_auth_token": "",
-    "twilio_from_number": "",
+    "fast2sms_api_key": "",
     "auto_assign_daily_limit": "0",
 }
 

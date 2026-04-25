@@ -477,35 +477,24 @@ export default function SettingsPage() {
               <path d="M7.5 8c0-.28.22-.5.5-.5h.5a.5.5 0 01.5.5v.5c0 .83-.5 1.5-1 2l1.5 1.5c.5-.5 1.17-1 2-1h.5a.5.5 0 01.5.5v.5a.5.5 0 01-.5.5C10 13 7 10 7.5 8z" fill="currentColor"/>
             </svg>
           }
-          title="WhatsApp / SMS"
-          description="Send reminders via Twilio (WhatsApp or SMS)"
+          title="WhatsApp Reminders"
+          description="Send follow-up reminders via Fast2SMS WhatsApp"
         >
           <div className="space-y-3">
             <Input
-              label="Twilio Account SID"
-              value={settings.twilio_account_sid ?? ""}
-              onChange={(e) => set("twilio_account_sid", e.target.value)}
-              placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-            />
-            <Input
-              label="Twilio Auth Token"
+              label="Fast2SMS API Key"
               type="password"
-              value={settings.twilio_auth_token ?? ""}
-              onChange={(e) => set("twilio_auth_token", e.target.value)}
-            />
-            <Input
-              label="From Number"
-              value={settings.twilio_from_number ?? ""}
-              onChange={(e) => set("twilio_from_number", e.target.value)}
-              placeholder="whatsapp:+14155238886  or  +91XXXXXXXXXX"
-              helpText="Use 'whatsapp:+number' for WhatsApp, or '+number' for SMS"
+              value={settings.fast2sms_api_key ?? ""}
+              onChange={(e) => set("fast2sms_api_key", e.target.value)}
+              placeholder="Your Fast2SMS API key"
+              helpText="Get your API key from fast2sms.com — used for WhatsApp follow-up reminders"
             />
             <SaveRow
               saving={savingWa}
               saved={savedWa}
               savedMsg="WhatsApp settings saved!"
               onSave={() => saveSection(
-                ["twilio_account_sid", "twilio_auth_token", "twilio_from_number"],
+                ["fast2sms_api_key"],
                 setSavingWa, setSavedWa,
               )}
             />
