@@ -69,11 +69,11 @@ PLANS = {
         "price": 3999,
         "original_price": 9999,
         "discount_pct": 60,
-        "max_users": -1,   # unlimited
+        "max_users": 100,
         "max_leads": -1,   # unlimited
         "razorpay_plan_id": "",
         "features": [
-            "Unlimited users",
+            "Up to 100 users",
             "Unlimited leads",
             "Full lead management & pipeline",
             "Email sending (SMTP)",
