@@ -3,7 +3,7 @@ import io
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from sqlalchemy import func, or_, and_
@@ -180,7 +180,6 @@ def get_followups(
     # LeadActivity.created_at is stored as UTC (datetime.utcnow()).
     # next_followup_at is IST-naive. Shift activity window by IST offset so
     # "done on target date" means the IST calendar day, not the UTC day.
-    from datetime import timedelta
     IST = timedelta(hours=5, minutes=30)
     act_start = day_start(target) - IST
     act_end   = day_end(target)   - IST
