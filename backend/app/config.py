@@ -30,8 +30,8 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_FROM_NUMBER: str = ""
 
-    # Fast2SMS — mobile OTP for signup verification (leave empty to disable)
-    FAST2SMS_API_KEY: str = ""
+    # Twilio WhatsApp OTP — set TWILIO_FROM_NUMBER="whatsapp:+14155238886" (sandbox)
+    # or your verified WhatsApp Business number e.g. "whatsapp:+919XXXXXXXXX"
 
     # SMTP — system transactional emails (OTP, welcome, password reset)
     SMTP_HOST: str = ""

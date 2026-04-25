@@ -1,8 +1,5 @@
 import random
 import smtplib
-import urllib.request
-import urllib.parse
-import json as _json
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -74,29 +71,27 @@ def create_otp_record(db: Session, email: str, mobile: str) -> dict:
 
 
 def _send_mobile_otp(mobile: str, otp: str) -> bool:
-    """Send OTP via Fast2SMS. Returns True on success."""
-    if not settings.FAST2SMS_API_KEY:
+    """Send OTP via Twilio WhatsApp. Returns True on success."""
+    if not (settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and settings.TWILIO_FROM_NUMBER):
         return False
-    # Strip country code if present — Fast2SMS expects 10-digit Indian number
-    number = mobile.lstrip("+").lstrip("91") if mobile.startswith("+91") or mobile.startswith("91") else mobile
-    number = number.strip()
+    # Normalise to E.164 with +91 prefix for Indian numbers
+    number = mobile.strip().lstrip("+")
+    if not number.startswith("91"):
+        number = "91" + number
+    to_wa   = f"whatsapp:+{number}"
+    from_wa = settings.TWILIO_FROM_NUMBER  # e.g. "whatsapp:+14155238886"
     try:
-        payload = urllib.parse.urlencode({
-            "variables_values": otp,
-            "route": "otp",
-            "numbers": number,
-        }).encode()
-        req = urllib.request.Request(
-            "https://www.fast2sms.com/dev/bulkV2",
-            data=payload,
-            headers={
-                "authorization": settings.FAST2SMS_API_KEY,
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
+        from twilio.rest import Client
+        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+        client.messages.create(
+            body=(
+                f"Your TrackmyLead verification code is *{otp}*.\n"
+                f"Valid for {OTP_EXPIRE_MINUTES} minutes. Do not share this code."
+            ),
+            from_=from_wa,
+            to=to_wa,
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            result = _json.loads(resp.read())
-            return result.get("return", False) is True
+        return True
     except Exception:
         return False
 
