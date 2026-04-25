@@ -2,7 +2,7 @@
 Platform super-admin endpoints.
 Only accessible to users with is_superadmin=True (admin@trackmylead.in).
 """
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
@@ -120,7 +120,8 @@ def platform_stats(
     _: User = Depends(require_platform_admin),
     db: Session = Depends(get_db),
 ):
-    today_start = datetime.combine(date.today(), datetime.min.time())
+    IST = timedelta(hours=5, minutes=30)
+    today_start = datetime.combine(date.today(), datetime.min.time()) - IST
     return PlatformStats(
         total_orgs=db.query(Organization).count(),
         individual_orgs=db.query(Organization).filter(Organization.type == OrgType.INDIVIDUAL).count(),

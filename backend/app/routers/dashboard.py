@@ -241,25 +241,32 @@ def get_trends(
     Uses 2 GROUP BY queries instead of 2×N individual counts.
     """
     org_id    = current_user.organization_id
-    today     = date.today()
-    start_dt  = datetime.combine(today - timedelta(days=days - 1), datetime.min.time())
+    IST       = timedelta(hours=5, minutes=30)
+    ist_now   = datetime.utcnow() + IST
+    today     = ist_now.date()
+    # start_dt in UTC = IST midnight of (today - N days) minus IST offset
+    start_dt  = datetime.combine(today - timedelta(days=days - 1), datetime.min.time()) - IST
 
     base = db.query(Lead).filter(Lead.organization_id == org_id)
     if current_user.role == UserRole.USER:
         base = base.filter(Lead.assigned_to_id == current_user.id)
 
-    # New leads grouped by date
+    # Shift UTC timestamp to IST before casting to date so grouping is by IST calendar day
+    ist_created  = Lead.created_at  + IST
+    ist_updated  = Lead.updated_at  + IST
+
+    # New leads grouped by IST date
     new_rows = (
         base.filter(Lead.created_at >= start_dt)
-        .with_entities(cast(Lead.created_at, Date).label("d"), func.count(Lead.id))
-        .group_by(cast(Lead.created_at, Date))
+        .with_entities(cast(ist_created, Date).label("d"), func.count(Lead.id))
+        .group_by(cast(ist_created, Date))
         .all()
     )
-    # Converted leads grouped by updated_at date
+    # Converted leads grouped by IST updated_at date
     conv_rows = (
         base.filter(Lead.status == LeadStatus.CONVERTED, Lead.updated_at >= start_dt)
-        .with_entities(cast(Lead.updated_at, Date).label("d"), func.count(Lead.id))
-        .group_by(cast(Lead.updated_at, Date))
+        .with_entities(cast(ist_updated, Date).label("d"), func.count(Lead.id))
+        .group_by(cast(ist_updated, Date))
         .all()
     )
 

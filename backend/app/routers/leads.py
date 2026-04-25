@@ -95,7 +95,9 @@ def _build_lead_query(
             func.lower(Lead.web_id).like(s)
         )
     if overdue:
-        q = q.filter(Lead.next_followup_at <= datetime.utcnow(), Lead.next_followup_at.isnot(None))
+        # next_followup_at is stored as IST-naive; compare to IST now (not UTC)
+        ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+        q = q.filter(Lead.next_followup_at <= ist_now, Lead.next_followup_at.isnot(None))
     if tag:
         q = q.filter(func.lower(Lead.tags).like(f"%{tag.lower()}%"))
     if date_from:
@@ -151,12 +153,13 @@ def get_followups(
     from datetime import date as date_cls, time as time_cls
 
     try:
-        target = datetime.strptime(date, "%Y-%m-%d").date() if date else datetime.utcnow().date()
+        _ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+        target = datetime.strptime(date, "%Y-%m-%d").date() if date else _ist_now.date()
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date, use YYYY-MM-DD")
 
-    now        = datetime.utcnow()
-    today      = now.date()
+    now        = datetime.utcnow() + timedelta(hours=5, minutes=30)  # IST now (naive)
+    today      = now.date()  # IST today
     day_start  = lambda d: datetime.combine(d, time_cls.min)
     day_end    = lambda d: datetime.combine(d, time_cls.max)
 

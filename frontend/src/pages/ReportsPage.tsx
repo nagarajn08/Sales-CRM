@@ -190,7 +190,7 @@ export default function ReportsPage() {
       setStats(s);
       setTrends(t);
       setTopLeads(
-        [...leads]
+        [...leads.leads]
           .filter(l => l.score != null)
           .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
           .slice(0, 10)
