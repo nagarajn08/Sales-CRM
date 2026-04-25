@@ -66,6 +66,8 @@ def list_users(admin: User = Depends(require_admin), db: Session = Depends(get_d
 
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(body: UserCreate, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    if not admin.is_superadmin and body.role == UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Organizations cannot create admin users")
     check_user_limit(db, admin.organization_id, is_superadmin=admin.is_superadmin)
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=409, detail="Email already registered")
@@ -101,6 +103,8 @@ def update_user(user_id: int, body: UserUpdate, admin: User = Depends(require_ad
     if body.mobile is not None:
         user.mobile = body.mobile
     if body.role is not None:
+        if not admin.is_superadmin and body.role == UserRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Organizations cannot assign admin role")
         user.role = body.role
     if body.is_active is not None:
         user.is_active = body.is_active

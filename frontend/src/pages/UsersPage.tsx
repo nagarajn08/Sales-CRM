@@ -14,7 +14,6 @@ import { cn } from "../lib/utils";
 const ROLE_OPTIONS = [
   { value: "user", label: "User" },
   { value: "manager", label: "Manager" },
-  { value: "admin", label: "Admin" },
 ];
 
 const ROLE_COLORS: Record<UserRole, string> = {
