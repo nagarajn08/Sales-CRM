@@ -103,8 +103,9 @@ function FollowupRow({ lead, isOverdue, onUpdated }: {
 
   return (
     <div
+      onClick={() => navigate(`/leads/${lead.id}`)}
       className={cn(
-        "group relative px-4 py-3.5 border-b border-border last:border-0",
+        "group relative px-4 py-3.5 border-b border-border last:border-0 cursor-pointer",
         "hover:bg-secondary/30 transition-colors",
         isOverdue ? "border-l-[3px] border-l-red-400" : "border-l-[3px] border-l-primary/40"
       )}
@@ -136,7 +137,7 @@ function FollowupRow({ lead, isOverdue, onUpdated }: {
           {/* Sub-info */}
           <div className="flex items-center gap-3 mt-1 flex-wrap text-xs text-muted-foreground">
             {lead.mobile && (
-              <a href={`tel:${lead.mobile}`} className="hover:text-foreground transition-colors flex items-center gap-1">
+              <a href={`tel:${lead.mobile}`} onClick={e => e.stopPropagation()} className="hover:text-foreground transition-colors flex items-center gap-1">
                 <svg viewBox="0 0 14 14" fill="none" className="h-3 w-3 shrink-0">
                   <path d="M2 2.5A1.5 1.5 0 013.5 1h.5a1 1 0 011 1v2a1 1 0 01-1 1h-.5A5.5 5.5 0 009 10.5V10a1 1 0 011-1h2a1 1 0 011 1v.5A1.5 1.5 0 0111.5 13C6.25 13 1 7.75 1 2.5z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
                 </svg>
@@ -195,7 +196,7 @@ function FollowupRow({ lead, isOverdue, onUpdated }: {
         {/* Converted — left, small, secondary so it's not accidentally clicked */}
         {!rescheduling && (
           <button
-            onClick={() => markDone("converted")}
+            onClick={e => { e.stopPropagation(); markDone("converted"); }}
             disabled={updating}
             className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-emerald-600 hover:bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 transition-all"
           >
@@ -209,7 +210,7 @@ function FollowupRow({ lead, isOverdue, onUpdated }: {
 
         {/* Reschedule + Open — right */}
         {rescheduling ? (
-          <div className="flex items-end gap-2 flex-wrap justify-end w-full">
+          <div className="flex items-end gap-2 flex-wrap justify-end w-full" onClick={e => e.stopPropagation()}>
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-0.5">Date</span>
               <input
@@ -229,14 +230,14 @@ function FollowupRow({ lead, isOverdue, onUpdated }: {
               />
             </div>
             <button
-              onClick={confirmReschedule}
+              onClick={e => { e.stopPropagation(); confirmReschedule(); }}
               disabled={updating}
               className="h-7 px-3 text-[11px] font-semibold rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
             >
               {updating ? "…" : "Save"}
             </button>
             <button
-              onClick={() => setRescheduling(false)}
+              onClick={e => { e.stopPropagation(); setRescheduling(false); }}
               className="h-7 px-2.5 text-[11px] rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground transition-colors"
             >
               Cancel
@@ -246,7 +247,7 @@ function FollowupRow({ lead, isOverdue, onUpdated }: {
           <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
             {/* Reschedule — highlighted primary */}
             <button
-              onClick={() => setRescheduling(true)}
+              onClick={e => { e.stopPropagation(); setRescheduling(true); }}
               disabled={updating}
               className="flex items-center gap-1.5 h-7 px-3 text-[11px] font-semibold rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
             >
