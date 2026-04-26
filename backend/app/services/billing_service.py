@@ -67,20 +67,37 @@ def check_import_row_limit(row_count: int, user_role: str = "user", is_superadmi
         )
 
 
+def increment_leads_created(db: Session, org_id: int):
+    """Increment the leads_created quota counter for the org's subscription."""
+    sub = get_or_create_subscription(db, org_id)
+    sub.leads_created = (sub.leads_created or 0) + 1
+    db.commit()
+
+
 def check_lead_limit(db: Session, org_id: int, is_superadmin: bool = False):
-    """Raise 403 if org has hit its plan-based lead limit."""
+    """Raise 403 if org has hit its plan-based lead limit.
+
+    Uses leads_created (total ever created) not current count,
+    so deleting and re-adding does not bypass the quota.
+    Superadmin can override max_leads per org on the Organization row.
+    """
     if is_superadmin:
         return
+    from app.models.organization import Organization
+    org = db.get(Organization, org_id)
     sub = get_or_create_subscription(db, org_id)
-    limits = get_plan_limits(sub.plan)
-    max_leads = limits["max_leads"]
+    # Per-org override wins over plan limit; -1 means unlimited
+    if org and org.max_leads is not None:
+        max_leads = org.max_leads
+    else:
+        max_leads = get_plan_limits(sub.plan)["max_leads"]
     if max_leads == -1:
         return
-    current = db.query(Lead).filter(Lead.organization_id == org_id).count()
-    if current >= max_leads:
+    used = sub.leads_created or 0
+    if used >= max_leads:
         raise HTTPException(
             status_code=403,
-            detail=f"Lead limit reached ({current}/{max_leads}). Upgrade your plan to add more leads.",
+            detail=f"Lead quota reached ({used}/{max_leads}). Upgrade your plan to add more leads.",
             headers={"X-Upgrade-Required": "true"},
         )
 
@@ -90,17 +107,18 @@ def get_usage(db: Session, org_id: int) -> dict:
     sub = get_or_create_subscription(db, org_id)
     limits = get_plan_limits(sub.plan)
     org = db.get(Organization, org_id)
-    # Use org-level override if set, else fall back to plan limit
     max_users = org.max_users if (org and org.max_users is not None) else limits["max_users"]
+    max_leads = org.max_leads if (org and org.max_leads is not None) else limits["max_leads"]
     user_count = db.query(User).filter(User.organization_id == org_id, User.is_active == True).count()
     lead_count = db.query(Lead).filter(Lead.organization_id == org_id).count()
+    leads_created = sub.leads_created or 0
     return {
         "plan": sub.plan,
         "status": sub.status,
         "current_period_end": sub.current_period_end,
         "razorpay_subscription_id": sub.razorpay_subscription_id,
         "users": {"current": user_count, "max": max_users},
-        "leads": {"current": lead_count, "max": limits["max_leads"]},
+        "leads": {"current": leads_created, "max": max_leads, "active": lead_count},
         "price": limits["price"],
         "features": limits["features"],
         "plan_name": limits["name"],

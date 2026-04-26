@@ -131,6 +131,24 @@ export interface SAUser {
   last_login: string | null; created_at: string;
 }
 
+export interface SubscriptionInfo {
+  plan: string;
+  status: string;
+  current_period_end: string | null;
+  leads_created: number;
+  max_leads_override: number | null;
+  max_users_override: number | null;
+}
+
+export interface SubscriptionPatch {
+  plan?: string;
+  status?: string;
+  current_period_end?: string;
+  max_leads?: number;
+  max_users?: number;
+  reset_leads_counter?: boolean;
+}
+
 export const superAdminApi = {
   stats: () => api.get<PlatformStats>("/api/superadmin/stats").then(r => r.data),
   listOrgs: () => api.get<OrgSummary[]>("/api/superadmin/orgs").then(r => r.data),
@@ -151,6 +169,10 @@ export const superAdminApi = {
     api.put<{ ok: boolean }>("/api/superadmin/otp-settings", data).then(r => r.data),
   setUserLimit: (orgId: number, max_users: number | null) =>
     api.patch<OrgSummary>(`/api/superadmin/orgs/${orgId}/user-limit`, { max_users }).then(r => r.data),
+  getSubscription: (orgId: number) =>
+    api.get<SubscriptionInfo>(`/api/superadmin/orgs/${orgId}/subscription`).then(r => r.data),
+  patchSubscription: (orgId: number, data: SubscriptionPatch) =>
+    api.patch<SubscriptionInfo>(`/api/superadmin/orgs/${orgId}/subscription`, data).then(r => r.data),
 };
 
 export const otpConfigApi = {

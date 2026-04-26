@@ -12,8 +12,10 @@ from app.models.lead import Lead, LeadStatus
 from app.models.organization import Organization, OrgType
 from app.models.user import User, UserRole
 from app.models.platform_config import PlatformConfig
+from app.models.subscription import Subscription, PlanName, SubStatus
 from app.config import PLANS
 from app.services.auth_service import hash_password
+from app.services.billing_service import get_or_create_subscription
 
 router = APIRouter(prefix="/api/superadmin", tags=["superadmin"])
 
@@ -397,3 +399,94 @@ def update_plan_pricing(
     db.commit()
     return {"ok": True, "plan": body.plan, "price": body.price,
             "original_price": body.original_price, "discount_pct": body.discount_pct}
+
+
+# ── Org Subscription Management ───────────────────────────────────────────────
+
+class SubscriptionPatch(BaseModel):
+    plan: str | None = None                    # "free" or "pro"
+    status: str | None = None                  # "active", "expired", "cancelled"
+    current_period_end: str | None = None      # ISO date string e.g. "2026-12-31"
+    max_leads: int | None = None               # per-org override; -1 = unlimited, null = use plan default
+    max_users: int | None = None               # per-org override; -1 = unlimited, null = use plan default
+    reset_leads_counter: bool = False          # set leads_created back to 0
+
+
+class SubscriptionInfo(BaseModel):
+    plan: str
+    status: str
+    current_period_end: datetime | None
+    leads_created: int
+    max_leads_override: int | None
+    max_users_override: int | None
+
+
+@router.get("/orgs/{org_id}/subscription", response_model=SubscriptionInfo)
+def get_org_subscription(
+    org_id: int,
+    _: User = Depends(require_platform_admin),
+    db: Session = Depends(get_db),
+):
+    org = db.get(Organization, org_id)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    sub = get_or_create_subscription(db, org_id)
+    return SubscriptionInfo(
+        plan=sub.plan,
+        status=sub.status,
+        current_period_end=sub.current_period_end,
+        leads_created=sub.leads_created or 0,
+        max_leads_override=org.max_leads,
+        max_users_override=org.max_users,
+    )
+
+
+@router.patch("/orgs/{org_id}/subscription", response_model=SubscriptionInfo)
+def patch_org_subscription(
+    org_id: int,
+    body: SubscriptionPatch,
+    _: User = Depends(require_platform_admin),
+    db: Session = Depends(get_db),
+):
+    org = db.get(Organization, org_id)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    sub = get_or_create_subscription(db, org_id)
+
+    if body.plan is not None:
+        if body.plan not in PLANS:
+            raise HTTPException(status_code=400, detail="Invalid plan. Use 'free' or 'pro'.")
+        sub.plan = PlanName(body.plan)
+
+    if body.status is not None:
+        try:
+            sub.status = SubStatus(body.status)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid status. Use 'active', 'expired', or 'cancelled'.")
+
+    if body.current_period_end is not None:
+        try:
+            sub.current_period_end = datetime.fromisoformat(body.current_period_end)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use ISO format e.g. '2026-12-31'.")
+
+    if body.reset_leads_counter:
+        sub.leads_created = 0
+
+    # Per-org limit overrides (stored on Organization row)
+    if "max_leads" in body.model_fields_set:
+        org.max_leads = None if body.max_leads == -1 else body.max_leads
+    if "max_users" in body.model_fields_set:
+        org.max_users = None if body.max_users == -1 else body.max_users
+
+    db.commit()
+    db.refresh(sub)
+    db.refresh(org)
+    return SubscriptionInfo(
+        plan=sub.plan,
+        status=sub.status,
+        current_period_end=sub.current_period_end,
+        leads_created=sub.leads_created or 0,
+        max_leads_override=org.max_leads,
+        max_users_override=org.max_users,
+    )

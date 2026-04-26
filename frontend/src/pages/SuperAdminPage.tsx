@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { superAdminApi, type SAUser } from "../api";
+import { superAdminApi, type SAUser, type SubscriptionInfo } from "../api";
 import type { OrgSummary, PlatformStats } from "../types";
 import { cn, fmtDate } from "../lib/utils";
 import { Button } from "../components/ui/button";
@@ -252,6 +252,133 @@ function ManageUsersModal({ org, orgs, onClose, onChanged }: {
       <div className="flex justify-end pt-4 border-t border-border mt-4">
         <Button variant="outline" size="sm" onClick={onClose}>Close</Button>
       </div>
+    </ModalShell>
+  );
+}
+
+// ── Subscription Modal ────────────────────────────────────────────────────────
+
+function SubscriptionModal({ org, onClose }: { org: OrgSummary; onClose: () => void }) {
+  const [sub, setSub] = useState<SubscriptionInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  const [plan, setPlan] = useState("free");
+  const [status, setStatus] = useState("active");
+  const [periodEnd, setPeriodEnd] = useState("");
+  const [maxLeads, setMaxLeads] = useState("");
+  const [maxUsers, setMaxUsers] = useState("");
+  const [resetCounter, setResetCounter] = useState(false);
+
+  useEffect(() => {
+    superAdminApi.getSubscription(org.id)
+      .then(s => {
+        setSub(s);
+        setPlan(s.plan);
+        setStatus(s.status);
+        setPeriodEnd(s.current_period_end ? s.current_period_end.slice(0, 10) : "");
+        setMaxLeads(s.max_leads_override != null ? String(s.max_leads_override) : "");
+        setMaxUsers(s.max_users_override != null ? String(s.max_users_override) : "");
+      })
+      .finally(() => setLoading(false));
+  }, [org.id]);
+
+  const save = async () => {
+    setSaving(true); setErr("");
+    try {
+      const patch: Record<string, unknown> = { plan, status, reset_leads_counter: resetCounter };
+      if (periodEnd) patch.current_period_end = periodEnd;
+      if (maxLeads.trim() !== "") {
+        const v = parseInt(maxLeads);
+        if (isNaN(v) || v < 0) { setErr("Max leads must be a positive number"); setSaving(false); return; }
+        patch.max_leads = v;
+      }
+      if (maxUsers.trim() !== "") {
+        const v = parseInt(maxUsers);
+        if (isNaN(v) || v < 0) { setErr("Max users must be a positive number"); setSaving(false); return; }
+        patch.max_users = v;
+      }
+      const updated = await superAdminApi.patchSubscription(org.id, patch);
+      setSub(updated);
+      setResetCounter(false);
+      toast.success("Subscription updated");
+    } catch (e: any) {
+      setErr(e?.response?.data?.detail ?? "Failed to update");
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <ModalShell title={`Subscription — ${org.name}`} onClose={onClose}>
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {sub && (
+            <div className="bg-secondary/50 rounded-lg px-4 py-3 text-xs text-muted-foreground space-y-1">
+              <p>Current plan: <span className="font-semibold text-foreground capitalize">{sub.plan}</span> · <span className="capitalize">{sub.status}</span></p>
+              <p>Leads quota used: <span className="font-semibold text-foreground tabular-nums">{sub.leads_created}</span>
+                {sub.max_leads_override != null ? ` / ${sub.max_leads_override} (override)` : " (using plan default)"}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Plan">
+              <select value={plan} onChange={e => setPlan(e.target.value)} className={inputCls}>
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+              </select>
+            </Field>
+            <Field label="Status">
+              <select value={status} onChange={e => setStatus(e.target.value)} className={inputCls}>
+                <option value="active">Active</option>
+                <option value="expired">Expired</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </Field>
+          </div>
+
+          <Field label="Subscription Expiry Date">
+            <input type="date" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} className={inputCls} />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Max Leads Override (blank = plan default)">
+              <input type="number" min={0} placeholder="e.g. 100" value={maxLeads}
+                onChange={e => setMaxLeads(e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Max Users Override (blank = plan default)">
+              <input type="number" min={0} placeholder="e.g. 10" value={maxUsers}
+                onChange={e => setMaxUsers(e.target.value)} className={inputCls} />
+            </Field>
+          </div>
+
+          <button
+            onClick={() => setResetCounter(v => !v)}
+            className={cn(
+              "w-full flex items-center justify-between gap-3 rounded-lg border p-3 text-left transition-all",
+              resetCounter ? "border-amber-400 bg-amber-50 dark:bg-amber-900/20" : "border-border bg-secondary/30"
+            )}
+          >
+            <div>
+              <p className="text-sm font-medium text-foreground">Reset leads quota counter</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Sets leads_created back to 0, allowing the org to create fresh leads up to their limit</p>
+            </div>
+            <div className={cn("w-10 h-6 rounded-full relative shrink-0 transition-colors", resetCounter ? "bg-amber-400" : "bg-border")}>
+              <div className={cn("absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all", resetCounter ? "left-5" : "left-1")} />
+            </div>
+          </button>
+
+          {err && <p className="text-xs text-destructive">{err}</p>}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+            <Button size="sm" loading={saving} onClick={save}>Save Changes</Button>
+          </div>
+        </div>
+      )}
     </ModalShell>
   );
 }
@@ -569,6 +696,7 @@ export default function SuperAdminPage() {
   const [showCreateOrg, setShowCreateOrg] = useState(false);
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [manageOrg, setManageOrg] = useState<OrgSummary | null>(null);
+  const [subOrg, setSubOrg] = useState<OrgSummary | null>(null);
 
   const reload = () =>
     Promise.all([superAdminApi.stats(), superAdminApi.listOrgs()])
@@ -729,12 +857,18 @@ export default function SuperAdminPage() {
                     <td className="px-4 py-3 text-center tabular-nums hidden xl:table-cell text-emerald-600 font-medium">{org.converted_count}</td>
                     <td className="px-4 py-3 hidden md:table-cell text-xs text-muted-foreground">{fmtDate(org.created_at)}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-1 flex-wrap">
                         <button
                           onClick={() => setManageOrg(org)}
                           className="text-xs font-medium px-3 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
                         >
                           Users
+                        </button>
+                        <button
+                          onClick={() => setSubOrg(org)}
+                          className="text-xs font-medium px-3 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-violet-400/60 transition-colors"
+                        >
+                          Subscription
                         </button>
                         <button
                           onClick={() => handleToggle(org)}
@@ -781,6 +915,13 @@ export default function SuperAdminPage() {
           orgs={orgs}
           onClose={() => setManageOrg(null)}
           onChanged={() => reload()}
+        />
+      )}
+
+      {subOrg && (
+        <SubscriptionModal
+          org={subOrg}
+          onClose={() => setSubOrg(null)}
         />
       )}
     </div>

@@ -30,5 +30,6 @@ class Subscription(Base):
     razorpay_customer_id = Column(String, nullable=True)
     current_period_start = Column(DateTime, nullable=True)
     current_period_end = Column(DateTime, nullable=True)
+    leads_created = Column(Integer, default=0, nullable=False)  # total ever created; used for quota enforcement
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

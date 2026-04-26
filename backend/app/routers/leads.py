@@ -23,7 +23,7 @@ from app.models.notification import Notification
 from app.models.app_settings import AppSettings
 from app.models.user import User, UserRole
 from app.schemas.lead import ActivityRead, BulkActionRequest, CallLogRequest, LeadCreate, LeadRead, LeadReassign, LeadStatusUpdate, LeadUpdate
-from app.services.billing_service import check_import_row_limit, check_lead_limit
+from app.services.billing_service import check_import_row_limit, check_lead_limit, increment_leads_created, get_or_create_subscription
 from app.services.scoring_service import recalculate_score
 
 
@@ -435,6 +435,7 @@ def create_lead(body: LeadCreate, current_user: User = Depends(get_current_user)
     recalculate_score(db, lead)
     db.commit()
     db.refresh(lead)
+    increment_leads_created(db, org_id)
     return lead
 
 
@@ -557,6 +558,10 @@ def import_leads(
             _log_activity(db, obj.id, current_user.id, ActivityType.IMPORTED)
 
     db.commit()
+    if created > 0 and not current_user.is_superadmin:
+        sub = get_or_create_subscription(db, current_user.organization_id)
+        sub.leads_created = (sub.leads_created or 0) + created
+        db.commit()
     return {"imported": created, "skipped": skipped}
 
 

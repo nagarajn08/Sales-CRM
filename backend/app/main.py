@@ -118,7 +118,7 @@ def run_migrations():
         inspector = inspect(engine)
         tables = inspector.get_table_names()
 
-        _allowed_tables = {"leads", "users", "app_settings", "email_templates", "user_sessions", "otp_records", "organizations"}
+        _allowed_tables = {"leads", "users", "app_settings", "email_templates", "user_sessions", "otp_records", "organizations", "subscriptions"}
         _allowed_types = {"VARCHAR", "INTEGER", "BOOLEAN DEFAULT FALSE", "BOOLEAN DEFAULT TRUE",
                           "TEXT", "DOUBLE PRECISION", "INTEGER DEFAULT 0", "TIMESTAMP"}
 
@@ -143,6 +143,10 @@ def run_migrations():
 
         # organizations
         add_col("organizations", "max_users", "INTEGER")
+        add_col("organizations", "max_leads", "INTEGER")
+
+        # subscriptions
+        add_col("subscriptions", "leads_created", "INTEGER DEFAULT 0")
 
         # user_sessions (created by SQLAlchemy metadata, no manual columns needed)
 
