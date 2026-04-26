@@ -1,5 +1,6 @@
 import random
 import smtplib
+import threading
 import urllib.request
 import urllib.parse
 import json as _json
@@ -65,11 +66,11 @@ def _send_smtp(smtp: dict, to: str, subject: str, html: str) -> bool:
         msg["To"] = to
         msg.attach(MIMEText(html, "html"))
         if port == 465:
-            with smtplib.SMTP_SSL(host, port, timeout=15) as server:
+            with smtplib.SMTP_SSL(host, port, timeout=5) as server:
                 server.login(user, password)
                 server.sendmail(sender, to, msg.as_string())
         else:
-            with smtplib.SMTP(host, port, timeout=15) as server:
+            with smtplib.SMTP(host, port, timeout=5) as server:
                 server.ehlo()
                 server.starttls()
                 server.ehlo()
@@ -122,7 +123,16 @@ def create_otp_record(db: Session, email: str, mobile: str) -> dict:
 
     smtp = _get_platform_smtp(db)
     smtp_configured = bool(smtp.get("host") and smtp.get("user"))
-    email_sent  = _send_email_otp(email, email_otp, smtp)   if email_on  else False
+
+    # Send email in background so the API response is instant (no 5-15s SMTP timeout blocking)
+    if email_on and smtp_configured:
+        threading.Thread(
+            target=_send_email_otp, args=(email, email_otp, dict(smtp)), daemon=True
+        ).start()
+        email_sent = True  # optimistic — background thread handles delivery
+    else:
+        email_sent = False
+
     mobile_sent = _send_mobile_otp(mobile, mobile_otp) if mobile_on else False
 
     dev = _is_dev()

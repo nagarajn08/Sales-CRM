@@ -139,9 +139,9 @@ def test_smtp(
         raise HTTPException(status_code=400, detail="Invalid SMTP port")
     try:
         if port == 465:
-            server = smtplib.SMTP_SSL(host, port, timeout=10)
+            server = smtplib.SMTP_SSL(host, port, timeout=5)
         else:
-            server = smtplib.SMTP(host, port, timeout=10)
+            server = smtplib.SMTP(host, port, timeout=5)
             server.ehlo()
             server.starttls()
             server.ehlo()
