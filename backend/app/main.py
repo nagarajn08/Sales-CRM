@@ -181,7 +181,7 @@ def seed_admin():
             db.flush()
 
         # Create admin if no admin exists
-        admin = db.query(User).filter(User.role == UserRole.ADMIN).first()
+        admin = db.query(User).filter(User.email == settings.ADMIN_EMAIL).first()
         if not admin:
             admin = User(
                 organization_id=default_org.id,
