@@ -187,20 +187,23 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
         {/* User area */}
         <div className="flex items-center gap-1">
-          {/* Avatar — click to open profile */}
-          <button
-            onClick={() => setShowProfile(true)}
-            title={`${user?.name} · Edit profile`}
-            className="flex items-center gap-2 h-8 px-2 rounded-lg hover:bg-secondary transition-colors"
-          >
-            <div
-              className="h-7 w-7 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shrink-0"
-              style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.6))" }}
+          {/* Avatar — click to open profile dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowProfile(v => !v)}
+              title={`${user?.name} · Edit profile`}
+              className="flex items-center gap-2 h-8 px-2 rounded-lg hover:bg-secondary transition-colors"
             >
-              {initials}
-            </div>
-            <span className="hidden sm:block text-xs font-medium text-foreground max-w-[100px] truncate capitalize">{user?.name}</span>
-          </button>
+              <div
+                className="h-7 w-7 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shrink-0"
+                style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.6))" }}
+              >
+                {initials}
+              </div>
+              <span className="hidden sm:block text-xs font-medium text-foreground max-w-[100px] truncate capitalize">{user?.name}</span>
+            </button>
+            <ProfileModal open={showProfile} onClose={() => setShowProfile(false)} />
+          </div>
 
           {/* Sign out */}
           <button
@@ -213,8 +216,6 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             </svg>
           </button>
         </div>
-
-        <ProfileModal open={showProfile} onClose={() => setShowProfile(false)} />
 
       </div>
     </header>

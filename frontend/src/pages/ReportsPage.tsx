@@ -429,7 +429,7 @@ export default function ReportsPage() {
                 dataKey="date"
                 tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                 axisLine={false} tickLine={false}
-                interval={period <= 7 ? 0 : Math.floor(period / 7)}
+                interval={period == null || period <= 7 ? 0 : Math.floor(period / 7)}
               />
               <YAxis
                 tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
