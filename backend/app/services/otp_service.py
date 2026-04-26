@@ -61,7 +61,9 @@ def _send_smtp(smtp: dict, to: str, subject: str, html: str) -> bool:
     password = smtp.get("password", "")
     sender = smtp.get("from", user)
     if not host or not user:
+        logger.warning(f"_send_smtp: missing host or user (host={host!r} user={user!r})")
         return False
+    logger.info(f"_send_smtp: connecting to {host}:{port} as {user} → {to}")
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -79,8 +81,10 @@ def _send_smtp(smtp: dict, to: str, subject: str, html: str) -> bool:
                 server.ehlo()
                 server.login(user, password)
                 server.sendmail(sender, to, msg.as_string())
+        logger.info(f"_send_smtp: sent successfully to {to}")
         return True
-    except Exception:
+    except Exception as exc:
+        logger.error(f"_send_smtp: FAILED to {to} via {host}:{port} — {type(exc).__name__}: {exc}")
         return False
 
 
