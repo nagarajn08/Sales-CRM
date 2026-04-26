@@ -1,3 +1,4 @@
+import logging
 import random
 import smtplib
 import threading
@@ -5,6 +6,8 @@ import urllib.request
 import urllib.parse
 import json as _json
 from datetime import datetime, timedelta
+
+logger = logging.getLogger("trackmylead.otp")
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from jose import jwt, JWTError
@@ -123,12 +126,14 @@ def create_otp_record(db: Session, email: str, mobile: str) -> dict:
 
     smtp = _get_platform_smtp(db)
     smtp_configured = bool(smtp.get("host") and smtp.get("user"))
+    logger.info(f"OTP created for {email} | email_on={email_on} smtp_configured={smtp_configured} host={smtp.get('host','')}")
 
     # Send email in background so the API response is instant (no 5-15s SMTP timeout blocking)
     if email_on and smtp_configured:
-        threading.Thread(
-            target=_send_email_otp, args=(email, email_otp, dict(smtp)), daemon=True
-        ).start()
+        def _bg_send(e, otp, s):
+            ok = _send_email_otp(e, otp, s)
+            logger.info(f"Background email OTP send to {e}: {'ok' if ok else 'FAILED'}")
+        threading.Thread(target=_bg_send, args=(email, email_otp, dict(smtp)), daemon=True).start()
         email_sent = True  # optimistic — background thread handles delivery
     else:
         email_sent = False

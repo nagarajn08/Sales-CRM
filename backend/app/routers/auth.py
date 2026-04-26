@@ -89,6 +89,7 @@ def otp_request(body: OTPRequestBody, request: Request, db: Session = Depends(ge
     return OTPRequestResponse(
         detail="OTP sent. Check your email and mobile.",
         email_sent=result["email_sent"],
+        smtp_configured=result.get("smtp_configured", False),
         email_otp_enabled=result["email_otp_enabled"],
         mobile_otp_enabled=result["mobile_otp_enabled"],
         dev_email_otp=result.get("dev_email_otp"),

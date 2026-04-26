@@ -36,6 +36,7 @@ class OTPVerifyBody(BaseModel):
 class OTPRequestResponse(BaseModel):
     detail: str
     email_sent: bool
+    smtp_configured: bool = False
     email_otp_enabled: bool = True
     mobile_otp_enabled: bool = True
     # Only populated in dev mode (no SMTP configured)
