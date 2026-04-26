@@ -68,7 +68,7 @@ export function StatusModal({ open, onClose, lead, onUpdated }: Props) {
 
   return (
     <Modal open={open} onClose={onClose} title="Update Status" maxWidth="max-w-sm">
-      <form onSubmit={submit} className="space-y-3">
+      <form onSubmit={submit} className="space-y-3 pb-16">
         <Select
           label="Status"
           value={status}
