@@ -20,6 +20,66 @@ def _generate_otp() -> str:
     return f"{random.randint(100000, 999999)}"
 
 
+def _get_platform_smtp(db: Session) -> dict:
+    """Return SMTP config: .env takes priority, PlatformConfig is fallback."""
+    if settings.SMTP_HOST and settings.SMTP_USER:
+        return {
+            "host": settings.SMTP_HOST,
+            "port": settings.SMTP_PORT,
+            "user": settings.SMTP_USER,
+            "password": settings.SMTP_PASS,
+            "from": settings.SMTP_FROM or settings.SMTP_USER,
+        }
+    # Fall back to platform-level config saved via the Settings page
+    try:
+        from app.models.platform_config import PlatformConfig
+        rows = {r.key: r.value for r in db.query(PlatformConfig).all()}
+        host = rows.get("smtp_host", "").strip()
+        user = rows.get("smtp_user", "").strip()
+        if host and user:
+            return {
+                "host": host,
+                "port": int(rows.get("smtp_port", "587")),
+                "user": user,
+                "password": rows.get("smtp_password", ""),
+                "from": rows.get("smtp_from", "") or user,
+            }
+    except Exception:
+        pass
+    return {}
+
+
+def _send_smtp(smtp: dict, to: str, subject: str, html: str) -> bool:
+    """Send an email using the provided smtp config dict. Returns True on success."""
+    host = smtp.get("host", "")
+    port = int(smtp.get("port", 587))
+    user = smtp.get("user", "")
+    password = smtp.get("password", "")
+    sender = smtp.get("from", user)
+    if not host or not user:
+        return False
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = sender
+        msg["To"] = to
+        msg.attach(MIMEText(html, "html"))
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, timeout=15) as server:
+                server.login(user, password)
+                server.sendmail(sender, to, msg.as_string())
+        else:
+            with smtplib.SMTP(host, port, timeout=15) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(user, password)
+                server.sendmail(sender, to, msg.as_string())
+        return True
+    except Exception:
+        return False
+
+
 def _is_dev() -> bool:
     return settings.FRONTEND_URL.startswith("http://localhost")
 
@@ -60,7 +120,8 @@ def create_otp_record(db: Session, email: str, mobile: str) -> dict:
     db.add(record)
     db.commit()
 
-    email_sent  = _send_email_otp(email, email_otp)   if email_on  else False
+    smtp = _get_platform_smtp(db)
+    email_sent  = _send_email_otp(email, email_otp, smtp)   if email_on  else False
     mobile_sent = _send_mobile_otp(mobile, mobile_otp) if mobile_on else False
 
     dev = _is_dev()
@@ -105,47 +166,23 @@ def _send_mobile_otp(mobile: str, otp: str) -> bool:
         return False
 
 
-def _send_email_otp(email: str, otp: str) -> bool:
-    """Try to send OTP via SMTP. Returns True on success."""
-    smtp_host = settings.SMTP_HOST
-    smtp_port = settings.SMTP_PORT
-    smtp_user = settings.SMTP_USER
-    smtp_pass = settings.SMTP_PASS
-    smtp_from = settings.SMTP_FROM or smtp_user
-
-    if not smtp_host or not smtp_user:
-        return False
-
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Your TrackmyLead verification code"
-        msg["From"] = smtp_from
-        msg["To"] = email
-
-        html = f"""
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
-          <h2 style="color:#1e293b;font-size:20px;margin:0 0 8px">Verify your email</h2>
-          <p style="color:#64748b;font-size:14px;margin:0 0 24px">
-            Enter this code to complete your TrackmyLead registration.
-          </p>
-          <div style="background:#f1f5f9;border-radius:12px;padding:24px;text-align:center;
-                      font-size:36px;font-weight:700;letter-spacing:8px;color:#4f46e5">
-            {otp}
-          </div>
-          <p style="color:#94a3b8;font-size:12px;margin:24px 0 0;text-align:center">
-            This code expires in {OTP_EXPIRE_MINUTES} minutes.
-          </p>
-        </div>"""
-
-        msg.attach(MIMEText(html, "html"))
-
-        with smtplib.SMTP(smtp_host, int(smtp_port)) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_pass)
-            server.sendmail(smtp_from, email, msg.as_string())
-        return True
-    except Exception:
-        return False
+def _send_email_otp(email: str, otp: str, smtp: dict) -> bool:
+    """Send OTP email using the provided smtp config dict."""
+    html = f"""
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+      <h2 style="color:#1e293b;font-size:20px;margin:0 0 8px">Verify your email</h2>
+      <p style="color:#64748b;font-size:14px;margin:0 0 24px">
+        Enter this code to complete your TrackmyLead registration.
+      </p>
+      <div style="background:#f1f5f9;border-radius:12px;padding:24px;text-align:center;
+                  font-size:36px;font-weight:700;letter-spacing:8px;color:#4f46e5">
+        {otp}
+      </div>
+      <p style="color:#94a3b8;font-size:12px;margin:24px 0 0;text-align:center">
+        This code expires in {OTP_EXPIRE_MINUTES} minutes.
+      </p>
+    </div>"""
+    return _send_smtp(smtp, email, "Your TrackmyLead verification code", html)
 
 
 MAX_OTP_ATTEMPTS = 5
@@ -204,7 +241,8 @@ def create_password_reset_otp(db: Session, email: str) -> dict:
     db.add(record)
     db.commit()
 
-    email_sent = _send_password_reset_email(email, otp)
+    smtp = _get_platform_smtp(db)
+    email_sent = _send_password_reset_email(email, otp, smtp)
     dev = _is_dev()
     return {
         "email_sent": email_sent,
@@ -232,47 +270,23 @@ def verify_password_reset_otp(db: Session, email: str, otp: str) -> bool:
     return True
 
 
-def _send_password_reset_email(email: str, otp: str) -> bool:
-    """Send a password reset OTP email. Returns True on success."""
-    smtp_host = settings.SMTP_HOST
-    smtp_port = settings.SMTP_PORT
-    smtp_user = settings.SMTP_USER
-    smtp_pass = settings.SMTP_PASS
-    smtp_from = settings.SMTP_FROM or smtp_user
-
-    if not smtp_host or not smtp_user:
-        return False
-
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Reset your TrackmyLead password"
-        msg["From"] = smtp_from
-        msg["To"] = email
-
-        html = f"""
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
-          <h2 style="color:#1e293b;font-size:20px;margin:0 0 8px">Reset your password</h2>
-          <p style="color:#64748b;font-size:14px;margin:0 0 24px">
-            Use this code to reset your TrackmyLead password. It expires in {OTP_EXPIRE_MINUTES} minutes.
-          </p>
-          <div style="background:#f1f5f9;border-radius:12px;padding:24px;text-align:center;
-                      font-size:36px;font-weight:700;letter-spacing:8px;color:#4f46e5">
-            {otp}
-          </div>
-          <p style="color:#94a3b8;font-size:12px;margin:24px 0 0;text-align:center">
-            If you did not request this, you can safely ignore this email.
-          </p>
-        </div>"""
-
-        msg.attach(MIMEText(html, "html"))
-
-        with smtplib.SMTP(smtp_host, int(smtp_port)) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_pass)
-            server.sendmail(smtp_from, email, msg.as_string())
-        return True
-    except Exception:
-        return False
+def _send_password_reset_email(email: str, otp: str, smtp: dict) -> bool:
+    """Send a password reset OTP email using the provided smtp config dict."""
+    html = f"""
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+      <h2 style="color:#1e293b;font-size:20px;margin:0 0 8px">Reset your password</h2>
+      <p style="color:#64748b;font-size:14px;margin:0 0 24px">
+        Use this code to reset your TrackmyLead password. It expires in {OTP_EXPIRE_MINUTES} minutes.
+      </p>
+      <div style="background:#f1f5f9;border-radius:12px;padding:24px;text-align:center;
+                  font-size:36px;font-weight:700;letter-spacing:8px;color:#4f46e5">
+        {otp}
+      </div>
+      <p style="color:#94a3b8;font-size:12px;margin:24px 0 0;text-align:center">
+        If you did not request this, you can safely ignore this email.
+      </p>
+    </div>"""
+    return _send_smtp(smtp, email, "Reset your TrackmyLead password", html)
 
 
 def create_verification_token(email: str, mobile: str) -> str:

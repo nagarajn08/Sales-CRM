@@ -35,6 +35,18 @@ def get_settings(current_user: User = Depends(get_current_user), db: Session = D
     return result
 
 
+SMTP_KEYS = {"smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from"}
+
+
+def _set_platform_config(db: Session, key: str, value: str):
+    from app.models.platform_config import PlatformConfig
+    row = db.get(PlatformConfig, key)
+    if row:
+        row.value = value
+    else:
+        db.add(PlatformConfig(key=key, value=value))
+
+
 @router.put("/")
 def update_settings(
     body: SettingsPayload,
@@ -50,6 +62,9 @@ def update_settings(
             row.value = value
         else:
             db.add(AppSettings(organization_id=admin.organization_id, key=key, value=value))
+        # Mirror SMTP settings to platform_config so system emails (OTP) can use them
+        if key in SMTP_KEYS:
+            _set_platform_config(db, key, value)
     db.commit()
     return {"ok": True}
 
