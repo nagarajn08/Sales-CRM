@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { NotificationPanel } from "./NotificationPanel";
+import { ProfileModal } from "../ProfileModal";
 import { useTheme } from "../../hooks/useTheme";
 
 interface TopbarProps {
@@ -100,6 +102,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const location = useLocation();
   const { theme, setTheme } = useTheme(user?.id);
   const isDark = theme.mode === "dark" || (theme.mode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const [showProfile, setShowProfile] = useState(false);
 
   const pathKey = "/" + location.pathname.split("/")[1];
   const page = PAGE_META[pathKey];
@@ -183,14 +186,21 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <div className="h-5 w-px bg-border mx-1" />
 
         {/* User area */}
-        <div className="flex items-center gap-2">
-          {/* Avatar */}
-          <div
-            className="h-7 w-7 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shrink-0"
-            style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.6))" }}
+        <div className="flex items-center gap-1">
+          {/* Avatar — click to open profile */}
+          <button
+            onClick={() => setShowProfile(true)}
+            title={`${user?.name} · Edit profile`}
+            className="flex items-center gap-2 h-8 px-2 rounded-lg hover:bg-secondary transition-colors"
           >
-            {initials}
-          </div>
+            <div
+              className="h-7 w-7 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shrink-0"
+              style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.6))" }}
+            >
+              {initials}
+            </div>
+            <span className="hidden sm:block text-xs font-medium text-foreground max-w-[100px] truncate capitalize">{user?.name}</span>
+          </button>
 
           {/* Sign out */}
           <button
@@ -203,6 +213,8 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             </svg>
           </button>
         </div>
+
+        <ProfileModal open={showProfile} onClose={() => setShowProfile(false)} />
 
       </div>
     </header>

@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { cn } from "../../lib/utils";
-import { ProfileModal } from "../ProfileModal";
 
 interface SidebarProps {
   open: boolean;
@@ -156,7 +154,6 @@ function SectionLabel({ children, collapsed }: { children: React.ReactNode; coll
 
 export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarProps) {
   const { user } = useAuth();
-  const [showProfile, setShowProfile] = useState(false);
   const initials = user?.name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() ?? "?";
 
   return (
@@ -265,11 +262,9 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
         </nav>
 
         {/* ── User footer ── */}
-        <ProfileModal open={showProfile} onClose={() => setShowProfile(false)} />
         <div className={cn("pb-3 pt-2 border-t border-sidebar-border shrink-0", collapsed ? "px-1.5" : "px-2.5")}>
-          <button
-            onClick={() => setShowProfile(true)}
-            title="Edit profile"
+          <div
+            title={collapsed ? `${user?.name} · ${user?.role}` : undefined}
             className={cn(
               "w-full flex items-center rounded-xl bg-white/[0.03] border border-sidebar-border/50 hover:bg-white/[0.07] transition-colors",
               collapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2.5 py-2"
@@ -300,7 +295,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
               </div>
             )}
-          </button>
+          </div>
         </div>
 
         {/* ── Collapse toggle (desktop only) ── */}

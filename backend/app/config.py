@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     BACKEND_URL: str = "http://localhost:8000"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    ADMIN_EMAIL: str = "admin@example.com"
+    ADMIN_EMAIL: str = "admin@trackmylead.in"
     ADMIN_PASSWORD: str = "Admin@123"
     ADMIN_NAME: str = "Administrator"
 
@@ -75,9 +75,10 @@ PLANS = {
             "Call log & activity timeline",
             "Email templates (create & send)",
             "Dashboard with deal value charts",
-            "Follow-up reminders & notifications",
+            "In-app follow-up notifications",
+            "Reports with Excel export",
             "Social media lead capture (webhooks)",
-            "Team management",
+            "Team management & lead reassignment",
             "Priority support",
         ],
     },
