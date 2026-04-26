@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axiosInstance";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 function cn(...c: (string | false | undefined)[]) { return c.filter(Boolean).join(" "); }
@@ -136,9 +137,18 @@ function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
+type PlanData = { name: string; price: number; original_price: number; discount_pct: number; features: string[]; max_users: number; max_leads: number };
+
 export default function LandingPage() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [plans, setPlans] = useState<Record<string, PlanData> | null>(null);
+
+  useEffect(() => {
+    api.get<Record<string, PlanData>>("/api/billing/plans")
+      .then(r => setPlans(r.data))
+      .catch(() => {}); // silently fall back to hardcoded
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white font-sans overflow-x-hidden">
@@ -653,56 +663,78 @@ export default function LandingPage() {
             <p className="text-white/40 text-lg">Start free, upgrade when you're ready.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            {/* Free */}
-            <div className="rounded-2xl border border-white/10 bg-white/4 p-7 flex flex-col">
-              <div className="mb-6">
-                <h3 className="font-display text-xl font-bold text-white mb-1">Free</h3>
-                <p className="text-4xl font-bold text-white font-display mt-3">₹0</p>
-                <p className="text-white/40 text-sm mt-1">Forever free · No card needed</p>
-              </div>
-              <ul className="space-y-2.5 flex-1 mb-7">
-                {["1 user", "25 leads", "Basic lead management", "Dashboard overview", "Email templates (view)"].map(f => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm text-white/50">
-                    <span className="text-white/50">{Icon.check}</span>{f}
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => navigate("/signup")}
-                className="w-full py-3 rounded-xl border border-white/10 text-white/70 hover:text-white hover:border-white/20 hover:bg-white/5 font-semibold text-sm transition-all"
-              >
-                Get started free
-              </button>
-            </div>
-
-            {/* Pro */}
-            <div className="relative rounded-2xl border border-indigo-500/50 bg-gradient-to-b from-indigo-500/10 to-violet-500/5 p-7 flex flex-col shadow-2xl shadow-indigo-500/10">
-              <div className="mb-6">
-                <h3 className="font-display text-xl font-bold text-white mb-1">Pro</h3>
-                <div className="flex items-baseline gap-2 mt-3">
-                  <p className="text-4xl font-bold text-white font-display">₹3,999</p>
-                  <span className="text-white/40 text-sm">/mo</span>
+          {(() => {
+            const free = plans?.free;
+            const pro = plans?.pro;
+            const freeFeatures = free?.features ?? ["1 user", "25 leads", "Basic lead management", "Dashboard overview", "Email templates (view)"];
+            const proFeatures = pro?.features ?? PRO_FEATURES;
+            const proPrice = pro?.price ?? 3999;
+            const proOriginal = pro?.original_price ?? 9999;
+            const proDiscount = pro?.discount_pct ?? 60;
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+                {/* Free */}
+                <div className="rounded-2xl border border-white/10 bg-white/4 p-7 flex flex-col">
+                  <div className="mb-6">
+                    <h3 className="font-display text-xl font-bold text-white mb-1">Free</h3>
+                    <p className="text-4xl font-bold text-white font-display mt-3">₹0</p>
+                    <p className="text-white/40 text-sm mt-1">Forever free · No card needed</p>
+                  </div>
+                  <ul className="space-y-2.5 flex-1 mb-7">
+                    {freeFeatures.map(f => (
+                      <li key={f} className="flex items-center gap-2.5 text-sm text-white/50">
+                        <span className="text-white/50">{Icon.check}</span>{f}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    onClick={() => navigate("/signup")}
+                    className="w-full py-3 rounded-xl border border-white/10 text-white/70 hover:text-white hover:border-white/20 hover:bg-white/5 font-semibold text-sm transition-all"
+                  >
+                    Get started free
+                  </button>
                 </div>
-                <p className="text-sm mt-1 text-white/35">Billed monthly · Cancel anytime</p>
+
+                {/* Pro */}
+                <div className="relative rounded-2xl border border-indigo-500/50 bg-gradient-to-b from-indigo-500/10 to-violet-500/5 p-7 flex flex-col shadow-2xl shadow-indigo-500/10">
+                  {proDiscount > 0 && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[11px] font-bold bg-indigo-500 text-white px-3 py-1 rounded-full whitespace-nowrap shadow">
+                      {proDiscount}% OFF — Limited time
+                    </div>
+                  )}
+                  <div className="mb-6">
+                    <h3 className="font-display text-xl font-bold text-white mb-1">Pro</h3>
+                    <div className="flex items-baseline gap-2 mt-3">
+                      <p className="text-4xl font-bold text-white font-display">₹{proPrice.toLocaleString("en-IN")}</p>
+                      <span className="text-white/40 text-sm">/mo</span>
+                    </div>
+                    {proOriginal > proPrice && (
+                      <p className="text-sm mt-1 text-white/35">
+                        <span className="line-through">₹{proOriginal.toLocaleString("en-IN")}</span>
+                        <span className="ml-2 text-emerald-400 font-semibold">Save ₹{(proOriginal - proPrice).toLocaleString("en-IN")}/mo</span>
+                      </p>
+                    )}
+                    <p className="text-sm mt-1 text-white/35">Billed monthly · Cancel anytime</p>
+                  </div>
+
+                  <ul className="space-y-2.5 flex-1 mb-7">
+                    {proFeatures.map(f => (
+                      <li key={f} className="flex items-center gap-2.5 text-sm text-white/70">
+                        <span className="text-indigo-400">{Icon.check}</span>{f}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => navigate("/signup")}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5"
+                  >
+                    Start with Pro →
+                  </button>
+                </div>
               </div>
-
-              <ul className="space-y-2.5 flex-1 mb-7">
-                {PRO_FEATURES.map(f => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm text-white/70">
-                    <span className="text-indigo-400">{Icon.check}</span>{f}
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={() => navigate("/signup")}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5"
-              >
-                Start with Pro →
-              </button>
-            </div>
-          </div>
+            );
+          })()}
 
           <p className="text-center text-white/30 text-sm mt-8">
             Cancel anytime. No hidden fees. Your data is always yours.

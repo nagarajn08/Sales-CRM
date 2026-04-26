@@ -77,6 +77,22 @@ def get_billing(current_user: User = Depends(get_current_user), db: Session = De
     }
 
 
+# ── Public plans (no auth — used by landing page) ────────────────────────────
+@router.get("/plans")
+def public_plans(db: Session = Depends(get_db)):
+    """Return effective plan pricing and features for the public landing page."""
+    plans = get_effective_plans(db)
+    return {k: {
+        "name": v["name"],
+        "price": v["price"],
+        "original_price": v["original_price"],
+        "discount_pct": v["discount_pct"],
+        "features": v["features"],
+        "max_users": v["max_users"],
+        "max_leads": v["max_leads"],
+    } for k, v in plans.items()}
+
+
 # ── Initiate upgrade ─────────────────────────────────────────────────────────
 @router.post("/upgrade")
 def initiate_upgrade(
