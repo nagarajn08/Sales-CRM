@@ -102,6 +102,7 @@ export default function SignupPage() {
   const [devEmailOtp, setDevEmailOtp] = useState<string | null>(null);
   const [devMobileOtp, setDevMobileOtp] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+  const [smtpConfigured, setSmtpConfigured] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [otpConfig, setOtpConfig] = useState<OTPConfig>({ email_otp_enabled: true, mobile_otp_enabled: true });
 
@@ -117,6 +118,7 @@ export default function SignupPage() {
     try {
       const res = await authApi.otpRequest({ email, mobile });
       setEmailSent(res.email_sent);
+      setSmtpConfigured(res.smtp_configured ?? false);
       setDevEmailOtp(res.dev_email_otp);
       setDevMobileOtp(res.dev_mobile_otp);
       setOtpConfig({ email_otp_enabled: res.email_otp_enabled, mobile_otp_enabled: res.mobile_otp_enabled });
@@ -168,6 +170,7 @@ export default function SignupPage() {
     try {
       const res = await authApi.otpRequest({ email, mobile });
       setEmailSent(res.email_sent);
+      setSmtpConfigured(res.smtp_configured ?? false);
       setDevEmailOtp(res.dev_email_otp);
       setDevMobileOtp(res.dev_mobile_otp);
       setOtpConfig({ email_otp_enabled: res.email_otp_enabled, mobile_otp_enabled: res.mobile_otp_enabled });
@@ -288,7 +291,9 @@ export default function SignupPage() {
                   <span className="font-medium text-foreground">Email:</span>{" "}
                   {emailSent
                     ? <>OTP sent to <span className="font-medium text-foreground">{email}</span></>
-                    : <span className="text-amber-600 font-medium">SMTP not configured — see dev code below</span>}
+                    : smtpConfigured
+                      ? <span className="text-red-600 font-medium">Email delivery failed — SMTP server unreachable. Contact admin.</span>
+                      : <span className="text-amber-600 font-medium">SMTP not configured — admin must set up email settings</span>}
                 </p>
               )}
               {!otpConfig.email_otp_enabled && (

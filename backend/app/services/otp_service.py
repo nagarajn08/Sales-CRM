@@ -121,12 +121,14 @@ def create_otp_record(db: Session, email: str, mobile: str) -> dict:
     db.commit()
 
     smtp = _get_platform_smtp(db)
+    smtp_configured = bool(smtp.get("host") and smtp.get("user"))
     email_sent  = _send_email_otp(email, email_otp, smtp)   if email_on  else False
     mobile_sent = _send_mobile_otp(mobile, mobile_otp) if mobile_on else False
 
     dev = _is_dev()
     return {
-        "email_sent":      email_sent,
+        "email_sent":        email_sent,
+        "smtp_configured":   smtp_configured,
         "email_otp_enabled":  email_on,
         "mobile_otp_enabled": mobile_on,
         "dev_email_otp":  email_otp  if dev and not email_sent  else None,

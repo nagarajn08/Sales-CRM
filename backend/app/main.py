@@ -229,6 +229,34 @@ def run_notification_job():
         db.close()
 
 
+def seed_platform_smtp():
+    """One-time: copy SMTP settings from AppSettings into PlatformConfig if not already there."""
+    from app.models.platform_config import PlatformConfig
+    from app.models.app_settings import AppSettings
+    smtp_keys = ["smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from"]
+    db = SessionLocal()
+    try:
+        existing = db.query(PlatformConfig).filter(PlatformConfig.key == "smtp_host").first()
+        if existing and existing.value:
+            return
+        rows = {r.key: r.value for r in db.query(AppSettings).filter(AppSettings.key.in_(smtp_keys)).all()}
+        if not rows.get("smtp_host"):
+            return
+        for key in smtp_keys:
+            if key in rows and rows[key]:
+                cfg = db.query(PlatformConfig).filter(PlatformConfig.key == key).first()
+                if cfg:
+                    cfg.value = rows[key]
+                else:
+                    db.add(PlatformConfig(key=key, value=rows[key]))
+        db.commit()
+        logger.info("Seeded PlatformConfig SMTP from AppSettings")
+    except Exception as e:
+        logger.warning(f"seed_platform_smtp warning: {e}")
+    finally:
+        db.close()
+
+
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
@@ -238,6 +266,7 @@ def on_startup():
         logger.warning(f"Migration warning: {e}")
     create_performance_indexes()
     seed_admin()
+    seed_platform_smtp()
     scheduler = BackgroundScheduler()
     scheduler.add_job(run_notification_job, "interval", minutes=1)
     scheduler.start()
