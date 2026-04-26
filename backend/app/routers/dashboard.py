@@ -1,5 +1,9 @@
+import io
 from datetime import datetime, date, timedelta
-from fastapi import APIRouter, Depends
+from typing import Optional
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
+import pandas as pd
 from sqlalchemy import func, case, cast, Date
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -234,18 +238,25 @@ def get_stats(current_user: User = Depends(get_current_user), db: Session = Depe
 @router.get("/trends")
 def get_trends(
     days: int = 30,
+    start_date: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="YYYY-MM-DD"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Daily trend: new leads and conversions for the last N days.
-    Uses 2 GROUP BY queries instead of 2×N individual counts.
-    """
     org_id    = current_user.organization_id
     IST       = timedelta(hours=5, minutes=30)
     ist_now   = datetime.utcnow() + IST
     today     = ist_now.date()
-    # start_dt in UTC = IST midnight of (today - N days) minus IST offset
-    start_dt  = datetime.combine(today - timedelta(days=days - 1), datetime.min.time()) - IST
+
+    if start_date and end_date:
+        range_start = date.fromisoformat(start_date)
+        range_end   = date.fromisoformat(end_date)
+        days        = (range_end - range_start).days + 1
+        today       = range_end
+    else:
+        range_start = today - timedelta(days=days - 1)
+
+    start_dt  = datetime.combine(range_start, datetime.min.time()) - IST
 
     if current_user.is_superadmin:
         base = db.query(Lead)
@@ -300,3 +311,90 @@ def get_trends(
         }
         for i in range(days - 1, -1, -1)
     ]
+
+
+@router.get("/export")
+def export_report(
+    days: int = 30,
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Export report as Excel workbook."""
+    IST = timedelta(hours=5, minutes=30)
+    ist_now = datetime.utcnow() + IST
+    today = ist_now.date()
+
+    if start_date and end_date:
+        range_start = date.fromisoformat(start_date)
+        range_end   = date.fromisoformat(end_date)
+        days        = (range_end - range_start).days + 1
+        today       = range_end
+    else:
+        range_start = today - timedelta(days=days - 1)
+
+    start_dt = datetime.combine(range_start, datetime.min.time()) - IST
+    org_id = current_user.organization_id
+
+    if current_user.is_superadmin:
+        base = db.query(Lead)
+    else:
+        base = db.query(Lead).filter(Lead.organization_id == org_id)
+    if current_user.role == UserRole.USER:
+        base = base.filter(Lead.assigned_to_id == current_user.id)
+
+    # Status breakdown
+    status_rows = base.with_entities(Lead.status, func.count(Lead.id)).group_by(Lead.status).all()
+    status_df = pd.DataFrame(
+        [{"Status": STATUS_LABELS.get(r[0].value, r[0].value), "Count": r[1]} for r in status_rows]
+    )
+
+    # Source breakdown
+    source_rows = base.with_entities(Lead.source, func.count(Lead.id)).group_by(Lead.source).all()
+    source_df = pd.DataFrame(
+        [{"Source": r[0].value.replace("_", " ").title(), "Count": r[1]} for r in source_rows]
+    )
+
+    # Trends
+    d_created = cast(func.timezone('Asia/Kolkata', Lead.created_at), Date)
+    d_updated = cast(func.timezone('Asia/Kolkata', Lead.updated_at), Date)
+    new_rows  = base.filter(Lead.created_at >= start_dt).with_entities(d_created, func.count(Lead.id)).group_by(d_created).all()
+    conv_rows = base.filter(Lead.status == LeadStatus.CONVERTED, Lead.updated_at >= start_dt).with_entities(d_updated, func.count(Lead.id)).group_by(d_updated).all()
+    new_map  = {r[0]: r[1] for r in new_rows}
+    conv_map = {r[0]: r[1] for r in conv_rows}
+    trends_df = pd.DataFrame([
+        {
+            "Date": (today - timedelta(days=i)).strftime("%d %b %Y"),
+            "New Leads": new_map.get(today - timedelta(days=i), 0),
+            "Converted": conv_map.get(today - timedelta(days=i), 0),
+        }
+        for i in range(days - 1, -1, -1)
+    ])
+
+    # Summary
+    total = base.count()
+    converted = base.filter(Lead.status == LeadStatus.CONVERTED).count()
+    active = base.filter(Lead.is_active == True).count()
+    summary_df = pd.DataFrame([
+        {"Metric": "Total Leads", "Value": total},
+        {"Metric": "Active Leads", "Value": active},
+        {"Metric": "Converted", "Value": converted},
+        {"Metric": "Conversion Rate", "Value": f"{round(converted/total*100, 1) if total else 0}%"},
+        {"Metric": "Report Period", "Value": f"{range_start.strftime('%d %b %Y')} – {today.strftime('%d %b %Y')}"},
+    ])
+
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as writer:
+        summary_df.to_excel(writer, sheet_name="Summary", index=False)
+        trends_df.to_excel(writer, sheet_name="Trends", index=False)
+        status_df.to_excel(writer, sheet_name="Status Breakdown", index=False)
+        source_df.to_excel(writer, sheet_name="Source Breakdown", index=False)
+    buf.seek(0)
+
+    filename = f"trackmylead_report_{today.strftime('%Y%m%d')}.xlsx"
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )

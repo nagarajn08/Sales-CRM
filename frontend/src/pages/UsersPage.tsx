@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { usersApi, billingApi, type UserSession } from "../api";
 import { useAuth } from "../auth/AuthContext";
+import toast from "react-hot-toast";
 import type { User, UserRole } from "../types";
 import { isValidEmail, isValidMobile, isValidPassword, digitsOnly, capitalizeName } from "../lib/validators";
 import { Button } from "../components/ui/button";
@@ -60,6 +61,9 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [reassignSource, setReassignSource] = useState<User | null>(null);
+  const [reassignTarget, setReassignTarget] = useState<number | "">("");
+  const [reassigning, setReassigning] = useState(false);
 
   const fetchUsers = () => {
     setLoading(true);
@@ -141,6 +145,31 @@ export default function UsersPage() {
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const forceLogout = async (sessionId: number) => {
+    try {
+      await usersApi.forceLogout(sessionId);
+      setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, logout_at: new Date().toISOString() } : s));
+      toast.success("Session terminated");
+    } catch {
+      toast.error("Failed to terminate session");
+    }
+  };
+
+  const doReassign = async () => {
+    if (!reassignSource || !reassignTarget) return;
+    setReassigning(true);
+    try {
+      const { reassigned } = await usersApi.reassignByUser(reassignSource.id, Number(reassignTarget));
+      toast.success(`${reassigned} lead${reassigned !== 1 ? "s" : ""} reassigned`);
+      setReassignSource(null);
+      setReassignTarget("");
+    } catch {
+      toast.error("Failed to reassign leads");
+    } finally {
+      setReassigning(false);
     }
   };
 
@@ -240,6 +269,7 @@ export default function UsersPage() {
                     <th className="text-left px-4 py-3">Duration</th>
                     <th className="text-left px-4 py-3 hidden sm:table-cell">IP Address</th>
                     <th className="text-center px-4 py-3">Status</th>
+                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -268,6 +298,13 @@ export default function UsersPage() {
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                             Online
                           </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {!s.logout_at && (
+                          <Button size="sm" variant="destructive" onClick={() => forceLogout(s.id)}>
+                            Force Logout
+                          </Button>
                         )}
                       </td>
                     </tr>
@@ -335,7 +372,8 @@ export default function UsersPage() {
                     </td>
                     {!isSuperAdmin && (
                       <td className="px-4 py-3 text-right">
-                        <div className="flex gap-2 justify-end">
+                        <div className="flex gap-2 justify-end flex-wrap">
+                          <Button size="sm" variant="outline" onClick={() => { setReassignSource(u); setReassignTarget(""); }}>Reassign</Button>
                           <Button size="sm" variant="outline" onClick={() => openEdit(u)}>Edit</Button>
                           <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(u)}>Delete</Button>
                         </div>
@@ -374,6 +412,25 @@ export default function UsersPage() {
             <Button type="submit" loading={saving}>{editUser ? "Save Changes" : "Create User"}</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Reassign leads modal */}
+      <Modal open={!!reassignSource} onClose={() => setReassignSource(null)} title="Reassign All Leads" maxWidth="max-w-sm">
+        <p className="text-sm text-muted-foreground mb-4">
+          Move all leads currently assigned to <strong className="text-foreground">{reassignSource?.name}</strong> to another team member.
+        </p>
+        <Select
+          label="Reassign to"
+          value={String(reassignTarget)}
+          onChange={e => setReassignTarget(Number(e.target.value))}
+          options={users
+            .filter(u => u.id !== reassignSource?.id && u.is_active)
+            .map(u => ({ value: String(u.id), label: u.name }))}
+        />
+        <div className="flex gap-2 justify-end mt-4">
+          <Button variant="outline" onClick={() => setReassignSource(null)}>Cancel</Button>
+          <Button loading={reassigning} disabled={!reassignTarget} onClick={doReassign}>Reassign</Button>
+        </div>
       </Modal>
 
       {/* Delete confirm */}

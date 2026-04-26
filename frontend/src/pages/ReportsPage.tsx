@@ -177,14 +177,21 @@ export default function ReportsPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [trends, setTrends] = useState<{ date: string; new: number; converted: number; followups: number }[]>([]);
   const [topLeads, setTopLeads] = useState<Lead[]>([]);
-  const [period, setPeriod] = useState(30);
+  const [period, setPeriod] = useState<number | null>(30);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
+    const trendParams = startDate && endDate
+      ? { start_date: startDate, end_date: endDate }
+      : { days: period ?? 30 };
+
     setLoading(true);
     Promise.all([
       dashboardApi.stats(),
-      dashboardApi.trends(period),
+      dashboardApi.trends(trendParams),
       leadsApi.list({ limit: 200 }),
     ]).then(([s, t, leads]) => {
       setStats(s);
@@ -196,7 +203,25 @@ export default function ReportsPage() {
           .slice(0, 10)
       );
     }).finally(() => setLoading(false));
-  }, [period]);
+  }, [period, startDate, endDate]);
+
+  const handleExport = async () => {
+    const trendParams = startDate && endDate
+      ? { start_date: startDate, end_date: endDate }
+      : { days: period ?? 30 };
+    setExporting(true);
+    try {
+      const blob = await dashboardApi.exportReport(trendParams);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `trackmylead_report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -258,22 +283,49 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          {/* period toggle */}
-          <div className="flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-xl p-1">
-            {PERIOD_OPTIONS.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setPeriod(opt.value)}
-                className={cn(
-                  "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
-                  period === opt.value
-                    ? "bg-white text-indigo-700 shadow-sm"
-                    : "text-white/70 hover:text-white"
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
+          {/* period toggle + custom range + export */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-xl p-1">
+              {PERIOD_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setPeriod(opt.value); setStartDate(""); setEndDate(""); }}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                    period === opt.value && !startDate
+                      ? "bg-white text-indigo-700 shadow-sm"
+                      : "text-white/70 hover:text-white"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-xl px-2 py-1">
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => { setStartDate(e.target.value); setPeriod(null); }}
+                className="text-[11px] bg-transparent text-white placeholder-white/50 focus:outline-none w-28"
+              />
+              <span className="text-white/50 text-xs">–</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={e => { setEndDate(e.target.value); setPeriod(null); }}
+                className="text-[11px] bg-transparent text-white placeholder-white/50 focus:outline-none w-28"
+              />
+            </div>
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold transition-all backdrop-blur-sm"
+            >
+              <svg viewBox="0 0 14 14" fill="none" className="h-3.5 w-3.5">
+                <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              {exporting ? "Exporting…" : "Export Excel"}
+            </button>
           </div>
         </div>
       </div>

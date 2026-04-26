@@ -27,6 +27,20 @@ class SessionRead(BaseModel):
 router = APIRouter(prefix="/api/users", tags=["users"])
 
 
+@router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+def force_logout_session(session_id: int, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    session = db.get(UserSession, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if not admin.is_superadmin:
+        user = db.get(User, session.user_id)
+        if not user or user.organization_id != admin.organization_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    if session.logout_at is None:
+        session.logout_at = datetime.utcnow()
+        db.commit()
+
+
 @router.get("/sessions", response_model=list[SessionRead])
 def list_sessions(
     limit: int = Query(200, le=500),

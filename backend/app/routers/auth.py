@@ -1,6 +1,7 @@
 import secrets
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
@@ -246,6 +247,40 @@ def logout(response: Response, db: Session = Depends(get_db), payload: dict = De
 
 @router.get("/me", response_model=UserRead)
 def me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+class ProfileUpdateBody(BaseModel):
+    name: str | None = None
+    mobile: str | None = None
+    current_password: str | None = None
+    new_password: str | None = None
+
+
+@router.patch("/me", response_model=UserRead)
+def update_me(
+    body: ProfileUpdateBody,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if body.name is not None:
+        current_user.name = body.name.strip()
+    if body.mobile is not None:
+        current_user.mobile = body.mobile.strip() or None
+    if body.new_password:
+        if not body.current_password:
+            raise HTTPException(status_code=400, detail="Current password is required")
+        if not verify_password(body.current_password, current_user.hashed_password):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+        from app.models.user_session import UserSession as _US
+        current_user.hashed_password = hash_password(body.new_password)
+        current_user.password_changed_at = datetime.utcnow()
+        db.query(_US).filter(
+            _US.user_id == current_user.id,
+            _US.logout_at.is_(None),
+        ).update({"logout_at": datetime.utcnow()})
+    db.commit()
+    db.refresh(current_user)
     return current_user
 
 

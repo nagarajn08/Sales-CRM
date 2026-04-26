@@ -7,6 +7,8 @@ export const authApi = {
   logout: () => api.post("/api/auth/logout"),
   refresh: () => api.post("/api/auth/refresh").then(r => r.data),
   me: () => api.get<User>("/api/auth/me").then(r => r.data),
+  updateMe: (data: { name?: string; mobile?: string; current_password?: string; new_password?: string }) =>
+    api.patch<User>("/api/auth/me", data).then(r => r.data),
   otpRequest: (data: { email: string; mobile: string }) =>
     api.post<{ detail: string; email_sent: boolean; email_otp_enabled: boolean; mobile_otp_enabled: boolean; dev_email_otp: string | null; dev_mobile_otp: string | null }>("/api/auth/otp/request", data).then(r => r.data),
   otpVerify: (data: { email: string; mobile: string; email_otp: string; mobile_otp: string }) =>
@@ -40,6 +42,9 @@ export const usersApi = {
   update: (id: number, data: object) => api.put<User>(`/api/users/${id}`, data).then(r => r.data),
   delete: (id: number) => api.delete(`/api/users/${id}`),
   sessions: () => api.get<UserSession[]>("/api/users/sessions").then(r => r.data),
+  forceLogout: (sessionId: number) => api.delete(`/api/users/sessions/${sessionId}`),
+  reassignByUser: (from_user_id: number, to_user_id: number) =>
+    api.post<{ reassigned: number }>("/api/leads/reassign-by-user", { from_user_id, to_user_id }).then(r => r.data),
 };
 
 // Leads
@@ -96,7 +101,10 @@ export const followupsApi = {
 // Dashboard
 export const dashboardApi = {
   stats: () => api.get<DashboardStats>("/api/dashboard/stats").then(r => r.data),
-  trends: (days = 30) => api.get<{ date: string; new: number; converted: number; followups: number }[]>("/api/dashboard/trends", { params: { days } }).then(r => r.data),
+  trends: (params: { days?: number; start_date?: string; end_date?: string }) =>
+    api.get<{ date: string; new: number; converted: number; followups: number }[]>("/api/dashboard/trends", { params }).then(r => r.data),
+  exportReport: (params: { days?: number; start_date?: string; end_date?: string }) =>
+    api.get("/api/dashboard/export", { params, responseType: "blob" }).then(r => r.data),
 };
 
 // Templates

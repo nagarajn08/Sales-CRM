@@ -704,6 +704,21 @@ def add_comment(lead_id: int, comment: str, current_user: User = Depends(get_cur
     return lead
 
 
+class ReassignByUserBody(BaseModel):
+    from_user_id: int
+    to_user_id: int
+
+
+@router.post("/reassign-by-user")
+def reassign_by_user(body: ReassignByUserBody, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    q = db.query(Lead).filter(Lead.assigned_to_id == body.from_user_id)
+    if not admin.is_superadmin:
+        q = q.filter(Lead.organization_id == admin.organization_id)
+    count = q.update({"assigned_to_id": body.to_user_id}, synchronize_session=False)
+    db.commit()
+    return {"reassigned": count}
+
+
 @router.post("/{lead_id}/reassign", response_model=LeadRead)
 def reassign_lead(lead_id: int, body: LeadReassign, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     lead = db.get(Lead, lead_id)
