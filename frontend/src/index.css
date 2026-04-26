@@ -156,6 +156,10 @@
 ::-webkit-scrollbar-thumb      { background: hsl(var(--border)); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover{ background: hsl(var(--muted-foreground) / 0.35); }
 
+/* Sidebar nav scrollbar — visible against dark background */
+aside ::-webkit-scrollbar-thumb      { background: hsl(var(--sidebar-muted) / 0.35); }
+aside ::-webkit-scrollbar-thumb:hover{ background: hsl(var(--sidebar-muted) / 0.6); }
+
 /* ─────────────────────────────────────────────────────────
    UTILITY CLASSES
    ───────────────────────────────────────────────────────── */
