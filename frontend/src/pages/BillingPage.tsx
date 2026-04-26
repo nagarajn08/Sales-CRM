@@ -28,12 +28,7 @@ export default function BillingPage() {
       const res = await billingApi.upgrade("pro");
 
       if (res.demo) {
-        await billingApi.activate({
-          plan: "pro",
-          razorpay_subscription_id: res.subscription_id,
-        });
-        setMessage({ type: "success", text: "Upgraded to Pro plan (demo mode — no payment taken)." });
-        fetchBilling();
+        setMessage({ type: "error", text: "Payment gateway not configured. Please contact admin to enable payments before upgrading." });
         return;
       }
 

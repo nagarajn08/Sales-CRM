@@ -301,7 +301,7 @@ export default function UsersPage() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        {!s.logout_at && (
+                        {isSuperAdmin && !s.logout_at && (
                           <Button size="sm" variant="destructive" onClick={() => forceLogout(s.id)}>
                             Force Logout
                           </Button>
@@ -404,7 +404,7 @@ export default function UsersPage() {
           <Select label="Role" value={form.role} onChange={(e) => f("role", e.target.value as UserRole)} options={ROLE_OPTIONS} />
           <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
             <input type="checkbox" checked={form.is_active} onChange={(e) => f("is_active", e.target.checked)} className="rounded" />
-            Active account
+            Activate account
           </label>
           {errors._ && <p className="text-sm text-destructive">{errors._}</p>}
           <div className="flex justify-end gap-2 pt-2">

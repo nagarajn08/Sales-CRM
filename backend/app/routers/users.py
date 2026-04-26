@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user, require_admin
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.user_session import UserSession
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.services.auth_service import hash_password
