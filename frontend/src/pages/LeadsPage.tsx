@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { leadsApi, usersApi } from "../api";
 import type { Lead, LeadStatus, LeadPriority, LeadSource, User } from "../types";
-import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS } from "../types";
+import { STATUS_LABELS, PRIORITY_COLORS } from "../types";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Input, Select } from "../components/ui/input";
@@ -469,7 +469,7 @@ export default function LeadsPage() {
                 {leads.map((lead, idx) => {
                   const followup = formatFollowup(lead.next_followup_at);
                   const isSelected = selected.has(lead.id);
-                  const tags = lead.tags ? lead.tags.split(",").map(t => t.trim()).filter(Boolean) : [];
+                  // tags available via lead.tags if needed in future
                   const assigneeName = lead.assigned_to?.name ?? "";
                   const assigneeInitials = assigneeName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
                   const leadInitials = lead.name.trim().split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();

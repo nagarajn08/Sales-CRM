@@ -5,7 +5,6 @@ import { STATUS_LABELS } from "../types";
 import { ScoreBadge } from "../components/ui/ScoreBadge";
 import { cn } from "../lib/utils";
 import {
-  AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line,
 } from "recharts";
@@ -212,7 +211,6 @@ export default function ReportsPage() {
 
   // ── derived ──
   const converted     = stats.status_breakdown.find(s => s.status === "converted")?.count ?? 0;
-  const notInterested = stats.status_breakdown.find(s => s.status === "not_interested")?.count ?? 0;
   const active        = stats.active_leads;
   const convRate      = stats.total_leads > 0 ? (converted / stats.total_leads * 100).toFixed(1) : "0.0";
   const overdueTotal  = stats.user_stats.reduce((a, u) => a + u.overdue_followups, 0);

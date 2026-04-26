@@ -30,18 +30,6 @@ function OrgTypeBadge({ type }: { type: string }) {
   );
 }
 
-function RoleBadge({ role }: { role: string }) {
-  const cls = role === "admin"
-    ? "bg-primary/10 text-primary"
-    : role === "manager"
-    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-    : "bg-secondary text-muted-foreground";
-  return (
-    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize", cls)}>
-      {role}
-    </span>
-  );
-}
 
 function StatusDot({ active }: { active: boolean }) {
   return (

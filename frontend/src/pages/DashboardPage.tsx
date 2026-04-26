@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { dashboardApi } from "../api";
-import type { DashboardStats, SourceCount, StatusCount } from "../types";
+import type { DashboardStats, SourceCount } from "../types";
 import { Badge } from "../components/ui/badge";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS } from "../types";
 import { cn, fmtDateTime } from "../lib/utils";

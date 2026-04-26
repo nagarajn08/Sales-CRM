@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Lead, LeadStatus } from "../../types";
-import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS } from "../../types";
+import { STATUS_LABELS, PRIORITY_COLORS } from "../../types";
 import { Badge } from "../ui/badge";
 import { leadsApi } from "../../api";
 import { cn, fmtDateTime } from "../../lib/utils";

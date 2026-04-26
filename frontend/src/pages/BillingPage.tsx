@@ -7,29 +7,6 @@ import { cn } from "../lib/utils";
 type BillingData = Awaited<ReturnType<typeof billingApi.get>>;
 type PlanDef = { name: string; price: number; original_price: number; discount_pct: number; max_users: number; max_leads: number; features: string[] };
 
-function UsageBar({ label, current, max }: { label: string; current: number; max: number }) {
-  const unlimited = max === -1;
-  const pct = unlimited ? 0 : Math.min((current / max) * 100, 100);
-  const warn = !unlimited && pct >= 80;
-  return (
-    <div>
-      <div className="flex justify-between text-xs mb-1.5">
-        <span className="font-medium text-foreground">{label}</span>
-        <span className={cn("font-semibold tabular-nums", warn ? "text-amber-600" : "text-muted-foreground")}>
-          {current} / {unlimited ? "∞" : max}
-        </span>
-      </div>
-      {!unlimited && (
-        <div className="h-1.5 rounded-full bg-border overflow-hidden">
-          <div
-            className={cn("h-full rounded-full transition-all duration-500", warn ? "bg-amber-500" : "bg-primary")}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function BillingPage() {
   const [billing, setBilling] = useState<BillingData | null>(null);
