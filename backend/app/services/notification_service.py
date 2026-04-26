@@ -10,19 +10,6 @@ from app.models.app_settings import AppSettings
 REMIND_BEFORE_MINUTES = 15
 
 
-def create_followup_notification(db: Session, lead: Lead) -> None:
-    """Create a notification when a follow-up is scheduled."""
-    if not lead.assigned_to_id or not lead.next_followup_at:
-        return
-    notif = Notification(
-        user_id=lead.assigned_to_id,
-        lead_id=lead.id,
-        message=f"Follow-up in {REMIND_BEFORE_MINUTES} min: {lead.name}",
-        due_at=lead.next_followup_at,
-    )
-    db.add(notif)
-    db.commit()
-
 
 def _get_fast2sms_key(db: Session, org_id: int) -> str:
     row = db.query(AppSettings).filter(

@@ -20,29 +20,31 @@ class NotificationRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
-def _due_filter(q):
-    """Surface notifications due within the next 30 minutes (or with no due date)."""
-    from datetime import timedelta
-    notify_from = datetime.utcnow() + timedelta(minutes=30)
-    return q.filter(
-        (Notification.due_at == None) | (Notification.due_at <= notify_from)
-    )
-
-
 @router.get("/", response_model=list[NotificationRead])
 def list_notifications(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    q = db.query(Notification).filter(Notification.user_id == current_user.id)
-    q = _due_filter(q)
+    from datetime import timedelta
+    from sqlalchemy import or_
+    notify_from = datetime.utcnow() + timedelta(minutes=30)
+    # Unread: always show (catches overdue/missed reminders after login)
+    # Read: only show if due within 30 min window (keep panel clean)
+    q = db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        or_(
+            Notification.is_read == False,
+            Notification.due_at == None,
+            Notification.due_at <= notify_from,
+        ),
+    )
     return q.order_by(Notification.created_at.desc()).limit(50).all()
 
 
 @router.get("/unread-count")
 def unread_count(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    q = db.query(Notification).filter(
-        Notification.user_id == current_user.id, Notification.is_read == False
-    )
-    q = _due_filter(q)
-    return {"count": q.count()}
+    # No time filter — count all unread so overdue missed reminders show badge
+    return {"count": db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False,
+    ).count()}
 
 
 @router.put("/{notif_id}/read")
