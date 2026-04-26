@@ -438,7 +438,12 @@ export default function SettingsPage() {
                 onClick={async () => {
                   setTestingSmtp(true);
                   try {
-                    const r = await settingsApi.testSmtp();
+                    const r = await settingsApi.testSmtp({
+                      smtp_host: settings.smtp_host ?? "",
+                      smtp_port: settings.smtp_port ?? "587",
+                      smtp_user: settings.smtp_user ?? "",
+                      smtp_password: settings.smtp_password ?? "",
+                    });
                     toast.success(r.detail);
                   } catch {
                     // error toast shown by global interceptor

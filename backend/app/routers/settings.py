@@ -94,15 +94,28 @@ def update_org_name(
     return {"ok": True, "name": org.name}
 
 
+class SmtpTestPayload(BaseModel):
+    smtp_host: str = ""
+    smtp_port: str = ""
+    smtp_user: str = ""
+    smtp_password: str = ""
+
+
 @router.post("/smtp-test")
-def test_smtp(admin: User = Depends(require_admin), db: Session = Depends(get_db)):
-    """Verify SMTP connection using stored settings without sending an email."""
+def test_smtp(
+    body: SmtpTestPayload,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Verify SMTP connection using supplied values (or fall back to DB if blank)."""
     rows = db.query(AppSettings).filter(AppSettings.organization_id == admin.organization_id).all()
-    s = {r.key: r.value for r in rows}
-    host = s.get("smtp_host", "").strip()
-    port_str = s.get("smtp_port", "587").strip()
-    user = s.get("smtp_user", "").strip()
-    password = s.get("smtp_password", "").strip()
+    saved = {r.key: r.value for r in rows}
+
+    host = (body.smtp_host or saved.get("smtp_host", "")).strip()
+    port_str = (body.smtp_port or saved.get("smtp_port", "587")).strip()
+    user = (body.smtp_user or saved.get("smtp_user", "")).strip()
+    password = (body.smtp_password or saved.get("smtp_password", "")).strip()
+
     if not host:
         raise HTTPException(status_code=400, detail="SMTP host is not configured")
     try:
