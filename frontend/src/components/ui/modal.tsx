@@ -6,10 +6,11 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   maxWidth?: string;
 }
 
-export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }: ModalProps) {
+export function Modal({ open, onClose, title, children, footer, maxWidth = "max-w-lg" }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -65,7 +66,14 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
         </div>
 
         {/* Body */}
-        <div className="p-4 sm:p-5 overflow-y-auto overscroll-contain">{children}</div>
+        <div className="p-4 sm:p-5 overflow-y-auto overscroll-contain flex-1 min-h-0">{children}</div>
+
+        {/* Footer (pinned, never scrolls) */}
+        {footer && (
+          <div className="px-4 sm:px-5 py-3 border-t border-border shrink-0 bg-card">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

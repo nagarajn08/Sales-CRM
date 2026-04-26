@@ -67,8 +67,19 @@ export function StatusModal({ open, onClose, lead, onUpdated }: Props) {
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Update Status" maxWidth="max-w-sm">
-      <form onSubmit={submit} className="space-y-3 pb-16">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Update Status"
+      maxWidth="max-w-sm"
+      footer={
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" className="flex-1" onClick={onClose}>Cancel</Button>
+          <Button type="submit" form="status-modal-form" size="sm" className="flex-1" loading={saving}>Update</Button>
+        </div>
+      }
+    >
+      <form id="status-modal-form" onSubmit={submit} className="space-y-3">
         <Select
           label="Status"
           value={status}
@@ -107,11 +118,6 @@ export function StatusModal({ open, onClose, lead, onUpdated }: Props) {
         />
 
         {error && <p className="text-xs text-destructive">{error}</p>}
-
-        <div className="sticky bottom-0 bg-card flex gap-2 pt-3 pb-1 -mx-4 sm:-mx-5 px-4 sm:px-5 border-t border-border">
-          <Button type="button" variant="outline" size="sm" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button type="submit" size="sm" className="flex-1" loading={saving}>Update</Button>
-        </div>
       </form>
     </Modal>
   );
