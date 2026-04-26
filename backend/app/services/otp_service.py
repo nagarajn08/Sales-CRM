@@ -1,5 +1,6 @@
 import logging
 import random
+import re
 import smtplib
 import threading
 import urllib.request
@@ -63,7 +64,10 @@ def _send_smtp(smtp: dict, to: str, subject: str, html: str) -> bool:
     if not host or not user:
         logger.warning(f"_send_smtp: missing host or user (host={host!r} user={user!r})")
         return False
-    logger.info(f"_send_smtp: connecting to {host}:{port} as {user} → {to}")
+    # sendmail() requires a plain email address — extract from "Name <email>" if needed
+    m = re.search(r"<([^>]+)>", sender)
+    from_addr = m.group(1) if m else (sender if "@" in sender else user)
+    logger.info(f"_send_smtp: connecting to {host}:{port} as {user} → {to} (from={from_addr})")
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -73,14 +77,14 @@ def _send_smtp(smtp: dict, to: str, subject: str, html: str) -> bool:
         if port == 465:
             with smtplib.SMTP_SSL(host, port, timeout=5) as server:
                 server.login(user, password)
-                server.sendmail(sender, to, msg.as_string())
+                server.sendmail(from_addr, to, msg.as_string())
         else:
             with smtplib.SMTP(host, port, timeout=5) as server:
                 server.ehlo()
                 server.starttls()
                 server.ehlo()
                 server.login(user, password)
-                server.sendmail(sender, to, msg.as_string())
+                server.sendmail(from_addr, to, msg.as_string())
         logger.info(f"_send_smtp: sent successfully to {to}")
         return True
     except Exception as exc:
