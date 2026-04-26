@@ -64,14 +64,22 @@ def _send_smtp(smtp: dict, to: str, subject: str, html: str) -> bool:
     if not host or not user:
         logger.warning(f"_send_smtp: missing host or user (host={host!r} user={user!r})")
         return False
-    # sendmail() requires a plain email address — extract from "Name <email>" if needed
+    # Build RFC-5322 compliant From header and extract bare email for sendmail()
     m = re.search(r"<([^>]+)>", sender)
-    from_addr = m.group(1) if m else (sender if "@" in sender else user)
+    if m:
+        from_addr = m.group(1)          # already "Name <email>" — extract email
+        from_header = sender
+    elif "@" in sender:
+        from_addr = sender              # plain email address
+        from_header = sender
+    else:
+        from_addr = user               # sender is display name only — combine
+        from_header = f"{sender} <{user}>"
     logger.info(f"_send_smtp: connecting to {host}:{port} as {user} → {to} (from={from_addr})")
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = sender
+        msg["From"] = from_header
         msg["To"] = to
         msg.attach(MIMEText(html, "html"))
         if port == 465:
