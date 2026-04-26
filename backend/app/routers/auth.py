@@ -140,6 +140,8 @@ def signup_individual(body: IndividualSignupRequest, response: Response, db: Ses
     db.refresh(user)
     seed_predefined_templates(db, org.id)
     get_or_create_subscription(db, org.id)
+    db.add(UserSession(user_id=user.id, organization_id=org.id))
+    db.commit()
     return _tokens(user, response)
 
 
@@ -175,6 +177,8 @@ def signup_corporate(body: CorporateSignupRequest, response: Response, db: Sessi
     db.refresh(user)
     seed_predefined_templates(db, org.id)
     get_or_create_subscription(db, org.id)
+    db.add(UserSession(user_id=user.id, organization_id=org.id))
+    db.commit()
     return _tokens(user, response)
 
 
